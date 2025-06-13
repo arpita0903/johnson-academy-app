@@ -122,26 +122,26 @@ export const technicalContent = [
 
 
 export const songContent = [
-    { s_no: 1, title: "Faded", session: "2 Sessions", date_of_issue: "2024-05-01", date_of_completion: "2024-05-05", remarks: "Completed with accuracy" },
-    { s_no: 2, title: "Aura Lee", session: "2 Sessions", date_of_issue: "2024-05-06", date_of_completion: "2024-05-09", remarks: "Good finger control" },
-    { s_no: 3, title: "Yankee Doodle", session: "2 Sessions", date_of_issue: "2024-05-10", date_of_completion: "2024-05-13", remarks: "Needs improvement in tempo" },
-    { s_no: 4, title: "In The End", session: "2 Sessions", date_of_issue: "2024-05-14", date_of_completion: "", remarks: "Excellent rhythm" },
-    { s_no: 5, title: "Ode To Joy", session: "2 Sessions", date_of_issue: "2024-05-19", date_of_completion: "", remarks: "Smooth transitions" },
-    { s_no: 6, title: "London Bridge", session: "2 Sessions", date_of_issue: "2024-05-22", date_of_completion: "", remarks: "Stable tempo" },
-    { s_no: 7, title: "Twinkle Twinkle Little Star", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Memorized well" },
-    { s_no: 8, title: "Aashique 2 Theme", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Emotive performance" },
-    { s_no: 9, title: "Jee Le Zara", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Finger stretch improving" },
-    { s_no: 10, title: "Sun Raha Hai Na Tu (Intro)", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Played fluently" },
-    { s_no: 11, title: "Jingle Bells", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Needs dynamic expression" },
-    { s_no: 12, title: "Shape Of You", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Catchy rhythm handled well" },
-    { s_no: 13, title: "Kesariya (Intro)", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Tone clarity improved" },
-    { s_no: 14, title: "Numb", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Great picking control" },
-    { s_no: 15, title: "DDLJ Theme", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Emotionally expressive" },
-    { s_no: 16, title: "Happy Birthday", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Confidently played" },
-    { s_no: 17, title: "Socha Hai (Intro)", session: "3 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Requires steady tempo" },
-    { s_no: 18, title: "Smoke On The Water", session: "4 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Strong riff control" },
-    { s_no: 19, title: "Enter Sandman", session: "4 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Excellent energy" },
-    { s_no: 20, title: "Seven Nation Army", session: "4 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Very good groove" }
+    {s_no: 1, title: "Faded", session: "2 Sessions", date_of_issue: "2024-05-01", date_of_completion: "2024-05-05", remarks: "Completed with accuracy"},
+    {s_no: 2, title: "Aura Lee", session: "2 Sessions", date_of_issue: "2024-05-06", date_of_completion: "2024-05-09", remarks: "Good finger control"},
+    {s_no: 3, title: "Yankee Doodle", session: "2 Sessions", date_of_issue: "2024-05-10", date_of_completion: "2024-05-13", remarks: "Needs improvement in tempo"},
+    {s_no: 4, title: "In The End", session: "2 Sessions", date_of_issue: "2024-05-14", date_of_completion: "", remarks: "Excellent rhythm"},
+    {s_no: 5, title: "Ode To Joy", session: "2 Sessions", date_of_issue: "2024-05-19", date_of_completion: "", remarks: "Smooth transitions"},
+    {s_no: 6, title: "London Bridge", session: "2 Sessions", date_of_issue: "2024-05-22", date_of_completion: "", remarks: "Stable tempo"},
+    {s_no: 7, title: "Twinkle Twinkle Little Star", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Memorized well"},
+    {s_no: 8, title: "Aashique 2 Theme", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Emotive performance"},
+    {s_no: 9, title: "Jee Le Zara", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Finger stretch improving"},
+    {s_no: 10, title: "Sun Raha Hai Na Tu (Intro)", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Played fluently"},
+    {s_no: 11, title: "Jingle Bells", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Needs dynamic expression"},
+    {s_no: 12, title: "Shape Of You", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Catchy rhythm handled well"},
+    {s_no: 13, title: "Kesariya (Intro)", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Tone clarity improved"},
+    {s_no: 14, title: "Numb", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Great picking control"},
+    {s_no: 15, title: "DDLJ Theme", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Emotionally expressive"},
+    {s_no: 16, title: "Happy Birthday", session: "2 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Confidently played"},
+    {s_no: 17, title: "Socha Hai (Intro)", session: "3 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Requires steady tempo"},
+    {s_no: 18, title: "Smoke On The Water", session: "4 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Strong riff control"},
+    {s_no: 19, title: "Enter Sandman", session: "4 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Excellent energy"},
+    {s_no: 20, title: "Seven Nation Army", session: "4 Sessions", date_of_issue: "", date_of_completion: "", remarks: "Very good groove"}
 ]
 
 
@@ -160,13 +160,13 @@ export const instrumentData = [
         progress: 0.75,
         type: 'details'
     },
-    {
-        id: '3',
-        name: 'Piano',
-        image: require('../../assets/images/arts.png'),
-        progress: 0.50,
-        type: 'details'
-    }
+    //{
+    //    id: '3',
+    //    name: 'Arts',
+    //    image: require('../../assets/images/arts.png'),
+    //    progress: 0.50,
+    //    type: 'details'
+    //}
 ];
 
 export const teacherData = {
@@ -179,16 +179,16 @@ export const teacherData = {
                     id: "g1",
                     name: "Guitar Batch A",
                     students: [
-                        { id: "s1", name: "Alice", progress: 80 },
-                        { id: "s2", name: "Bob", progress: 65 },
+                        {id: "JA/GTR/1127", name: "Rajat Pattidar", progress: 80, instrument: "Guitar", date_of_joining: "10th January 2024", level: "Level 2", promoted: "2025"},
+                        {id: "JA/GTR/1128", name: "Virat Kohli", progress: 65, instrument: "Guitar", date_of_joining: " 6th August 2023", level: "Level 3", promoted: "2024"}
                     ],
                 },
                 {
                     id: "g2",
                     name: "Guitar Batch B",
                     students: [
-                        { id: "s3", name: "Charlie", progress: 90 },
-                        { id: "s4", name: "Diana", progress: 75 },
+                        {id: "s3", name: "Charlie", progress: 90},
+                        {id: "s4", name: "Diana", progress: 75},
                     ],
                 },
             ],
@@ -200,22 +200,36 @@ export const teacherData = {
                     id: "p1",
                     name: "Piano Batch A",
                     students: [
-                        { id: "s5", name: "Eve", progress: 85 },
-                        { id: "s6", name: "Frank", progress: 70 },
+                        {id: "s5", name: "Eve", progress: 85},
+                        {id: "s6", name: "Frank", progress: 70},
                     ],
                 },
                 {
                     id: "p2",
                     name: "Piano Batch B",
                     students: [
-                        { id: "s7", name: "Grace", progress: 95 },
-                        { id: "s8", name: "Heidi", progress: 60 },
+                        {id: "s7", name: "Grace", progress: 95},
+                        {id: "s8", name: "Heidi", progress: 60},
                     ],
                 },
             ],
         },
     ],
 };
+
+
+export const assignments = [{
+    id: 'a1',
+    title: 'Scales Practice',
+    description: 'Practice all major scales',
+    file: {name: 'scales.pdf', uri: '...'},
+}, {
+    id: 'a2',
+    title: 'Scales Practice',
+    description: 'Practice all major scales',
+    file: {name: 'scales.pdf', uri: '...'},
+}]
+
 
 
 

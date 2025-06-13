@@ -1,35 +1,75 @@
-import React from 'react'
-import { SafeAreaView, StyleSheet } from 'react-native'
+import React from "react";
+import { createDrawerNavigator } from "@react-navigation/drawer";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
 
-// import "./global.css"
+import Login from "./components/Login";
+import Homepage from "./Student/Homepage";
+import CourseDetails from "./Student/CourseDetails";
+import DetailScreen from "./Student/DetailScreen";
+import TeacherDashboard from "./Teacher/Dashboard";
+import StudentList from "./Teacher/StudentList";
+import TeacherCourseDetail from "./Teacher/TeacherCourseDetail";
+import ProfileDrawer from "./components/ProfileDrawer";
 
-import { createStackNavigator } from '@react-navigation/stack';
+import { AppProvider } from "./context/AppContext";
+import { Image, TouchableOpacity } from "react-native";
+import profile from "../assets/images/profileDefault.jpg";
+import AssignmentList from "./Teacher/AssignmentList";
+import PublishAssignment from "./Teacher/PublishAssignment";
 
-import Login from './components/Login';
-import Homepage from './Student/Homepage';
-import CourseDetails from './Student/CourseDetails';
-import DetailScreen from './Student/DetailScreen';
-import TeacherDashboard from './Teacher/Dashboard';
-import StudentList from './Teacher/StudentList';
+const Drawer = createDrawerNavigator();
+const Stack = createStackNavigator();
 
-const Stack = createStackNavigator()
+const StackScreens = ({ navigation }) => (
+  <Stack.Navigator>
+    <Stack.Screen
+      name="Login"
+      component={Login}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen name="Courses" component={CourseDetails} />
+    <Stack.Screen
+      name="Homepage"
+      component={Homepage}
+      options={{
+        headerRight: () => (
+          <TouchableOpacity onPress={() => navigation.openDrawer()}>
+            <Image
+              source={profile}
+              resizeMode="contain"
+              style={{ width: 40, marginRight: 10, borderRadius: 20 }}
+            />
+          </TouchableOpacity>
+        ),
+      }}
+    />
+    <Stack.Screen name="Detail" component={DetailScreen} />
+    <Stack.Screen name="TeacherDashboard" component={TeacherDashboard} />
+    <Stack.Screen name="StudentList" component={StudentList} />
+    <Stack.Screen name="TeacherCourseDetail" component={TeacherCourseDetail} />
+    <Stack.Screen name="PublishAssignment" component={PublishAssignment} />
+    <Stack.Screen name="AssignmentList" component={AssignmentList} />
+  </Stack.Navigator>
+);
 
-const index = () => {
-    return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <Stack.Navigator>
-                <Stack.Screen name="Home" component={Login} options={{ headerShown: false }} />
-                <Stack.Screen name="Courses" component={CourseDetails} />
-                <Stack.Screen name="Homepage" component={Homepage} />
-                <Stack.Screen name="Detail" component={DetailScreen} />
-                <Stack.Screen name="TeacherDashboard" component={TeacherDashboard} options={{ title: 'Dashboard' }} />
-                <Stack.Screen name="StudentList" component={StudentList} options={{ title: 'Students' }} />
-            </Stack.Navigator>
-        </SafeAreaView >
+const App = () => {
+  return (
+    <AppProvider>
+      {/*<NavigationContainer>*/}
+      <Drawer.Navigator
+        screenOptions={{ drawerPosition: "right" }}
+        drawerContent={(props) => <ProfileDrawer {...props} />}
+      >
+        <Drawer.Screen
+          name="Main"
+          component={StackScreens}
+          options={{ headerShown: false }}
+        />
+      </Drawer.Navigator>
+      {/*</NavigationContainer>*/}
+    </AppProvider>
+  );
+};
 
-    )
-}
-
-export default index
-
-const styles = StyleSheet.create({})
+export default App;
