@@ -21,7 +21,7 @@ const TeacherCourseDetail = ({ route }) => {
   };
 
   const handleEnd = () => {
-    console.log("Course Ended");
+    //course ended
   };
 
   return (

@@ -177,15 +177,19 @@ export const teacherData = {
             batches: [
                 {
                     id: "g1",
-                    name: "Guitar Batch A",
+                    name: "Guitar Batch-01",
                     students: [
-                        {id: "JA/GTR/1127", name: "Rajat Pattidar", progress: 80, instrument: "Guitar", date_of_joining: "10th January 2024", level: "Level 2", promoted: "2025"},
-                        {id: "JA/GTR/1128", name: "Virat Kohli", progress: 65, instrument: "Guitar", date_of_joining: " 6th August 2023", level: "Level 3", promoted: "2024"}
+                        {id: "JA/GTR/1127", name: "Arnav Iyer", progress: 80, instrument: "Guitar", date_of_joining: "10th January 2025", level: "Level 1", promoted: "2025"},
+                        {id: "JA/GTR/1131", name: "Sagnik", progress: 65, instrument: "Guitar", date_of_joining: " 16th August 2024", level: "Level 3", promoted: "2024"},
+                        {id: "JA/GTR/1128", name: "Chattoraj", progress: 65, instrument: "Guitar", date_of_joining: "26th March 2023", level: "Level 3", promoted: "2024"},
+                        {id: "JA/GTR/1129", name: "Ishan G", progress: 65, instrument: "Guitar", date_of_joining: " 9th April 2024", level: "Level 3", promoted: "2024"},
+                        {id: "JA/GTR/1132", name: "Ishta Gowda", progress: 65, instrument: "Guitar", date_of_joining: "02th June 2025", level: "Level 1", promoted: "2024"},
+                        {id: "JA/GTR/1127", name: "Dhruv Raj", progress: 65, instrument: "Guitar", date_of_joining: "22th August 2024", level: "Level 3", promoted: "2024"}
                     ],
                 },
                 {
                     id: "g2",
-                    name: "Guitar Batch B",
+                    name: "Guitar Batch-02",
                     students: [
                         {id: "s3", name: "Charlie", progress: 90},
                         {id: "s4", name: "Diana", progress: 75},
@@ -198,7 +202,7 @@ export const teacherData = {
             batches: [
                 {
                     id: "p1",
-                    name: "Piano Batch A",
+                    name: "Piano Batch-01",
                     students: [
                         {id: "s5", name: "Eve", progress: 85},
                         {id: "s6", name: "Frank", progress: 70},
@@ -206,7 +210,7 @@ export const teacherData = {
                 },
                 {
                     id: "p2",
-                    name: "Piano Batch B",
+                    name: "Piano Batch-02",
                     students: [
                         {id: "s7", name: "Grace", progress: 95},
                         {id: "s8", name: "Heidi", progress: 60},
@@ -220,12 +224,12 @@ export const teacherData = {
 
 export const assignments = [{
     id: 'a1',
-    title: 'Scales Practice',
+    title: 'Guitar Practice 1',
     description: 'Practice all major scales',
     file: {name: 'scales.pdf', uri: '...'},
 }, {
     id: 'a2',
-    title: 'Scales Practice',
+    title: 'Guitar Practice 2',
     description: 'Practice all major scales',
     file: {name: 'scales.pdf', uri: '...'},
 }]

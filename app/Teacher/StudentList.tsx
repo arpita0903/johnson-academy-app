@@ -12,14 +12,13 @@ import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import AttendanceCalendar from "../components/AttendanceCalendar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AssignmentModal from "./AssignmentModal";
-import MRTModal from "./MRTModal";
 
 const StudentList = ({ route, navigation }) => {
   const { batch } = route.params;
   const bottomSheetRef = useRef(null);
 
   const [selectedStudent, setSelectedStudent] = useState({
-    name: "Pratikkshanth",
+    name: "Pratik",
     id: "12345",
   });
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
@@ -44,7 +43,7 @@ const StudentList = ({ route, navigation }) => {
   };
 
   const handleStudentPress = (student) => {
-    navigation.navigate("Courses", { student });
+    navigation.navigate("Course", { student });
   };
 
   const openAttendanceSheet = (student) => {
@@ -54,7 +53,6 @@ const StudentList = ({ route, navigation }) => {
   };
 
   const openStudentDetails = (student: any) => {
-    console.log(student, "item");
     setSelectedStudent(student);
     setDetailsModalVisible(true);
   };
@@ -63,25 +61,12 @@ const StudentList = ({ route, navigation }) => {
     setDetailsModalVisible(false);
   };
 
-  //  const handleShowMRT = () => {
-  //    setDetailsModalVisible(false);
-  //    navigation.navigate("MRTScreen", { student: selectedStudent });
-  //  };
-  console.log("detailsModalVisible", detailsModalVisible);
-
   return (
     <>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.container}>
           <Text style={styles.header}>{batch.name} - Students</Text>
 
-          {/*<View style={styles.headerRow}>
-          <Text style={styles.header}>{batch.name} - Students</Text>
-          <TouchableOpacity onPress={() => openMenu()}>
-            <Icon name="ellipsis1" size={22} />
-          </TouchableOpacity>
-        </View>*/}
-          {/* Floating Action Button */}
           <TouchableOpacity style={styles.fab} onPress={handleFabPress}>
             <Icon name="plus" size={24} color="#fff" />
           </TouchableOpacity>
@@ -114,9 +99,9 @@ const StudentList = ({ route, navigation }) => {
                   <TouchableOpacity onPress={() => openAttendanceSheet(item)}>
                     <Icon name="calendar" size={24} color="#6200ee" />
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => openStudentDetails(item)}>
+                  {/*<TouchableOpacity onPress={() => openStudentDetails(item)}>
                     <Icon name="infocirlceo" size={24} color="#6200ee" />
-                  </TouchableOpacity>
+                  </TouchableOpacity>*/}
                 </View>
               </View>
             )}
@@ -144,16 +129,11 @@ const StudentList = ({ route, navigation }) => {
           )}
         </View>
       </GestureHandlerRootView>
-      {/*<AssignmentModal
+      <AssignmentModal
         fabVisible={fabVisible}
         handleCloseFab={handleCloseFab}
         handlePublishAssignment={handlePublishAssignment}
         handleViewAssignments={handleViewAssignments}
-      />*/}
-      <MRTModal
-        detailsModalVisible={detailsModalVisible}
-        selectedStudent={selectedStudent}
-        closeStudentDetails={closeStudentDetails}
       />
     </>
   );

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,18 +10,36 @@ import {
 } from "react-native";
 import { ProgressBar } from "react-native-paper";
 import { instrumentData } from "../components/JsonData";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+//import { moduleData } from "../services/module";
+import { courseData } from "../services/course";
 
 const Homepage = ({ navigation }) => {
+  const [user, setUser] = useState(null);
+
   const handleSubmit = () => {
-    navigation.navigate("Courses");
+    navigation.navigate("Course");
   };
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const storedUser = await AsyncStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+      //  const data = await moduleData();
+      const data = await courseData();
+    };
+
+    fetchUser();
+  }, []);
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.welcome}>Welcome,</Text>
         <Text style={styles.username}>
-          Hello, <Text style={{ fontWeight: "bold" }}>Jess</Text>
+          Hello, <Text style={{ fontWeight: "bold" }}>{user?.name}</Text>
         </Text>
       </View>
 
@@ -29,7 +47,7 @@ const Homepage = ({ navigation }) => {
       <TouchableOpacity style={styles.banner}>
         <View>
           <Text style={styles.bannerTitle}>Musical Instruments Offer</Text>
-          <Text style={styles.bannerCTA}>Click Now &gt;</Text>
+          <Text style={styles.bannerCTA}>Click to Grab now!!</Text>
         </View>
         <Image
           source={require("../../assets/images/instruments.png")}
@@ -97,7 +115,7 @@ const Homepage = ({ navigation }) => {
             </Text>
             <TouchableOpacity
               style={styles.assignmentButton}
-              onPress={() => navigation.navigate("AssignmentDetail")} // replace with your screen name
+              onPress={() => navigation.navigate("AssignmentList")} // replace with your screen name
             >
               <Text style={styles.assignmentButtonText}>View Now</Text>
             </TouchableOpacity>
@@ -143,8 +161,9 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   bannerCTA: {
-    color: "#fff",
+    color: "red",
     marginTop: 4,
+    fontWeight: "bold",
   },
   bannerImage: {
     position: "absolute",

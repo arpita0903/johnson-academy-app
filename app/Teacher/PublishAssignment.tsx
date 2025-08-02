@@ -25,13 +25,6 @@ const PublishAssignment = ({ route, navigation }) => {
   };
 
   const handleSubmit = () => {
-    // Save the assignment (you can connect to API or context/store)
-    console.log({
-      title,
-      description,
-      file,
-      batchId,
-    });
     navigation.goBack();
   };
 

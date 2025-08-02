@@ -53,14 +53,14 @@ const getStatusIcon = (item) => {
 
 const initialLayout = { width: Dimensions.get("window").width };
 
-const CourseDetails = () => {
+const CourseDetails = ({ route }) => {
   const navigation = useNavigation();
   const [index, setIndex] = React.useState(0);
-  const [routes] = React.useState([
+  const routes = [
     { key: "theory", title: "Theory" },
     { key: "technical", title: "Technical" },
     { key: "learning", title: "Learning" },
-  ]);
+  ];
 
   const [role, setRole] = useState("");
 
@@ -174,11 +174,18 @@ const CourseDetails = () => {
     </ScrollView>
   );
 
-  const renderScene = SceneMap({
-    theory: TheoryRoute,
-    technical: TechnicalRoute,
-    learning: LearningRoute,
-  });
+  const renderScene = ({ route }) => {
+    switch (route.key) {
+      case "theory":
+        return <TheoryRoute />;
+      case "technical":
+        return <TechnicalRoute />;
+      case "learning":
+        return <LearningRoute />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <TabView
@@ -190,7 +197,7 @@ const CourseDetails = () => {
         <TabBar
           {...props}
           indicatorStyle={{ backgroundColor: "white" }} //s#c4c3c2
-          style={{ backgroundColor: "purple" }}
+          style={{ backgroundColor: "#6200ee" }}
         />
       )}
     />
@@ -200,18 +207,20 @@ const CourseDetails = () => {
 const styles = StyleSheet.create({
   content: {
     padding: 12,
+    backgroundColor: "white",
   },
   card: {
     marginBottom: 10,
     paddingHorizontal: 14,
     paddingVertical: 6,
-    backgroundColor: "#e0f5ec",
+    backgroundColor: "white",
   },
   disableCard: {
     marginBottom: 10,
     paddingHorizontal: 14,
     paddingVertical: 6,
-    backgroundColor: "#d9d9d9",
+    opacity: 0.7,
+    backgroundColor: "white",
   },
   cardText: {
     fontSize: 18,

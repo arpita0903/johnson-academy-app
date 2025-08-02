@@ -13,6 +13,9 @@ import {
   Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAppContext } from "../context/AppContext";
+import { loginUser } from "../services/auth";
+import { Alert } from "react-native";
 
 const Login = ({ navigation }) => {
   const bannerImg = require("../../assets/images/bannerImg.png");
@@ -20,6 +23,7 @@ const Login = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState({});
   const [role, setRole] = useState("");
+  const { setUser } = useAppContext();
 
   useEffect(() => {
     const setInitialRole = async () => {
@@ -28,21 +32,46 @@ const Login = ({ navigation }) => {
     setInitialRole();
   }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError({});
-    if (!role)
-      return setError({ role: "Please select your role (Student or Teacher)" });
-    // if (!name) return setError({ name: "Please enter your name" });
-    // if (!password) return setError({ password: "Please enter your password" });
 
-    if (role === "teacher") {
-      navigation.navigate("TeacherDashboard");
-    } else {
-      navigation.navigate("Homepage");
+    //if (!role)
+    //  return setError({ role: "Please select your role (Student or Teacher)" });
+    if (!name) return setError({ name: "Please enter your name" });
+    if (!password) return setError({ password: "Please enter your password" });
+
+    try {
+      const data = await loginUser(name, password);
+
+      console.log("data", data);
+
+      const accessToken = data?.tokens?.access?.token;
+      const refreshToken = data?.tokens?.refresh?.token;
+      const user = data?.user;
+
+      if (!accessToken || !refreshToken || !user) {
+        throw new Error("Missing login data");
+      }
+
+      await AsyncStorage.setItem("token", JSON.stringify(accessToken)); // store access token
+      await AsyncStorage.setItem("refreshToken", refreshToken); // optional
+      await AsyncStorage.setItem("user", JSON.stringify(user)); // store user object
+
+      console.log("Login data stored successfully");
+
+      setUser({ ...data.user, role });
+
+      if (role === "teacher") {
+        navigation.navigate("TeacherDashboard");
+      } else {
+        navigation.navigate("Homepage");
+      }
+
+      setName("");
+      setPassword("");
+    } catch (err) {
+      Alert.alert("Login Failed", err?.message || "Invalid credentials");
     }
-
-    setName("");
-    setPassword("");
   };
 
   return (

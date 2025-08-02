@@ -78,7 +78,7 @@ const AssignmentSheet = ({
   handleViewAssignments,
 }) => {
   const bottomSheetRef = useRef(null);
-  const snapPoints = useMemo(() => ["35%"], []);
+  const snapPoints = useMemo(() => [100]);
 
   useEffect(() => {
     if (fabVisible) {

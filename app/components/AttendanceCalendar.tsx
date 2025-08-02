@@ -6,12 +6,11 @@ import moment from "moment";
 const AttendanceCalendar = () => {
   const today = moment().format("YYYY-MM-DD");
   const [present, setPresent] = useState([
-    "2025-05-05",
-    "2025-05-07",
-    "2025-05-21",
-    "2025-05-01",
+    "2025-06-12",
+    "2025-06-05",
+    "2025-06-03",
   ]);
-  const [absent, setAbsent] = useState(["2025-05-06"]);
+  const [absent, setAbsent] = useState(["2025-06-10"]);
 
   const [selectedDate, setSelectedDate] = useState(today);
   const [markedDates, setMarkedDates] = useState({

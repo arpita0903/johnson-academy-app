@@ -20,10 +20,13 @@ const MusicProfile = ({navigation}) => {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name="chevron-back" size={24} color="#000" />
                 </TouchableOpacity>
-                <View style={styles.headerIcons}>
+                {/*<View style={styles.headerIcons}>
                     <Icon name="share-outline" size={22} color="#000" style={styles.icon} />
                     <Icon name="create-outline" size={22} color="#000" />
-                </View>
+                </View>*/}
+                <TouchableOpacity onPress={() => navigation.navigate("Main", {screen: "Login"})}>
+                    <Text style={styles.noShowTag}>Log Out</Text>
+                </TouchableOpacity>
             </View>
 
             {/* Profile Section */}
@@ -36,10 +39,7 @@ const MusicProfile = ({navigation}) => {
                     <StatItem number="5" label="Assignment Submitted" />
                     <StatItem number="9.5" label="Score" />
                 </View>
-                <TouchableOpacity onPress={() => navigation.navigate("Main", {screen: "Login"})}>
-                    <Text style={styles.noShowTag}>Log Out</Text>
-                </TouchableOpacity>
-                {/*<Text style={styles.noShowTag}>1 No show(s)</Text>*/}
+
             </View>
 
             {/* Weekly Practice Card */}
@@ -244,9 +244,10 @@ const styles = StyleSheet.create({
     noShowTag: {
         backgroundColor: '#fee',
         color: '#d00',
-        padding: 4,
+        padding: 6,
         marginTop: 10,
         borderRadius: 4,
+        fontWeight: "bold"
     },
     card: {
         backgroundColor: '#fff',

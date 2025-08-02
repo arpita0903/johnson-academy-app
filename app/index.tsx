@@ -18,17 +18,42 @@ import profile from "../assets/images/profileDefault.jpg";
 import AssignmentList from "./Teacher/AssignmentList";
 import PublishAssignment from "./Teacher/PublishAssignment";
 
+import Icon from "react-native-vector-icons/Foundation";
+import StudentDetailsScreen from "./Teacher/StudentDetailsScreen";
+
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
 
-const StackScreens = ({ navigation }) => (
+const StackScreens = ({ navigation, route }) => (
   <Stack.Navigator>
     <Stack.Screen
       name="Login"
       component={Login}
       options={{ headerShown: false }}
     />
-    <Stack.Screen name="Courses" component={CourseDetails} />
+    <Stack.Screen
+      name="Course"
+      component={CourseDetails}
+      options={({ route, navigation }) => ({
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("StudentDetailsScreen", {
+                selectedStudent: route.params?.student,
+              })
+            }
+          >
+            <Icon
+              name="results-demographics"
+              size={32}
+              color="#7a58f5"
+              style={{ width: 40, marginRight: 10, borderRadius: 20 }}
+            />
+          </TouchableOpacity>
+        ),
+      })}
+    />
+
     <Stack.Screen
       name="Homepage"
       component={Homepage}
@@ -50,6 +75,10 @@ const StackScreens = ({ navigation }) => (
     <Stack.Screen name="TeacherCourseDetail" component={TeacherCourseDetail} />
     <Stack.Screen name="PublishAssignment" component={PublishAssignment} />
     <Stack.Screen name="AssignmentList" component={AssignmentList} />
+    <Stack.Screen
+      name="StudentDetailsScreen"
+      component={StudentDetailsScreen}
+    />
   </Stack.Navigator>
 );
 
