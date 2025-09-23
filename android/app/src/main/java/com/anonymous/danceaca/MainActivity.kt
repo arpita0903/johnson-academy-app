@@ -1,4 +1,4 @@
-package com.anonymous.danceaca
+package com.johnsonacademy.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

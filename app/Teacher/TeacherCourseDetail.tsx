@@ -8,9 +8,12 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useTheme } from "../context/ThemeContext";
+import { ThemeColors } from "../theme/colors";
 
-const TeacherCourseDetail = ({ route }) => {
+const TeacherCourseDetail = ({ route }: { route: any }) => {
   const { item } = route.params;
+  const { colors } = useTheme();
 
   const [hasStarted, setHasStarted] = useState(false);
   const [totalDays, setTotalDays] = useState("");
@@ -24,111 +27,125 @@ const TeacherCourseDetail = ({ route }) => {
     //course ended
   };
 
+  const dynamicStyles = createStyles(colors);
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={dynamicStyles.container}>
       {/* Detail Section */}
-      <View style={styles.card}>
-        <Text style={styles.title}>{item.title}</Text>
+      <View style={dynamicStyles.card}>
+        <Text style={dynamicStyles.title}>{item.title}</Text>
 
         {item.description ? (
-          <View style={styles.section}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>Description</Text>
-              <View style={styles.pillContainer}>
-                <Text style={styles.pillText}>{item.session}</Text>
+          <View style={dynamicStyles.section}>
+            <View style={dynamicStyles.labelRow}>
+              <Text style={dynamicStyles.label}>Description</Text>
+              <View style={dynamicStyles.pillContainer}>
+                <Text style={dynamicStyles.pillText}>{item.session}</Text>
               </View>
             </View>
-            <Text style={styles.text}>{item.description}</Text>
+            <Text style={dynamicStyles.text}>{item.description}</Text>
           </View>
         ) : (
-          <View style={styles.pillPostion}>
-            <View style={[styles.pillContainer]}>
-              <Text style={styles.pillText}>{item.session}</Text>
+          <View style={dynamicStyles.pillPostion}>
+            <View style={[dynamicStyles.pillContainer]}>
+              <Text style={dynamicStyles.pillText}>{item.session}</Text>
             </View>
           </View>
         )}
 
-        <View style={[styles.section, styles.dateContainer]}>
-          <MaterialIcons name="event" size={20} color="#3498db" />
-          <Text style={styles.dateLabel}>Date of Issue:</Text>
-          <View style={styles.dateBadge}>
-            <Text style={styles.dateText}>{item.date_of_issue || "N/A"}</Text>
+        <View style={[dynamicStyles.section, dynamicStyles.dateContainer]}>
+          <MaterialIcons name="event" size={20} color={colors.primary} />
+          <Text style={dynamicStyles.dateLabel}>Date of Issue:</Text>
+          <View style={dynamicStyles.dateBadge}>
+            <Text style={dynamicStyles.dateText}>
+              {item.date_of_issue || "N/A"}
+            </Text>
           </View>
         </View>
 
-        <View style={[styles.section, styles.dateContainer]}>
-          <MaterialIcons name="event-available" size={20} color="#27ae60" />
-          <Text style={styles.dateLabel}>Date of Completion:</Text>
-          <View style={[styles.dateBadge, { backgroundColor: "#d4f4dd" }]}>
-            <Text style={[styles.dateText, { color: "#2d8659" }]}>
+        <View style={[dynamicStyles.section, dynamicStyles.dateContainer]}>
+          <MaterialIcons
+            name="event-available"
+            size={20}
+            color={colors.success}
+          />
+          <Text style={dynamicStyles.dateLabel}>Date of Completion:</Text>
+          <View
+            style={[dynamicStyles.dateBadge, dynamicStyles.completionBadge]}
+          >
+            <Text
+              style={[dynamicStyles.dateText, dynamicStyles.completionText]}
+            >
               {item.date_of_completion || "N/A"}
             </Text>
           </View>
         </View>
 
-        <View style={[styles.section, styles.sectionBgAlt]}>
-          <Text style={styles.label}>Remark</Text>
-          <Text style={styles.text}>{item.remark || "N/A"}</Text>
+        <View style={[dynamicStyles.section, dynamicStyles.sectionBgAlt]}>
+          <Text style={dynamicStyles.label}>Remark</Text>
+          <Text style={dynamicStyles.text}>{item.remark || "N/A"}</Text>
         </View>
       </View>
 
-      <View style={styles.formContainer}>
-        <View style={styles.row}>
-          {/*<View style={styles.halfInputWrapper}>
-            <Text style={styles.formLabel}>Start Date</Text>
+      <View style={dynamicStyles.formContainer}>
+        <View style={dynamicStyles.row}>
+          {/*<View style={dynamicStyles.halfInputWrapper}>
+            <Text style={dynamicStyles.formLabel}>Start Date</Text>
             <TextInput
-              style={styles.input}
+              style={dynamicStyles.input}
               value={item.date_of_issue}
               editable={false}
             />
           </View>
 
-          <View style={styles.halfInputWrapper}>
-            <Text style={styles.formLabel}>End Date</Text>
+          <View style={dynamicStyles.halfInputWrapper}>
+            <Text style={dynamicStyles.formLabel}>End Date</Text>
             <TextInput
-              style={styles.input}
+              style={dynamicStyles.input}
               value={item.date_of_completion}
               editable={false}
             />
           </View>*/}
         </View>
 
-        <Text style={styles.formLabel}>Total Days</Text>
+        <Text style={dynamicStyles.formLabel}>Total Days</Text>
         <TextInput
-          style={styles.input}
+          style={dynamicStyles.input}
           keyboardType="numeric"
           value={totalDays}
           onChangeText={setTotalDays}
           placeholder="Enter total days"
+          placeholderTextColor={colors.placeholderText}
         />
 
-        <Text style={styles.formLabel}>Remark</Text>
+        <Text style={dynamicStyles.formLabel}>Remark</Text>
         <TextInput
-          style={[styles.input, styles.textArea]}
+          style={[dynamicStyles.input, dynamicStyles.textArea]}
           value={remark}
           onChangeText={setRemark}
           multiline
           numberOfLines={3}
           placeholder="Enter remark"
+          placeholderTextColor={colors.placeholderText}
         />
 
-        <View style={styles.buttonRow}>
+        <View style={dynamicStyles.buttonRow}>
           <TouchableOpacity
-            style={[styles.button, styles.startButton]}
+            style={[dynamicStyles.button, dynamicStyles.startButton]}
             onPress={handleStart}
           >
-            <Text style={styles.buttonText}>Start Course</Text>
+            <Text style={dynamicStyles.buttonText}>Start Course</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
-              styles.button,
-              styles.endButton,
-              !hasStarted && styles.disabledButton,
+              dynamicStyles.button,
+              dynamicStyles.endButton,
+              !hasStarted && dynamicStyles.disabledButton,
             ]}
             onPress={handleEnd}
             disabled={!hasStarted}
           >
-            <Text style={styles.buttonText}>End Course</Text>
+            <Text style={dynamicStyles.buttonText}>End Course</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -136,169 +153,200 @@ const TeacherCourseDetail = ({ route }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: "#f2f6fc",
-    flexGrow: 1,
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: "#2c3e50",
-    marginBottom: 28,
-    textAlign: "center",
-  },
-  section: {
-    marginBottom: 18,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#34495e",
-    marginBottom: 6,
-  },
-  labelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  text: {
-    fontSize: 16,
-    color: "#7f8c8d",
-    lineHeight: 22,
-  },
-  pillContainer: {
-    backgroundColor: "#ead1ff",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  pillPostion: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginBottom: 18,
-  },
-  pillText: {
-    color: "#8d05ff",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  sectionBgAlt: {
-    backgroundColor: "#fef6e4",
-    padding: 12,
-    marginTop: 20,
-    borderRadius: 8,
-  },
-  dateContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 10,
-  },
-  dateLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#555",
-  },
-  dateBadge: {
-    backgroundColor: "#e1f0ff",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginLeft: 8,
-  },
-  dateText: {
-    color: "#0077cc",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  formSection: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  formLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 6,
-    color: "#34495e",
-  },
-  input: {
-    backgroundColor: "#f0f4f8",
-    borderRadius: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    fontSize: 15,
-    color: "#333",
-    marginBottom: 20,
-  },
-  textBox: {
-    height: 100,
-    textAlignVertical: "top",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 6,
-    alignItems: "center",
-    marginHorizontal: 5,
-  },
-  startButton: {
-    backgroundColor: "#4CAF50",
-  },
-  endButton: {
-    backgroundColor: "#E74C3C",
-  },
-  disabledButton: {
-    backgroundColor: "#ccc",
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-
-  formContainer: {
-    backgroundColor: "white",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    borderRadius: 8,
-  },
-
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  halfInputWrapper: {
-    flex: 1,
-    marginHorizontal: 5,
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: "top", // for Android multiline text input alignment
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      padding: 20,
+      backgroundColor: colors.background,
+      flexGrow: 1,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 24,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
+      marginBottom: 20,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: "700",
+      color: colors.primary,
+      marginBottom: 28,
+      textAlign: "center",
+    },
+    section: {
+      marginBottom: 18,
+    },
+    label: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    labelRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 6,
+    },
+    text: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      lineHeight: 22,
+    },
+    pillContainer: {
+      backgroundColor: colors.surface,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    pillPostion: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      marginBottom: 18,
+    },
+    pillText: {
+      color: colors.primary,
+      fontWeight: "600",
+      fontSize: 14,
+    },
+    sectionBgAlt: {
+      backgroundColor: colors.surface,
+      padding: 16,
+      marginTop: 20,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    dateContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 12,
+    },
+    dateLabel: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    dateBadge: {
+      backgroundColor: colors.surface,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+      marginLeft: 8,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    dateText: {
+      color: colors.primary,
+      fontSize: 14,
+      fontWeight: "600",
+    },
+    completionBadge: {
+      backgroundColor: colors.surface,
+      borderColor: colors.success,
+    },
+    completionText: {
+      color: colors.success,
+    },
+    formSection: {
+      backgroundColor: colors.card,
+      padding: 20,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    formLabel: {
+      fontSize: 16,
+      fontWeight: "600",
+      marginBottom: 8,
+      color: colors.text,
+    },
+    input: {
+      backgroundColor: colors.inputBackground,
+      borderRadius: 10,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      fontSize: 16,
+      color: colors.text,
+      marginBottom: 20,
+      borderWidth: 1.5,
+      borderColor: colors.inputBorder,
+    },
+    textBox: {
+      height: 100,
+      textAlignVertical: "top",
+    },
+    buttonRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    button: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 10,
+      alignItems: "center",
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    startButton: {
+      backgroundColor: colors.success,
+    },
+    endButton: {
+      backgroundColor: colors.error,
+    },
+    disabledButton: {
+      backgroundColor: colors.textMuted,
+      opacity: 0.6,
+    },
+    buttonText: {
+      color: colors.primaryText,
+      fontWeight: "600",
+      fontSize: 16,
+    },
+    formContainer: {
+      backgroundColor: colors.card,
+      paddingHorizontal: 20,
+      paddingVertical: 20,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    row: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    halfInputWrapper: {
+      flex: 1,
+      marginHorizontal: 5,
+    },
+    textArea: {
+      height: 100,
+      textAlignVertical: "top", // for Android multiline text input alignment
+    },
+  });
 
 export default TeacherCourseDetail;

@@ -1,3 +1,82 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Dark mode global styles */
+:root {
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #000000;
+  --color-text-secondary: #666666;
+  --color-text-muted: #999999;
+  --color-primary: #ff6b35;
+  --color-primary-dark: #e55a2b;
+  --color-primary-light: #ff8c5a;
+  --color-accent: #ff9966;
+  --color-primary-text: #ffffff;
+  --color-border: #cccccc;
+  --color-input-background: #ffffff;
+  --color-input-border: #dddddd;
+  --color-placeholder-text: #a8a8a8;
+  --color-error: #ff0000;
+  --color-success: #4caf50;
+  --color-warning: #ff9800;
+  --color-shadow: #000000;
+  --color-card: #ffffff;
+  --color-card-border: #eeeeee;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #121212;
+    --color-surface: #1e1e1e;
+    --color-text: #ffffff;
+    --color-text-secondary: #b3b3b3;
+    --color-text-muted: #808080;
+    --color-primary: #ff6b35;
+    --color-primary-dark: #e55a2b;
+    --color-primary-light: #ff8c5a;
+    --color-accent: #ff9966;
+    --color-primary-text: #ffffff;
+    --color-border: #333333;
+    --color-input-background: #2a2a2a;
+    --color-input-border: #404040;
+    --color-placeholder-text: #666666;
+    --color-error: #ff4444;
+    --color-success: #4caf50;
+    --color-warning: #ff9800;
+    --color-shadow: #000000;
+    --color-card: #2a2a2a;
+    --color-card-border: #404040;
+  }
+}
+
+/* Force dark theme */
+.dark-theme {
+  --color-background: #121212;
+  --color-surface: #1e1e1e;
+  --color-text: #ffffff;
+  --color-text-secondary: #b3b3b3;
+  --color-text-muted: #808080;
+  --color-primary: #ff6b35;
+  --color-primary-dark: #e55a2b;
+  --color-primary-light: #ff8c5a;
+  --color-accent: #ff9966;
+  --color-primary-text: #ffffff;
+  --color-border: #333333;
+  --color-input-background: #2a2a2a;
+  --color-input-border: #404040;
+  --color-placeholder-text: #666666;
+  --color-error: #ff4444;
+  --color-success: #4caf50;
+  --color-warning: #ff9800;
+  --color-shadow: #000000;
+  --color-card: #2a2a2a;
+  --color-card-border: #404040;
+}
+
+body {
+  font-family: "Inter", "Helvetica Neue", sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text);
+}

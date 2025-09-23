@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "dance-aca",
-    "slug": "dance-aca",
+    "name": "johnson-academy-app",
+    "slug": "johnson-academy-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -10,14 +10,18 @@
     "newArchEnabled": true,
     "jsEngine": "hermes",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "statusBar": {
+        "style": "dark",
+        "backgroundColor": "#ffffff"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.danceaca"
+      "package": "com.johnsonacademy.app"
     },
     "web": {
       "bundler": "metro",
@@ -34,10 +38,24 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "abb2b53b-3837-41c4-9791-74053ab4ff6e"
+      }
     }
   }
 }

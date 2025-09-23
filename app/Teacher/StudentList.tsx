@@ -8,21 +8,32 @@ import {
   Pressable,
 } from "react-native";
 import Icon from "react-native-vector-icons/AntDesign";
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import AttendanceCalendar from "../components/AttendanceCalendar";
+// import BottomSheet from "@gorhom/bottom-sheet";
+// import AttendanceCalendar from "../components/AttendanceCalendar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useTheme } from "../context/ThemeContext";
+import { ThemeColors } from "../theme/colors";
 import AssignmentModal from "./AssignmentModal";
+import { useTeacherContext } from "../context/TeacherContext";
 
-const StudentList = ({ route, navigation }) => {
+const StudentList = ({
+  route,
+  navigation,
+}: {
+  route: any;
+  navigation: any;
+}) => {
   const { batch } = route.params;
-  const bottomSheetRef = useRef(null);
+  const { colors } = useTheme();
+  // const bottomSheetRef = useRef<BottomSheet>(null);
 
-  const [selectedStudent, setSelectedStudent] = useState({
-    name: "Pratik",
-    id: "12345",
-  });
-  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  // const [selectedStudent, setSelectedStudent] = useState({
+  //   name: "",
+  //   id: "",
+  // });
+  // const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [fabVisible, setFabVisible] = useState(false);
+  const { selectStudent } = useTeacherContext();
 
   const handleFabPress = () => {
     setFabVisible(true);
@@ -42,42 +53,45 @@ const StudentList = ({ route, navigation }) => {
     navigation.navigate("PublishAssignment", { batch });
   };
 
-  const handleStudentPress = (student) => {
-    navigation.navigate("Course", { student });
+  const handleStudentPress = (student: any) => {
+    selectStudent(student);
+    navigation.navigate("Course", { student, batch });
   };
 
-  const openAttendanceSheet = (student) => {
-    setSelectedStudent(student);
+  // const openAttendanceSheet = (student: any) => {
+  //   setSelectedStudent(student);
 
-    bottomSheetRef.current?.expand();
-  };
+  //   bottomSheetRef.current?.expand();
+  // };
 
-  const openStudentDetails = (student: any) => {
-    setSelectedStudent(student);
-    setDetailsModalVisible(true);
-  };
+  // const openStudentDetails = (student: any) => {
+  //   setSelectedStudent(student);
+  //   setDetailsModalVisible(true);
+  // };
 
-  const closeStudentDetails = () => {
-    setDetailsModalVisible(false);
-  };
+  // const closeStudentDetails = () => {
+  //   setDetailsModalVisible(false);
+  // };
+
+  const dynamicStyles = createStyles(colors);
 
   return (
     <>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <View style={styles.container}>
-          <Text style={styles.header}>{batch.name} - Students</Text>
+        <View style={dynamicStyles.container}>
+          <Text style={dynamicStyles.header}>{batch.name} - Students</Text>
 
-          <TouchableOpacity style={styles.fab} onPress={handleFabPress}>
-            <Icon name="plus" size={24} color="#fff" />
+          <TouchableOpacity style={dynamicStyles.fab} onPress={handleFabPress}>
+            <Icon name="plus" size={24} color={colors.primaryText} />
           </TouchableOpacity>
           {/* FAB Action Modal */}
 
           <FlatList
             data={batch.students}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={dynamicStyles.listContent}
             renderItem={({ item }) => (
-              <View style={styles.studentCard}>
+              <View style={dynamicStyles.studentCard}>
                 <TouchableOpacity
                   onPress={() => handleStudentPress(item)}
                   style={{
@@ -86,47 +100,47 @@ const StudentList = ({ route, navigation }) => {
                     alignItems: "center",
                   }}
                 >
-                  <Text style={styles.studentInitial}>
+                  <Text style={dynamicStyles.studentInitial}>
                     {item.name.charAt(0).toUpperCase()}
                   </Text>
-                  <View style={styles.infoContainer}>
-                    <Text style={styles.studentName}>{item.name}</Text>
-                    <Text style={styles.studentId}>ID: {item.id}</Text>
+                  <View style={dynamicStyles.infoContainer}>
+                    <Text style={dynamicStyles.studentName}>{item.name}</Text>
+                    <Text style={dynamicStyles.studentId}> {item.email}</Text>
                   </View>
                 </TouchableOpacity>
 
-                <View style={{ flexDirection: "row", gap: 12 }}>
+                {/* <View style={{ flexDirection: "row", gap: 12 }}>
                   <TouchableOpacity onPress={() => openAttendanceSheet(item)}>
                     <Icon name="calendar" size={24} color="#6200ee" />
                   </TouchableOpacity>
-                  {/*<TouchableOpacity onPress={() => openStudentDetails(item)}>
-                    <Icon name="infocirlceo" size={24} color="#6200ee" />
-                  </TouchableOpacity>*/}
-                </View>
+                </View> */}
               </View>
             )}
           />
 
           {/* Bottom Sheet for Attendance */}
-          {selectedStudent && (
+          {/* {selectedStudent && (
             <BottomSheet
               enableOverDrag
               enableDynamicSizing
               enablePanDownToClose
               ref={bottomSheetRef}
               index={-1}
-              snapPoints={[100, "60%"]}
+              snapPoints={["75%"]}
             >
               <BottomSheetView style={styles.contentContainer}>
                 <View>
                   <Text style={styles.sheetTitle}>
                     Attendance - {selectedStudent?.name}
                   </Text>
-                  <AttendanceCalendar />
+                  <AttendanceCalendar
+                    studentId={selectedStudent.id}
+                    classId={batch.id}
+                  />
                 </View>
               </BottomSheetView>
             </BottomSheet>
-          )}
+          )} */}
         </View>
       </GestureHandlerRootView>
       <AssignmentModal
@@ -139,123 +153,129 @@ const StudentList = ({ route, navigation }) => {
   );
 };
 
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 16,
+      backgroundColor: colors.background,
+    },
+    contentContainer: {
+      flex: 1,
+      alignItems: "center",
+      backgroundColor: colors.background,
+    },
+    header: {
+      fontSize: 26,
+      fontWeight: "bold",
+      color: colors.primary,
+      marginBottom: 24,
+      textAlign: "center",
+    },
+    listContent: {
+      paddingBottom: 100, // Extra space for FAB
+    },
+    sheetTitle: {
+      fontSize: 24,
+      fontWeight: "600",
+      marginBottom: 10,
+      textAlign: "center",
+      color: colors.text,
+    },
+    studentCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 18,
+      marginBottom: 16,
+      backgroundColor: colors.card,
+      borderRadius: 15,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.3,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 8,
+      elevation: 6,
+      justifyContent: "space-between",
+    },
+    studentInitial: {
+      backgroundColor: colors.primary,
+      color: colors.primaryText,
+      fontSize: 22,
+      fontWeight: "bold",
+      height: 56,
+      width: 56,
+      borderRadius: 28,
+      textAlign: "center",
+      textAlignVertical: "center",
+      marginRight: 16,
+      shadowColor: colors.primary,
+      shadowOpacity: 0.3,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    infoContainer: {
+      flex: 1,
+    },
+    studentName: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    studentId: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    publishButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 10,
+    },
+    publishButtonText: {
+      color: colors.primaryText,
+      fontWeight: "bold",
+      fontSize: 14,
+    },
+    headerRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 20,
+    },
+    actions: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    headerButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+      borderRadius: 10,
+      marginLeft: 8,
+    },
+    headerButtonText: {
+      color: colors.primaryText,
+      fontWeight: "bold",
+      fontSize: 14,
+    },
+    fab: {
+      position: "absolute",
+      bottom: 30,
+      right: 20,
+      backgroundColor: colors.primary,
+      padding: 18,
+      borderRadius: 32,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+      elevation: 8,
+      zIndex: 100,
+    },
+  });
+
 export default StudentList;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: "#f8f8f8",
-  },
-  contentContainer: {
-    flex: 1,
-    alignItems: "center",
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  listContent: {
-    paddingBottom: 20,
-  },
-
-  sheetTitle: {
-    fontSize: 24,
-    fontWeight: "600",
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  studentCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    marginBottom: 12,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    justifyContent: "space-between",
-  },
-  studentInitial: {
-    backgroundColor: "#6200ee",
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "bold",
-    height: 48,
-    width: 48,
-    borderRadius: 24,
-    textAlign: "center",
-    textAlignVertical: "center",
-    marginRight: 16,
-  },
-  infoContainer: {
-    flex: 1,
-  },
-  studentName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-  },
-  studentId: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 2,
-  },
-
-  publishButton: {
-    backgroundColor: "#6200ee",
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-  },
-  publishButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-
-  actions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-
-  headerButton: {
-    backgroundColor: "#6200ee",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginLeft: 8,
-  },
-
-  headerButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-
-  fab: {
-    position: "absolute",
-    bottom: 30,
-    right: 20,
-    backgroundColor: "#6200ee",
-    padding: 16,
-    borderRadius: 30,
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    zIndex: 100,
-  },
-});
