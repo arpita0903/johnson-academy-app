@@ -70,7 +70,7 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
     return (
       <View style={styles.header}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>My Classes</Text>
+          <Text style={styles.primaryText}>My Classes</Text>
           <Text style={styles.seeAll}>See all</Text>
         </View>
         <View style={styles.loadingContainer}>
@@ -85,7 +85,7 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
     return (
       <View style={styles.header}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>My Classes</Text>
+          <Text style={styles.primaryText}>My Classes</Text>
           <Text style={styles.seeAll}>See all</Text>
         </View>
         <View style={styles.errorContainer}>
@@ -98,7 +98,7 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
   return (
     <View style={styles.header}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>My Classes</Text>
+        <Text style={styles.primaryText}>My Classes</Text>
         <Text style={styles.seeAll}>See all</Text>
       </View>
 
@@ -116,7 +116,10 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
                 style={styles.instrumentIcon}
               />
               <Text style={styles.instrumentName}>{item.name}</Text>
-              <Text style={styles.courseName}>{item.courseId.name}</Text>
+              // ellipsis one line text
+              <Text style={styles.courseName} numberOfLines={1}>
+                {item.courseId.name}
+              </Text>
             </View>
           </TouchableOpacity>
         )}
@@ -134,7 +137,8 @@ const styles = {
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
   },
-  sectionTitle: {
+  primaryText: {
+    color: "#FF7043",
     fontSize: 18,
     fontWeight: "600" as const,
   },

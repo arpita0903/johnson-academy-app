@@ -1,10 +1,11 @@
 // api.js
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import config from "../config/environment";
 
 const api = axios.create({
-  baseURL: "http://10.0.2.2:8000/v1",
-  timeout: 10000,
+  baseURL: config.API_BASE_URL,
+  timeout: config.API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
   },
@@ -19,7 +20,10 @@ api.interceptors.request.use(
         config.headers["Authorization"] = `Bearer ${JSON.parse(token)}`;
       }
     } catch (error) {
-      console.error("Error fetching token for request:", error);
+      // Silent error handling for production
+      if (__DEV__) {
+        console.error("Error fetching token for request:", error);
+      }
     }
     return config;
   },

@@ -11,6 +11,7 @@ import { Card } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { useTheme } from "../context/ThemeContext";
+import { useAppContext } from "../context/AppContext";
 import { ThemeColors } from "../theme/colors";
 import { getProgressFromStudentIdClassId } from "../services/student";
 import { Module } from "../types/studentProgress";
@@ -61,6 +62,7 @@ const CourseDetails = ({
 }) => {
   const { studentClass = {}, student = {}, batch = {} } = route.params;
   const { colors } = useTheme();
+  const { role } = useAppContext();
 
   // Memoize the extracted IDs to prevent infinite re-renders
   const { studentId, classId } = useMemo(() => {
@@ -159,7 +161,7 @@ const CourseDetails = ({
     };
 
     fetchStudentProgress();
-  }, [studentId, classId]); // Only depend on the memoized IDs
+  }, [studentId, classId]);
 
   const onRefresh = async () => {
     // Guard clause to prevent API calls without valid IDs
@@ -206,27 +208,47 @@ const CourseDetails = ({
         </View>
       );
     }
-    return modules.map((module) => (
-      <TouchableOpacity
-        key={module.moduleId.id}
-        onPress={() => handleDetailsNavigation(module)}
-      >
-        <Card style={dynamicStyles.card}>
-          <Card.Title
-            title={
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                {getStatusIcon(module.status, colors)}
-                <Text style={dynamicStyles.cardText}>
-                  {module.moduleId.title}
-                </Text>
-              </View>
-            }
-            subtitle={`Session ${module.moduleId.session}`}
-            subtitleStyle={dynamicStyles.cardSubtitle}
-          />
-        </Card>
-      </TouchableOpacity>
-    ));
+    return modules.map((module) => {
+      const isUpcoming = module.status === "upcoming";
+      const shouldDisable = isUpcoming && role === "student";
+
+      return (
+        <TouchableOpacity
+          key={module.moduleId.id}
+          onPress={() => !shouldDisable && handleDetailsNavigation(module)}
+          disabled={shouldDisable}
+          style={shouldDisable ? dynamicStyles.disabledTouchable : undefined}
+        >
+          <Card
+            style={[
+              dynamicStyles.card,
+              shouldDisable && dynamicStyles.disabledCard,
+            ]}
+          >
+            <Card.Title
+              title={
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  {getStatusIcon(module.status, colors)}
+                  <Text
+                    style={[
+                      dynamicStyles.cardText,
+                      shouldDisable && dynamicStyles.disabledText,
+                    ]}
+                  >
+                    {module.moduleId.title}
+                  </Text>
+                </View>
+              }
+              subtitle={`Session ${module.moduleId.session}`}
+              subtitleStyle={[
+                dynamicStyles.cardSubtitle,
+                shouldDisable && dynamicStyles.disabledSubtitle,
+              ]}
+            />
+          </Card>
+        </TouchableOpacity>
+      );
+    });
   };
 
   return (
@@ -396,6 +418,22 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 18,
       color: colors.text,
       fontWeight: "500",
+    },
+    disabledTouchable: {
+      opacity: 0.6,
+    },
+    disabledCard: {
+      backgroundColor: colors.background,
+      borderColor: colors.textMuted,
+      opacity: 0.7,
+    },
+    disabledText: {
+      color: colors.textMuted,
+      opacity: 0.8,
+    },
+    disabledSubtitle: {
+      color: colors.textMuted,
+      opacity: 0.6,
     },
   });
 

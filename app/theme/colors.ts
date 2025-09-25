@@ -20,6 +20,8 @@ export const Colors = {
     shadow: "#000000",
     card: "#ffffff",
     cardBorder: "#eeeeee",
+    black: "#000000",
+    white: "#ffffff",
   },
   dark: {
     background: "#121212",
@@ -42,6 +44,8 @@ export const Colors = {
     shadow: "#000000",
     card: "#2a2a2a",
     cardBorder: "#404040",
+    black: "#000000",
+    white: "#ffffff",
   },
 };
 

@@ -32,6 +32,7 @@ const Homepage = ({ navigation }: HomepageProps) => {
 
   const handleSubmit = (classData: any) => {
     // You can now use the progressId to fetch progress data or navigate with it
+
     navigation.navigate("Course", { studentClass: classData });
   };
 
@@ -74,18 +75,18 @@ const Homepage = ({ navigation }: HomepageProps) => {
         </View>
 
         {/* Offer Banner */}
-        <TouchableOpacity style={dynamicStyles.banner}>
+        {/* <TouchableOpacity style={dynamicStyles.banner}>
           <View>
             <Text style={dynamicStyles.bannerTitle}>
               Musical Instruments Offer
             </Text>
-            <Text style={dynamicStyles.bannerCTA}>Click to Grab now!!</Text>
+            <Text style={dynamicStyles.bannerTitle}>Click to Grab now!!</Text>
           </View>
           <Image
             source={require("../../assets/images/instruments.png")}
             style={{ width: 150, height: 120 }}
           />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         {/* Instruments Section */}
         <InstrumentSection onInstrumentPress={handleSubmit} />

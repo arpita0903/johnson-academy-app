@@ -1,27 +1,34 @@
 {
   "expo": {
-    "name": "johnson-academy-app",
+    "name": "Johnson Academy",
     "slug": "johnson-academy-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "icon": "./assets/images/logo.png",
+    "scheme": "johnsonacademy",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "jsEngine": "hermes",
+    "description": "Johnson Academy - Music Education Platform",
+    "privacy": "public",
     "ios": {
       "supportsTablet": true,
       "statusBar": {
         "style": "dark",
         "backgroundColor": "#ffffff"
+      },
+      "bundleIdentifier": "com.johnsonacademy.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.johnsonacademy.app"
+      "package": "com.johnsonacademy.app",
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "web": {
       "bundler": "metro",
@@ -33,10 +40,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#023c69"
         }
       ],
       [

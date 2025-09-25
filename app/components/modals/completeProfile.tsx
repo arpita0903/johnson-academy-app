@@ -166,7 +166,11 @@ const CompleteProfileModal = ({
             >
               {profileData.profilePicture ? (
                 <Image
-                  source={{ uri: profileData.profilePicture }}
+                  source={
+                    profileData.profilePicture
+                      ? { uri: profileData.profilePicture }
+                      : require("../../../assets/images/profileDefault.png")
+                  }
                   style={styles.profilePicture}
                 />
               ) : (

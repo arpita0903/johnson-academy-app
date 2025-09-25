@@ -23,6 +23,7 @@ import ProfileDrawer from "./components/ProfileDrawer";
 import { AppProvider, useAppContext } from "./context/AppContext";
 import { TeacherProvider } from "./context/TeacherContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
+import { Provider as PaperProvider } from "react-native-paper";
 import { Image, TouchableOpacity } from "react-native";
 import AssignmentList from "./Teacher/AssignmentList";
 import PublishAssignment from "./Teacher/PublishAssignment";
@@ -47,7 +48,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: colors.card,
+          backgroundColor: colors.background,
           borderBottomWidth: 1,
           borderBottomColor: colors.cardBorder,
         },
@@ -98,6 +99,14 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
       <Stack.Screen
         name="Homepage"
         options={{
+          headerShown: true,
+          headerTitle: "Johnson Music Academy",
+          headerLeft: () => (
+            <Image
+              source={require("../assets/images/logo.png")}
+              style={{ width: 32, height: 32 }}
+            />
+          ),
           headerRight: () => (
             <TouchableOpacity onPress={() => navigation.openDrawer()}>
               <Icon
@@ -124,6 +133,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
       <Stack.Screen
         name="TeacherDashboard"
         options={{
+          headerTitle: "Teacher Dashboard",
           headerRight: () => (
             <TouchableOpacity onPress={() => navigation.openDrawer()}>
               <Icon
@@ -148,6 +158,8 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
       <Stack.Screen
         name="StudentList"
         options={{
+          headerTitle: "Student List",
+
           headerRight: () => (
             <TouchableOpacity onPress={() => navigation.openDrawer()}>
               <Icon
@@ -172,6 +184,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
       <Stack.Screen
         name="TeacherCourseDetail"
         options={{
+          headerTitle: "Course Detail",
           headerRight: () => (
             <TouchableOpacity onPress={() => navigation.openDrawer()}>
               <Icon
@@ -196,6 +209,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
       <Stack.Screen
         name="PublishAssignment"
         options={{
+          headerTitle: "Publish Assignment",
           headerRight: () => (
             <TouchableOpacity onPress={() => navigation.openDrawer()}>
               <Icon
@@ -217,6 +231,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
       <Stack.Screen
         name="AssignmentList"
         options={{
+          headerTitle: "Assignment List",
           headerRight: () => (
             <TouchableOpacity onPress={() => navigation.openDrawer()}>
               <Icon
@@ -241,6 +256,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
       <Stack.Screen
         name="StudentDetailsScreen"
         options={{
+          headerTitle: "Student Details",
           headerRight: () => (
             <TouchableOpacity onPress={() => navigation.openDrawer()}>
               <Icon
@@ -269,25 +285,27 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
 const App = () => {
   return (
     <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <ThemeProvider>
-        <AppProvider>
-          <TeacherProvider>
-            {/*<NavigationContainer>*/}
-            <Drawer.Navigator
-              screenOptions={{ drawerPosition: "right" }}
-              drawerContent={(props) => <ProfileDrawer {...props} />}
-            >
-              <Drawer.Screen
-                name="Main"
-                component={StackScreens}
-                options={{ headerShown: false }}
-              />
-            </Drawer.Navigator>
-            {/*</NavigationContainer>*/}
-          </TeacherProvider>
-        </AppProvider>
-      </ThemeProvider>
+      <StatusBar style="auto" />
+      <PaperProvider>
+        <ThemeProvider>
+          <AppProvider>
+            <TeacherProvider>
+              {/*<NavigationContainer>*/}
+              <Drawer.Navigator
+                screenOptions={{ drawerPosition: "right" }}
+                drawerContent={(props) => <ProfileDrawer {...props} />}
+              >
+                <Drawer.Screen
+                  name="Main"
+                  component={StackScreens}
+                  options={{ headerShown: false }}
+                />
+              </Drawer.Navigator>
+              {/*</NavigationContainer>*/}
+            </TeacherProvider>
+          </AppProvider>
+        </ThemeProvider>
+      </PaperProvider>
     </SafeAreaProvider>
   );
 };

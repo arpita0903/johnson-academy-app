@@ -21,7 +21,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
   }
 }
 
-rootProject.name = 'dance-aca'
+rootProject.name = 'Johnson Academy'
 
 dependencyResolutionManagement {
   versionCatalogs {

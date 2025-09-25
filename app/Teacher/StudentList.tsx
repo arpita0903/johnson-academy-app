@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Pressable,
+  Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/AntDesign";
 // import BottomSheet from "@gorhom/bottom-sheet";
@@ -74,6 +75,7 @@ const StudentList = ({
   // };
 
   const dynamicStyles = createStyles(colors);
+  console.log(batch.students[0].profilePicture);
 
   return (
     <>
@@ -100,9 +102,17 @@ const StudentList = ({
                     alignItems: "center",
                   }}
                 >
-                  <Text style={dynamicStyles.studentInitial}>
+                  <Image
+                    source={
+                      item.profilePicture
+                        ? { uri: item.profilePicture }
+                        : require("../../assets/images/profileDefault.png")
+                    }
+                    style={dynamicStyles.studentImage}
+                  />
+                  {/* <Text style={dynamicStyles.studentInitial}>
                     {item.name.charAt(0).toUpperCase()}
-                  </Text>
+                  </Text> */}
                   <View style={dynamicStyles.infoContainer}>
                     <Text style={dynamicStyles.studentName}>{item.name}</Text>
                     <Text style={dynamicStyles.studentId}> {item.email}</Text>
@@ -143,12 +153,12 @@ const StudentList = ({
           )} */}
         </View>
       </GestureHandlerRootView>
-      <AssignmentModal
+      {/* <AssignmentModal
         fabVisible={fabVisible}
         handleCloseFab={handleCloseFab}
         handlePublishAssignment={handlePublishAssignment}
         handleViewAssignments={handleViewAssignments}
-      />
+      /> */}
     </>
   );
 };
@@ -275,6 +285,12 @@ const createStyles = (colors: ThemeColors) =>
       shadowRadius: 8,
       elevation: 8,
       zIndex: 100,
+    },
+    studentImage: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      marginRight: 16,
     },
   });
 

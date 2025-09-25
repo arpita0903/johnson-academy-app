@@ -1,24 +1,17 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons"; // or any icon lib you use
-import {
-  Card,
-  Paragraph,
-  Chip,
-  Divider,
-  List,
-  Avatar,
-  Badge,
-} from "react-native-paper";
+import { Card, Divider, List, Avatar, Badge } from "react-native-paper";
 
-import RNPickerSelect from "react-native-picker-select"; // install this if not already
+import { Menu, Button } from "react-native-paper";
 import { TextInput } from "react-native";
 import { useTeacherContext } from "../context/TeacherContext";
 import { getStudentAttendance } from "../services/attendance";
@@ -45,6 +38,7 @@ const StudentDetailsScreen = () => {
     useState<AttendanceResponse | null>(null);
   const [filteredMonths, setFilteredMonths] = useState<MonthOption[]>([]);
   const [loading, setLoading] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({
     "SPT & File Submission": "",
     Regularity: "",
@@ -230,238 +224,244 @@ const StudentDetailsScreen = () => {
   }
 
   return (
-    <ScrollView contentContainerStyle={dynamicStyles.container}>
-      {/*<TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={styles.backButton}
+    <KeyboardAvoidingView
+      style={dynamicStyles.keyboardAvoidingView}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
+      <ScrollView
+        contentContainerStyle={dynamicStyles.container}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <Ionicons name="arrow-back" size={24} color="#333" />
-        <Text style={styles.backText}>Back</Text>
-      </TouchableOpacity>*/}
-
-      {/* <View style={styles.detailsBox}>
-        <Text style={styles.sheetTitle}>{selectedStudent.name}'s Details</Text>
-
-        <Text style={styles.detailText}>
-          <Text style={styles.boldLabel}>Roll number: </Text>
-          {selectedStudent.id}
-        </Text>
-        <Text style={styles.detailText}>
-          <Text style={styles.boldLabel}>Instrument: </Text>
-          {selectedStudent.instrument}
-        </Text>
-        <Text style={styles.detailText}>
-          <Text style={styles.boldLabel}>Date of Joining: </Text>
-          {selectedStudent.date_of_joining}
-        </Text>
-        <Text style={styles.detailText}>
-          <Text style={styles.boldLabel}>Current Level: </Text>
-          {selectedStudent.level}
-        </Text>
-        <Text style={styles.detailText}>
-          <Text style={styles.boldLabel}>Last level promoted: </Text>
-          {selectedStudent.promoted}
-        </Text>
-      </View> */}
-
-      {attendanceData && (
-        <Card style={dynamicStyles.attendanceCard}>
-          <Card.Content>
-            <View style={dynamicStyles.attendanceHeader}>
-              <Avatar.Icon
-                size={40}
-                icon="calendar-check"
-                style={dynamicStyles.attendanceIcon}
-              />
-              <View style={dynamicStyles.attendanceTitleContainer}>
-                <Text style={dynamicStyles.attendanceTitle}>
-                  Attendance Information
-                </Text>
-                <Text style={dynamicStyles.attendanceSubtitle}>
-                  Student performance tracking
-                </Text>
-              </View>
-            </View>
-
-            <Divider style={dynamicStyles.divider} />
-
-            <View style={dynamicStyles.attendanceStats}>
-              <View style={dynamicStyles.statRow}>
-                <List.Icon icon="calendar" color={colors.textSecondary} />
-                <View style={dynamicStyles.statContent}>
-                  <Text style={dynamicStyles.statLabel}>Joining Date</Text>
-                  <Text style={dynamicStyles.statValue}>
-                    {attendanceData.results?.[0]?.joiningDate
-                      ? formatDate(attendanceData.results[0].joiningDate)
-                      : selectedStudent.date_of_joining || "Not available"}
+        {attendanceData && (
+          <Card style={dynamicStyles.attendanceCard}>
+            <Card.Content>
+              <View style={dynamicStyles.attendanceHeader}>
+                <Avatar.Icon
+                  size={40}
+                  icon="calendar-check"
+                  style={dynamicStyles.attendanceIcon}
+                />
+                <View style={dynamicStyles.attendanceTitleContainer}>
+                  <Text style={dynamicStyles.attendanceTitle}>
+                    Attendance Information
+                  </Text>
+                  <Text style={dynamicStyles.attendanceSubtitle}>
+                    Student performance tracking
                   </Text>
                 </View>
               </View>
 
-              <View style={dynamicStyles.statRow}>
-                <List.Icon icon="calendar-month" color={colors.textSecondary} />
-                <View style={dynamicStyles.statContent}>
-                  <Text style={dynamicStyles.statLabel}>Available Months</Text>
-                  <View style={dynamicStyles.monthDisplayContainer}>
-                    <Text style={dynamicStyles.monthCountText}>
-                      {filteredMonths.length}
-                    </Text>
-                    <Text style={dynamicStyles.monthLabelText}>
-                      {filteredMonths.length === 1 ? "month" : "months"}
-                    </Text>
-                  </View>
-                </View>
-              </View>
+              <Divider style={dynamicStyles.divider} />
 
-              {attendanceData.results?.[0]?.presentDates && (
+              <View style={dynamicStyles.attendanceStats}>
                 <View style={dynamicStyles.statRow}>
-                  <List.Icon icon="check-circle" color={colors.success} />
+                  <List.Icon icon="calendar" color={colors.textSecondary} />
                   <View style={dynamicStyles.statContent}>
-                    <Text style={dynamicStyles.statLabel}>Present Days</Text>
-                    <Badge size={24} style={dynamicStyles.presentBadge}>
-                      {attendanceData.results[0].presentDates.length}
-                    </Badge>
-                  </View>
-                </View>
-              )}
-
-              {attendanceData.results?.[0]?.absentDates && (
-                <View style={dynamicStyles.statRow}>
-                  <List.Icon icon="cancel" color={colors.error} />
-                  <View style={dynamicStyles.statContent}>
-                    <Text style={dynamicStyles.statLabel}>Absent Days</Text>
-                    <Badge size={24} style={dynamicStyles.absentBadge}>
-                      {attendanceData.results[0].absentDates.length}
-                    </Badge>
-                  </View>
-                </View>
-              )}
-
-              {attendanceData.results?.[0]?.lastDate && (
-                <View style={dynamicStyles.statRow}>
-                  <List.Icon icon="update" color={colors.primary} />
-                  <View style={dynamicStyles.statContent}>
-                    <Text style={dynamicStyles.statLabel}>Last Attendance</Text>
+                    <Text style={dynamicStyles.statLabel}>Joining Date</Text>
                     <Text style={dynamicStyles.statValue}>
-                      {formatDate(attendanceData.results[0].lastDate)}
+                      {attendanceData.results?.[0]?.joiningDate
+                        ? formatDate(attendanceData.results[0].joiningDate)
+                        : selectedStudent.date_of_joining || "Not available"}
                     </Text>
                   </View>
                 </View>
-              )}
-            </View>
-          </Card.Content>
-        </Card>
-      )}
 
-      <View style={dynamicStyles.mrtSection}>
-        <Card style={dynamicStyles.mrtCard}>
-          <Card.Content>
-            <View style={dynamicStyles.mrtHeader}>
-              <Avatar.Icon
-                size={40}
-                icon="clipboard-check"
-                style={dynamicStyles.mrtIcon}
-              />
-              <View style={dynamicStyles.mrtTitleContainer}>
-                <Text style={dynamicStyles.mrtHeading}>
-                  Monthly Review Test (30 Marks)
-                </Text>
-                <Text style={dynamicStyles.mrtSubtitle}>
-                  Evaluate student performance for selected month
-                </Text>
-              </View>
-            </View>
-
-            {loading ? (
-              <View style={dynamicStyles.loadingContainer}>
-                <Text style={dynamicStyles.loadingText}>Loading months...</Text>
-              </View>
-            ) : (
-              <>
-                {filteredMonths.length > 0 ? (
-                  <View style={dynamicStyles.dropdownContainer}>
-                    <Text style={dynamicStyles.dropdownLabel}>
-                      Select Month
+                <View style={dynamicStyles.statRow}>
+                  <List.Icon
+                    icon="calendar-month"
+                    color={colors.textSecondary}
+                  />
+                  <View style={dynamicStyles.statContent}>
+                    <Text style={dynamicStyles.statLabel}>
+                      Available Months
                     </Text>
-                    <RNPickerSelect
-                      onValueChange={(value) => setSelectedMonth(value)}
-                      items={filteredMonths}
-                      placeholder={{ label: "Choose a month", value: null }}
-                      style={{
-                        inputIOS: dynamicStyles.dropdown,
-                        inputAndroid: dynamicStyles.dropdown,
-                      }}
-                    />
+                    <View style={dynamicStyles.monthDisplayContainer}>
+                      <Text style={dynamicStyles.monthCountText}>
+                        {filteredMonths.length}
+                      </Text>
+                      <Text style={dynamicStyles.monthLabelText}>
+                        {filteredMonths.length === 1 ? "month" : "months"}
+                      </Text>
+                    </View>
                   </View>
-                ) : (
-                  <View style={dynamicStyles.noMonthsContainer}>
-                    <Text style={dynamicStyles.noMonthsText}>
-                      No months available for this student
-                    </Text>
+                </View>
+
+                {attendanceData.results?.[0]?.presentDates && (
+                  <View style={dynamicStyles.statRow}>
+                    <List.Icon icon="check-circle" color={colors.success} />
+                    <View style={dynamicStyles.statContent}>
+                      <Text style={dynamicStyles.statLabel}>Present Days</Text>
+                      <Badge size={24} style={dynamicStyles.presentBadge}>
+                        {attendanceData.results[0].presentDates.length}
+                      </Badge>
+                    </View>
                   </View>
                 )}
-              </>
-            )}
-          </Card.Content>
-        </Card>
-      </View>
 
-      {selectedMonth && (
-        <Card style={dynamicStyles.formCard}>
-          <Card.Content>
-            <View style={dynamicStyles.formHeader}>
-              <Avatar.Icon
-                size={32}
-                icon="form-select"
-                style={dynamicStyles.formIcon}
-              />
-              <Text style={dynamicStyles.formTitle}>MRT Evaluation Form</Text>
-            </View>
+                {attendanceData.results?.[0]?.absentDates && (
+                  <View style={dynamicStyles.statRow}>
+                    <List.Icon icon="cancel" color={colors.error} />
+                    <View style={dynamicStyles.statContent}>
+                      <Text style={dynamicStyles.statLabel}>Absent Days</Text>
+                      <Badge size={24} style={dynamicStyles.absentBadge}>
+                        {attendanceData.results[0].absentDates.length}
+                      </Badge>
+                    </View>
+                  </View>
+                )}
 
-            <Divider style={dynamicStyles.formDivider} />
+                {attendanceData.results?.[0]?.lastDate && (
+                  <View style={dynamicStyles.statRow}>
+                    <List.Icon icon="update" color={colors.primary} />
+                    <View style={dynamicStyles.statContent}>
+                      <Text style={dynamicStyles.statLabel}>
+                        Last Attendance
+                      </Text>
+                      <Text style={dynamicStyles.statValue}>
+                        {formatDate(attendanceData.results[0].lastDate)}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            </Card.Content>
+          </Card>
+        )}
 
-            <View style={dynamicStyles.formContainer}>
-              {[
-                "SPT & File Submission",
-                "Regularity",
-                "Learning Speed",
-                "Theory and Technicals",
-                "Song Learning",
-                "Assignment",
-                "remarks",
-              ].map((field, idx) => (
-                <View key={field} style={dynamicStyles.inputGroup}>
-                  <Text style={dynamicStyles.inputLabel}>
-                    {field === "remarks" ? "Remarks" : `${field} *`}
+        <View style={dynamicStyles.mrtSection}>
+          <Card style={dynamicStyles.mrtCard}>
+            <Card.Content>
+              <View style={dynamicStyles.mrtHeader}>
+                <Avatar.Icon
+                  size={40}
+                  icon="clipboard-check"
+                  style={dynamicStyles.mrtIcon}
+                />
+                <View style={dynamicStyles.mrtTitleContainer}>
+                  <Text style={dynamicStyles.mrtHeading}>
+                    Monthly Review Test (30 Marks)
                   </Text>
-                  <TextInput
-                    style={dynamicStyles.input}
-                    value={formData[field]}
-                    onChangeText={(text) => handleChange(field, text)}
-                    placeholder={
-                      field === "remarks"
-                        ? "Enter remarks (optional)"
-                        : `Max marks: 5`
-                    }
-                    placeholderTextColor={colors.placeholderText}
-                    keyboardType={field === "remarks" ? "default" : "numeric"}
-                    multiline={field === "remarks"}
-                    numberOfLines={field === "remarks" ? 3 : 1}
-                  />
+                  <Text style={dynamicStyles.mrtSubtitle}>
+                    Evaluate student performance for selected month
+                  </Text>
                 </View>
-              ))}
+              </View>
 
-              <TouchableOpacity
-                style={dynamicStyles.submitButton}
-                onPress={handleSubmit}
-              >
-                <Text style={dynamicStyles.submitButtonText}>Submit MRT</Text>
-              </TouchableOpacity>
-            </View>
-          </Card.Content>
-        </Card>
-      )}
-    </ScrollView>
+              {loading ? (
+                <View style={dynamicStyles.loadingContainer}>
+                  <Text style={dynamicStyles.loadingText}>
+                    Loading months...
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  {filteredMonths.length > 0 ? (
+                    <View style={dynamicStyles.dropdownContainer}>
+                      <Text style={dynamicStyles.dropdownLabel}>
+                        Select Month
+                      </Text>
+                      <Menu
+                        visible={menuVisible}
+                        onDismiss={() => setMenuVisible(false)}
+                        anchor={
+                          <Button
+                            mode="outlined"
+                            onPress={() => setMenuVisible(true)}
+                            style={dynamicStyles.dropdown}
+                            contentStyle={{ justifyContent: "flex-start" }}
+                          >
+                            {selectedMonth
+                              ? filteredMonths.find(
+                                  (m) => m.value === selectedMonth
+                                )?.label || "Choose a month"
+                              : "Choose a month"}
+                          </Button>
+                        }
+                      >
+                        {filteredMonths.map((month) => (
+                          <Menu.Item
+                            key={month.value}
+                            onPress={() => {
+                              setSelectedMonth(month.value);
+                              setMenuVisible(false);
+                            }}
+                            title={month.label}
+                          />
+                        ))}
+                      </Menu>
+                    </View>
+                  ) : (
+                    <View style={dynamicStyles.noMonthsContainer}>
+                      <Text style={dynamicStyles.noMonthsText}>
+                        No months available for this student
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
+            </Card.Content>
+          </Card>
+        </View>
+
+        {selectedMonth && (
+          <Card style={dynamicStyles.formCard}>
+            <Card.Content>
+              <View style={dynamicStyles.formHeader}>
+                <Avatar.Icon
+                  size={32}
+                  icon="form-select"
+                  style={dynamicStyles.formIcon}
+                />
+                <Text style={dynamicStyles.formTitle}>MRT Evaluation Form</Text>
+              </View>
+
+              <Divider style={dynamicStyles.formDivider} />
+
+              <View style={dynamicStyles.formContainer}>
+                {[
+                  "SPT & File Submission",
+                  "Regularity",
+                  "Learning Speed",
+                  "Theory and Technicals",
+                  "Song Learning",
+                  "Assignment",
+                  "remarks",
+                ].map((field, idx) => (
+                  <View key={field} style={dynamicStyles.inputGroup}>
+                    <Text style={dynamicStyles.inputLabel}>
+                      {field === "remarks" ? "Remarks" : `${field} *`}
+                    </Text>
+                    <TextInput
+                      style={dynamicStyles.input}
+                      value={formData[field]}
+                      onChangeText={(text) => handleChange(field, text)}
+                      placeholder={
+                        field === "remarks"
+                          ? "Enter remarks (optional)"
+                          : `Max marks: 5`
+                      }
+                      placeholderTextColor={colors.placeholderText}
+                      keyboardType={field === "remarks" ? "default" : "numeric"}
+                      multiline={field === "remarks"}
+                      numberOfLines={field === "remarks" ? 3 : 1}
+                    />
+                  </View>
+                ))}
+
+                <TouchableOpacity
+                  style={dynamicStyles.submitButton}
+                  onPress={handleSubmit}
+                >
+                  <Text style={dynamicStyles.submitButtonText}>Submit MRT</Text>
+                </TouchableOpacity>
+              </View>
+            </Card.Content>
+          </Card>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -469,6 +469,10 @@ export default StudentDetailsScreen;
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+    keyboardAvoidingView: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
     container: {
       flexGrow: 1,
       padding: 20,

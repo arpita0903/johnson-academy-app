@@ -42,7 +42,11 @@ const MusicProfile = ({ navigation }) => {
       {/* Profile Section */}
       <View style={dynamicStyles.profileSection}>
         <Image
-          source={{ uri: user?.profilePicture }}
+          source={
+            user?.profilePicture
+              ? { uri: user?.profilePicture }
+              : require("../../assets/images/profileDefault.png")
+          }
           style={dynamicStyles.profileImage}
         />
         <Text style={dynamicStyles.name}>{user?.name || "User"}</Text>
