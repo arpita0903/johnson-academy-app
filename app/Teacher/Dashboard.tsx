@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppContext } from "../context/AppContext";
@@ -137,8 +138,11 @@ const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
                     </Text>
                   </View>
                   {item.courseId.image && (
-                    <View style={dynamicStyles.courseImageContainer}>
-                      <Text style={dynamicStyles.imagePlaceholder}>📚</Text>
+                    <View>
+                      <Image
+                        source={{ uri: item.courseId.image }}
+                        style={dynamicStyles.courseImageContainer}
+                      />
                     </View>
                   )}
                 </View>
@@ -304,14 +308,15 @@ const createStyles = (colors: ThemeColors) =>
       marginRight: 12,
     },
     courseImageContainer: {
+      //contain the image
+      objectFit: "contain",
       width: 56,
       height: 56,
-      borderRadius: 12,
-      backgroundColor: colors.surface,
+      // backgroundColor: colors.surface,
       justifyContent: "center",
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: colors.border,
+      // borderWidth: 1,
+      // borderColor: colors.border,
     },
     imagePlaceholder: {
       fontSize: 28,

@@ -26,7 +26,9 @@ import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { Provider as PaperProvider } from "react-native-paper";
 import { Image, TouchableOpacity } from "react-native";
 import AssignmentList from "./Teacher/AssignmentList";
+import AssignmentDetail from "./Teacher/AssignmentDetail";
 import PublishAssignment from "./Teacher/PublishAssignment";
+import StudentAssignmentDetailScreen from "./Student/StudentAssignmentDetailScreen";
 
 import Icon from "react-native-vector-icons/Foundation";
 import StudentDetailsScreen from "./Teacher/StudentDetailsScreen";
@@ -275,6 +277,38 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
             requiredRole="teacher"
           >
             <StudentDetailsScreen {...props} />
+          </ProtectedWrapper>
+        )}
+      </Stack.Screen>
+      <Stack.Screen
+        name="AssignmentDetail"
+        options={{
+          title: "Assignment Details",
+          headerShown: false, // We're using custom header in the component
+        }}
+      >
+        {(props) => (
+          <ProtectedWrapper
+            navigation={props.navigation}
+            requiredRole={user?.role}
+          >
+            <AssignmentDetail {...props} />
+          </ProtectedWrapper>
+        )}
+      </Stack.Screen>
+      <Stack.Screen
+        name="StudentAssignmentDetail"
+        options={{
+          title: "Assignment Details",
+          headerShown: false, // We're using custom header in the component
+        }}
+      >
+        {(props) => (
+          <ProtectedWrapper
+            navigation={props.navigation}
+            requiredRole="student"
+          >
+            <StudentAssignmentDetailScreen {...props} />
           </ProtectedWrapper>
         )}
       </Stack.Screen>

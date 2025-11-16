@@ -95,6 +95,8 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
     );
   }
 
+  console.log(studentClasses[0].courseId.image);
+
   return (
     <View style={styles.header}>
       <View style={styles.sectionHeader}>
@@ -112,7 +114,7 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
           <TouchableOpacity onPress={() => onInstrumentPress(item)}>
             <View style={styles.instrumentCard}>
               <Image
-                source={require("../../assets/images/guitar.png")}
+                source={{ uri: item?.courseId?.image }}
                 style={styles.instrumentIcon}
               />
               <Text style={styles.instrumentName}>{item.name}</Text>
@@ -147,13 +149,23 @@ const styles = {
     fontWeight: "600" as const,
   },
   instrumentCard: {
-    backgroundColor: "#FFEFD5",
+    backgroundColor: "#F8F9FA",
     borderRadius: 16,
     padding: 12,
     paddingBottom: 20,
     width: 180,
     marginRight: 12,
     alignItems: "center" as const,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "#E9ECEF",
   },
   instrumentIcon: {
     width: 150,

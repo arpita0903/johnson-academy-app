@@ -28,7 +28,6 @@ export const startModule = async (studentProgressId, moduleId, syllabusId) => {
  * @param {string} studentProgressId - The student progress ID
  * @param {string} moduleId - The module ID to end
  * @param {string} syllabusId - The syllabus ID
- * @param {string} remark - The remark/feedback for the module
  * @param {string} score - The score achieved in the module
  * @returns {Promise} - API response
  */
@@ -36,7 +35,6 @@ export const endModule = async (
   studentProgressId,
   moduleId,
   syllabusId,
-  remark,
   score
 ) => {
   try {
@@ -45,7 +43,6 @@ export const endModule = async (
       {
         moduleId,
         syllabusId,
-        remark,
         score,
       }
     );

@@ -75,7 +75,6 @@ const StudentList = ({
   // };
 
   const dynamicStyles = createStyles(colors);
-  console.log(batch.students[0].profilePicture);
 
   return (
     <>
@@ -153,12 +152,12 @@ const StudentList = ({
           )} */}
         </View>
       </GestureHandlerRootView>
-      {/* <AssignmentModal
+      <AssignmentModal
         fabVisible={fabVisible}
         handleCloseFab={handleCloseFab}
         handlePublishAssignment={handlePublishAssignment}
         handleViewAssignments={handleViewAssignments}
-      /> */}
+      />
     </>
   );
 };

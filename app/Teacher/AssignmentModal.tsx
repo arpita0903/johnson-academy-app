@@ -71,14 +71,21 @@ import {
 } from "react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 
-const AssignmentSheet = ({
+type AssignmentSheetProps = {
+  fabVisible: boolean;
+  handleCloseFab: () => void;
+  handlePublishAssignment: () => void;
+  handleViewAssignments: () => void;
+};
+
+const AssignmentSheet: React.FC<AssignmentSheetProps> = ({
   fabVisible,
   handleCloseFab,
   handlePublishAssignment,
   handleViewAssignments,
 }) => {
-  const bottomSheetRef = useRef(null);
-  const snapPoints = useMemo(() => [100]);
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => [100], []);
 
   useEffect(() => {
     if (fabVisible) {

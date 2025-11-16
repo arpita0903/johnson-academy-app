@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   Linking,
   Alert,
-  TextInput,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { getStudentProgress } from "../services/student";
@@ -57,7 +56,6 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
     useState<StudentProgressResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [remark, setRemark] = useState("");
   const [starRating, setStarRating] = useState(0);
   const [showEndModal, setShowEndModal] = useState(false);
   const [selectedModuleForEnd, setSelectedModuleForEnd] =
@@ -129,6 +127,15 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
         return;
       }
 
+      // Validate minimum star rating
+      if (starRating < 2) {
+        Alert.alert(
+          "Validation Error",
+          "Please provide a rating of at least 2 stars."
+        );
+        return;
+      }
+
       // Get syllabus ID from the progress data
       const syllabusId = progressData?.syllabusProgress?.[0]?.syllabusId?.id;
       if (!syllabusId) {
@@ -140,7 +147,6 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
         progressId,
         selectedModuleForEnd.moduleId.id,
         syllabusId,
-        remark,
         starRating.toString()
       );
 
@@ -151,7 +157,6 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
       );
 
       // Clear the form and close modal
-      setRemark("");
       setStarRating(0);
       setShowEndModal(false);
       setSelectedModuleForEnd(null);
@@ -536,25 +541,12 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
               </View>
             </View>
 
-            <View style={dynamicStyles.inputContainer}>
-              <Text style={dynamicStyles.inputLabel}>Remark</Text>
-              <TextInput
-                style={dynamicStyles.textInput}
-                value={remark}
-                onChangeText={setRemark}
-                placeholder="Enter remark (optional)"
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-
             <View style={dynamicStyles.modalButtonRow}>
               <TouchableOpacity
                 style={[dynamicStyles.modalButton, dynamicStyles.cancelButton]}
                 onPress={() => {
                   setShowEndModal(false);
                   setSelectedModuleForEnd(null);
-                  setRemark("");
                   setStarRating(0);
                 }}
               >

@@ -14,6 +14,7 @@ import { fetchUser, User } from "../services/auth";
 //import { moduleData } from "../services/module";
 import { courseData } from "../services/course";
 import InstrumentSection from "../components/InstrumentSection";
+import AssignmentSection from "../components/AssignmentSection";
 import CompleteProfileModal, {
   ProfileData,
 } from "../components/modals/completeProfile";
@@ -91,34 +92,8 @@ const Homepage = ({ navigation }: HomepageProps) => {
         {/* Instruments Section */}
         <InstrumentSection onInstrumentPress={handleSubmit} />
 
-        {/* <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Assignment</Text>
-        </View> */}
-
-        {/* <View style={styles.assignmentContainer}>
-          {false ? (
-            <View style={styles.assignmentBox}>
-              <Text style={styles.assignmentText}>
-                🎉 No assignments right now!
-              </Text>
-              <Text style={styles.assignmentSubtext}>
-                No tasks for now. Time to jam with your favorite tunes!
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.assignmentBox}>
-              <Text style={styles.assignmentText}>
-                📘 You have a new assignment!
-              </Text>
-              <TouchableOpacity
-                style={styles.assignmentButton}
-                onPress={() => navigation.navigate("AssignmentList")} // replace with your screen name
-              >
-                <Text style={styles.assignmentButtonText}>View Now</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View> */}
+        {/* Assignment Section */}
+        <AssignmentSection navigation={navigation} studentId={user?.id} />
       </ScrollView>
 
       {/* Profile Completion Modal */}
@@ -190,17 +165,6 @@ const createStyles = (colors: ThemeColors) =>
       top: 0,
       resizeMode: "contain",
     },
-    sectionHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 16,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.text,
-    },
     seeAll: {
       color: colors.primary,
       fontWeight: "600",
@@ -208,46 +172,6 @@ const createStyles = (colors: ThemeColors) =>
     eventRow: {
       flexDirection: "row",
       justifyContent: "space-between",
-    },
-    assignmentContainer: {
-      marginTop: 14,
-      padding: 20,
-      paddingVertical: 40,
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    assignmentBox: {
-      alignItems: "center",
-    },
-    assignmentText: {
-      fontSize: 22,
-      fontWeight: "bold",
-      color: colors.primary,
-      marginBottom: 8,
-    },
-    assignmentSubtext: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      textAlign: "center",
-    },
-    assignmentButton: {
-      backgroundColor: colors.primary,
-      paddingVertical: 10,
-      paddingHorizontal: 24,
-      borderRadius: 25,
-      marginTop: 12,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    assignmentButtonText: {
-      color: colors.primaryText,
-      fontWeight: "600",
-      fontSize: 14,
     },
   });
 

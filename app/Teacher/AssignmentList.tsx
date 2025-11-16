@@ -1,137 +1,237 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
-  Linking,
+  FlatList,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
-import { assignments } from "../components/JsonData";
+import { getAssignmentsByClass } from "../services/assignment";
 import { useAppContext } from "../context/AppContext";
+import TeacherAssignmentCard from "../components/TeacherAssignmentCard";
 
-const AssignmentList = React.memo(() => {
-  const { user } = useAppContext();
+interface Assignment {
+  id: string;
+  title: string;
+  description: string;
+  dueDate?: string;
+  fileUrl?: string;
+  classId: string;
+  teacherId: string;
+  createdBy: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
-  return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.heading}>All Assignments</Text>
-      {assignments.map((item, index) => (
-        <View key={index} style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.title}>{item.title}</Text>
-            <TouchableOpacity style={styles.viewPdfButton}>
-              <Text style={styles.viewPdfText}>View PDF</Text>
-            </TouchableOpacity>
-          </View>
+interface Batch {
+  id: string;
+  name: string;
+  students?: any[];
+}
 
-          <Text style={styles.description}>{item.description}</Text>
+interface AssignmentListProps {
+  route: {
+    params: {
+      batch: Batch;
+    };
+  };
+  navigation: any;
+}
 
-          {user.role === "student" ? (
-            <>
-              <Text style={styles.label}>Submit Assignment Link</Text>
-              <TextInput
-                placeholder="Paste your assignment link"
-                style={styles.input}
-                placeholderTextColor="#aaa"
-              />
-              <TouchableOpacity style={styles.submitButton}>
-                <Text style={styles.submitButtonText}>Submit Now</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <Text
-              style={{ color: "blue", textDecorationLine: "underline" }}
-              onPress={() =>
-                Linking.openURL(
-                  "https://drive.google.com/file/d/1A2B3C4D5E6F7G8H9/view"
-                )
-              }
-            >
-              View Document
-            </Text>
-          )}
+const AssignmentList = React.memo<AssignmentListProps>(
+  ({ route, navigation }) => {
+    const { user } = useAppContext();
+    const { batch } = route.params;
+    const [assignments, setAssignments] = useState<Assignment[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+      fetchAssignments();
+    }, [batch.id]);
+
+    const fetchAssignments = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Use batch.id as classId for fetching assignments
+        const classId = batch.id;
+
+        const fetchedAssignments = await getAssignmentsByClass(classId);
+        setAssignments(fetchedAssignments || []);
+      } catch (err: any) {
+        console.error("Error fetching assignments:", err);
+        setError(err?.message || "Failed to fetch assignments");
+        Alert.alert("Error", "Failed to load assignments. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const handleRefresh = () => {
+      fetchAssignments();
+    };
+
+    const handleAssignmentPress = (assignment: Assignment) => {
+      // Navigate to assignment detail screen with assignment ID
+      navigation.navigate("AssignmentDetail", {
+        assignmentId: assignment.id,
+        assignment: assignment,
+      });
+    };
+
+    const renderAssignment = ({ item }: { item: Assignment }) => (
+      <TeacherAssignmentCard
+        assignment={item}
+        onPress={handleAssignmentPress}
+      />
+    );
+
+    const keyExtractor = (item: Assignment) => item.id;
+
+    if (loading) {
+      return (
+        <View style={[styles.container, styles.centered]}>
+          <ActivityIndicator size="large" color="#ff6b35" />
+          <Text style={styles.loadingText}>Loading assignments...</Text>
         </View>
-      ))}
-    </ScrollView>
-  );
-});
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={[styles.container, styles.centered]}>
+          <Text style={styles.errorText}>Error: {error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    const renderEmptyComponent = () => (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No assignments found</Text>
+        <Text style={styles.emptySubText}>
+          Assignments will appear here once they are created.
+        </Text>
+      </View>
+    );
+
+    const renderHeader = () => (
+      <View style={styles.headerContainer}>
+        <View style={styles.titleContainer}>
+          <Text style={styles.heading}>Assignments</Text>
+          <Text style={styles.batchName}>{batch.name}</Text>
+        </View>
+        <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
+          <Text style={styles.refreshButtonText}>Refresh</Text>
+        </TouchableOpacity>
+      </View>
+    );
+
+    return (
+      <View style={styles.container}>
+        <FlatList
+          data={assignments}
+          renderItem={renderAssignment}
+          keyExtractor={keyExtractor}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={renderEmptyComponent}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContainer}
+          refreshing={loading}
+          onRefresh={handleRefresh}
+        />
+      </View>
+    );
+  }
+);
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#fff",
+    backgroundColor: "#1a1a1a",
+    flex: 1,
+  },
+  listContainer: {
     padding: 16,
+    flexGrow: 1,
+  },
+  centered: {
+    justifyContent: "center",
+    alignItems: "center",
+    flex: 1,
+  },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  titleContainer: {
+    flex: 1,
   },
   heading: {
     fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 16,
-    color: "#6a1b9a",
+    color: "#ff6b35",
   },
-  card: {
-    backgroundColor: "#f8f6ff",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    elevation: 4,
+  batchName: {
+    fontSize: 14,
+    color: "#cccccc",
+    marginTop: 2,
   },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
-    flex: 1,
-  },
-  viewPdfButton: {
-    backgroundColor: "#6200ee",
+  refreshButton: {
+    backgroundColor: "#ff6b35",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
   },
-  viewPdfText: {
-    color: "#fff",
+  refreshButtonText: {
+    color: "#ffffff",
     fontWeight: "600",
-    fontSize: 13,
+    fontSize: 12,
   },
-  description: {
-    fontSize: 14,
-    color: "#555",
-    marginBottom: 14,
+  loadingText: {
+    color: "#ffffff",
+    marginTop: 12,
+    fontSize: 16,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 6,
-    color: "#333",
+  errorText: {
+    color: "#ff6b6b",
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 16,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
+  retryButton: {
+    backgroundColor: "#ff6b35",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-    fontSize: 14,
   },
-  submitButton: {
-    backgroundColor: "#03dac6",
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  submitButtonText: {
-    color: "#000",
+  retryButtonText: {
+    color: "#ffffff",
     fontWeight: "bold",
-    fontSize: 15,
+    fontSize: 16,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  emptyText: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  emptySubText: {
+    color: "#cccccc",
+    fontSize: 14,
+    textAlign: "center",
   },
 });
 
