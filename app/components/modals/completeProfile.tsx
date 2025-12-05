@@ -6,15 +6,16 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  Alert,
   StyleSheet,
   ActivityIndicator,
+  Pressable,
 } from "react-native";
 import { Icon } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import { uploadProfilePicture } from "../../services/upload";
 import { fetchUser, updateUserProfile } from "@/app/services/auth";
 import { useAppContext } from "../../context/AppContext";
+import { useToast } from "../../context/ToastContext";
 
 interface CompleteProfileModalProps {
   visible: boolean;
@@ -42,6 +43,7 @@ const CompleteProfileModal = ({
   });
   const [isUploading, setIsUploading] = useState(false);
   const { setUser } = useAppContext();
+  const { showError, showSuccess, showInfo } = useToast();
   useEffect(() => {
     const loadUser = async () => {
       const userData = await fetchUser();
@@ -64,11 +66,7 @@ const CompleteProfileModal = ({
         await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (status !== "granted") {
-        Alert.alert(
-          "Permission Required",
-          "Sorry, we need photo library permissions to make this work!",
-          [{ text: "OK" }]
-        );
+        showInfo("Sorry, we need photo library permissions to make this work!");
         return;
       }
 
@@ -82,6 +80,7 @@ const CompleteProfileModal = ({
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const selectedImage = result.assets[0];
+        console.log("selectedImage", selectedImage.uri);
         setProfileData((prev) => ({
           ...prev,
           profilePicture: selectedImage.uri,
@@ -89,19 +88,22 @@ const CompleteProfileModal = ({
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to select image. Please try again.");
+      showError("Failed to select image. Please try again.");
     }
   };
 
   const handleSubmit = async () => {
     setIsUploading(true);
+    console.log("profileData", profileData);
     if (!profileData.name.trim() || !profileData.phoneNumber.trim()) {
-      Alert.alert("Error", "Please fill in all required fields");
+      showError("Please fill in all required fields");
+      setIsUploading(false);
       return;
     }
 
     if (!profileData.profilePicture) {
-      Alert.alert("Error", "Please select a profile image");
+      showError("Please select a profile image");
+      setIsUploading(false);
       return;
     }
 
@@ -113,6 +115,8 @@ const CompleteProfileModal = ({
         "student",
         "profile"
       );
+
+      console.log("uploadResult", uploadResult);
 
       // Update profile data with the uploaded image URL
       const updatedProfileData = {
@@ -128,11 +132,10 @@ const CompleteProfileModal = ({
       );
 
       // Show success message
-      Alert.alert("Success", "Profile picture uploaded successfully!");
+      showSuccess("Profile updated successfully!");
     } catch (error: any) {
       console.error("Error uploading profile picture:", error);
-      Alert.alert(
-        "Upload Failed",
+      showError(
         error.message || "Failed to upload profile picture. Please try again."
       );
     } finally {
@@ -148,9 +151,16 @@ const CompleteProfileModal = ({
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+      <Pressable style={styles.modalOverlay} onPress={onClose}>
+        <Pressable style={styles.modalContent} onPress={() => {}}>
           <View style={styles.modalHeader}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={onClose}
+              disabled={isUploading}
+            >
+              <Icon source="close" size={24} color="#666" />
+            </TouchableOpacity>
             <Text style={styles.modalTitle}>Complete Your Profile</Text>
             <Text style={styles.modalSubtitle}>
               Please provide the following information to continue
@@ -229,15 +239,15 @@ const CompleteProfileModal = ({
               {isUploading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="small" color="#fff" />
-                  <Text style={styles.submitButtonText}>Uploading...</Text>
+                  <Text style={styles.submitButtonText}>Updating...</Text>
                 </View>
               ) : (
-                <Text style={styles.submitButtonText}>Complete Profile</Text>
+                <Text style={styles.submitButtonText}>Update Profile</Text>
               )}
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 };
@@ -259,6 +269,15 @@ const styles = StyleSheet.create({
   modalHeader: {
     alignItems: "center",
     marginBottom: 20,
+    width: "100%",
+    position: "relative",
+  },
+  closeButton: {
+    position: "absolute",
+    top: -10,
+    right: -10,
+    padding: 8,
+    zIndex: 1,
   },
   modalTitle: {
     fontSize: 20,

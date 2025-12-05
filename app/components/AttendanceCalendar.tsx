@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
@@ -18,6 +17,7 @@ import {
   AttendanceCalendarProps,
   AttendanceResponse,
 } from "../types/attendance";
+import { useToast } from "../context/ToastContext";
 
 /**
  * AttendanceCalendar Component
@@ -53,6 +53,7 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [attendanceId, setAttendanceId] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
+  const { showError, showSuccess } = useToast();
 
   // Fetch attendance data from API
   const fetchAttendanceData = async () => {
@@ -145,10 +146,7 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
   const markAttendance = async (status: "present" | "absent") => {
     if (!attendanceId) {
-      Alert.alert(
-        "Error",
-        "Attendance record not found. Please refresh the page."
-      );
+      showError("Attendance record not found. Please refresh the page.");
       return;
     }
 
@@ -187,12 +185,12 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         setTarget([...targetArray, selectedDate]);
       }
 
-      Alert.alert("Success", `Marked as ${status} for ${selectedDate}`);
+      showSuccess(`Marked as ${status} for ${selectedDate}`);
     } catch (err: unknown) {
       console.error(`Error marking as ${status}:`, err);
       const errorMessage =
         err instanceof Error ? err.message : `Failed to mark as ${status}`;
-      Alert.alert("Error", errorMessage);
+      showError(errorMessage);
     } finally {
       setUpdating(false);
     }

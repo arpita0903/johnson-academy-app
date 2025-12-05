@@ -1,23 +1,10 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  Alert,
-} from "react-native";
-import { ProgressBar } from "react-native-paper";
+import { View, Text, ScrollView, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { fetchUser, User } from "../services/auth";
-//import { moduleData } from "../services/module";
-import { courseData } from "../services/course";
 import InstrumentSection from "../components/InstrumentSection";
 import AssignmentSection from "../components/AssignmentSection";
-import CompleteProfileModal, {
-  ProfileData,
-} from "../components/modals/completeProfile";
+import { ProfileData } from "../components/modals/completeProfile";
 import { useTheme } from "../context/ThemeContext";
 import { ThemeColors } from "../theme/colors";
 
@@ -35,16 +22,6 @@ const Homepage = ({ navigation }: HomepageProps) => {
     // You can now use the progressId to fetch progress data or navigate with it
 
     navigation.navigate("Course", { studentClass: classData });
-  };
-
-  const handleProfileSubmit = (data: ProfileData) => {
-    // Here you would typically update the user profile in your backend
-
-    // Close modal and update user state
-    setShowProfileModal(false);
-    setUser((prev) => (prev ? { ...prev, isCompleteProfile: true } : null));
-
-    // Alert.alert("Success", "Profile completed successfully!");
   };
 
   useEffect(() => {
@@ -97,11 +74,11 @@ const Homepage = ({ navigation }: HomepageProps) => {
       </ScrollView>
 
       {/* Profile Completion Modal */}
-      <CompleteProfileModal
+      {/* <CompleteProfileModal
         visible={showProfileModal}
         onClose={() => setShowProfileModal(false)}
         onSubmit={handleProfileSubmit}
-      />
+      /> */}
     </SafeAreaView>
   );
 };

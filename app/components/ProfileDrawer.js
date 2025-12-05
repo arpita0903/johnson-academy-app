@@ -12,49 +12,61 @@ import { logout } from "../services/auth";
 import { useAppContext } from "../context/AppContext";
 import { useTheme } from "../context/ThemeContext";
 import MyCourses from "./MyCourses";
+import CompleteProfileModal from "./modals/completeProfile";
 
 const MusicProfile = ({ navigation }) => {
   const { user } = useAppContext();
   const { colors } = useTheme();
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // use image from user.profilePicture
   const dynamicStyles = createStyles(colors);
 
   return (
-    <ScrollView style={dynamicStyles.container}>
-      {/* Header */}
-      <View style={dynamicStyles.header}>
-        <TouchableOpacity onPress={() => navigation.closeDrawer()}>
-          <Icon name="chevron-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={async () => {
-            await logout();
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "Main", params: { screen: "Login" } }],
-            });
-          }}
-        >
-          <Text style={dynamicStyles.logoutButton}>Log Out</Text>
-        </TouchableOpacity>
-      </View>
-      {/* Profile Section */}
-      <View style={dynamicStyles.profileSection}>
-        <Image
-          source={
-            user?.profilePicture
-              ? { uri: user?.profilePicture }
-              : require("../../assets/images/profileDefault.png")
-          }
-          style={dynamicStyles.profileImage}
-        />
-        <Text style={dynamicStyles.name}>{user?.name || "User"}</Text>
-        <Text style={dynamicStyles.subtext}>{user?.email}</Text>
-        <Text style={dynamicStyles.subtext}>
-          {user?.role === "teacher" ? "Teacher" : "Student"}
-        </Text>
-        {/* <View style={dynamicStyles.statsRow}>
+    <>
+      <ScrollView style={dynamicStyles.container}>
+        {/* Header */}
+        <View style={dynamicStyles.header}>
+          <TouchableOpacity onPress={() => navigation.closeDrawer()}>
+            <Icon name="chevron-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={async () => {
+              await logout();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "Main", params: { screen: "Login" } }],
+              });
+            }}
+          >
+            <Text style={dynamicStyles.logoutButton}>Log Out</Text>
+          </TouchableOpacity>
+        </View>
+        {/* Profile Section */}
+        <View style={dynamicStyles.profileSection}>
+          <Image
+            source={
+              user?.profilePicture
+                ? { uri: user?.profilePicture }
+                : require("../../assets/images/profileDefault.png")
+            }
+            style={dynamicStyles.profileImage}
+          />
+          <Text style={dynamicStyles.name}>{user?.name || "User"}</Text>
+          <Text style={dynamicStyles.subtext}>{user?.email}</Text>
+          <Text style={dynamicStyles.subtext}>
+            {user?.role === "teacher" ? "Teacher" : "Student"}
+          </Text>
+          {/* <TouchableOpacity
+            style={dynamicStyles.editProfileButton}
+            onPress={() => setShowProfileModal(true)}
+          >
+            <Icon name="create-outline" size={16} color={colors.primaryText} />
+            <Text style={dynamicStyles.editProfileButtonText}>
+              Edit Profile
+            </Text>
+          </TouchableOpacity> */}
+          {/* <View style={dynamicStyles.statsRow}>
           {user?.role === "teacher" ? (
             <>
               <StatItem
@@ -99,18 +111,18 @@ const MusicProfile = ({ navigation }) => {
             </>
           )}
         </View> */}
-      </View>
+        </View>
 
-      {/* My courses Section */}
-      {user?.role === "student" && <MyCourses userId={user?.id} />}
+        {/* My courses Section */}
+        {user?.role === "student" && <MyCourses userId={user?.id} />}
 
-      {/* Weekly Practice Card */}
-      {/* <View style={dynamicStyles.card}> */}
-      {/* <Text style={dynamicStyles.cardTitle}>18 May - 24 May</Text> */}
-      {/*<Text style={styles.cardSub}>Completed 0% of your weekly goal</Text>*/}
-      {/*<Text style={styles.minsTag}>0/300 MIN</Text>*/}
-      {/* Weekly Progress */}
-      {/* <View style={dynamicStyles.progressRow}>
+        {/* Weekly Practice Card */}
+        {/* <View style={dynamicStyles.card}> */}
+        {/* <Text style={dynamicStyles.cardTitle}>18 May - 24 May</Text> */}
+        {/*<Text style={styles.cardSub}>Completed 0% of your weekly goal</Text>*/}
+        {/*<Text style={styles.minsTag}>0/300 MIN</Text>*/}
+        {/* Weekly Progress */}
+        {/* <View style={dynamicStyles.progressRow}>
           {["20%", "60%", "30%", "0%"].map((item, i) => (
             <View key={i} style={dynamicStyles.progressItem}>
               <Text style={dynamicStyles.progressPercent}>{item}</Text>
@@ -120,9 +132,9 @@ const MusicProfile = ({ navigation }) => {
             </View>
           ))}
         </View> */}
-      {/* </View> */}
-      {/* Active Level */}
-      {/*<View style={styles.card}>
+        {/* </View> */}
+        {/* Active Level */}
+        {/*<View style={styles.card}>
                 <Text style={styles.sectionTitle}>Active Level</Text>
                 <Text style={styles.learnMore}>Learn More</Text>
                 <View style={styles.levelRow}>
@@ -131,8 +143,8 @@ const MusicProfile = ({ navigation }) => {
                     ))}
                 </View>
             </View>*/}
-      {/* Badges */}
-      {/* <View style={dynamicStyles.card}>
+        {/* Badges */}
+        {/* <View style={dynamicStyles.card}>
         <Text style={dynamicStyles.sectionTitle}>
           {user?.role === "teacher" ? "Teaching Badges" : "Appreciation Badges"}
         </Text>
@@ -170,9 +182,9 @@ const MusicProfile = ({ navigation }) => {
           )}
         </View>
       </View> */}
-      {/* Leaderboard */}
-      {/* Music Stats Overview */}
-      {/* <View style={dynamicStyles.card}>
+        {/* Leaderboard */}
+        {/* Music Stats Overview */}
+        {/* <View style={dynamicStyles.card}>
         <Text style={dynamicStyles.sectionTitle}>
           {user?.role === "teacher" ? "Teaching Overview" : "Leaderboard"}
         </Text>
@@ -224,15 +236,25 @@ const MusicProfile = ({ navigation }) => {
           </View>
         </View>
       </View> */}
-      {/* Groups */}
-      {/*<View style={styles.card}>
+        {/* Groups */}
+        {/*<View style={styles.card}>
                 <Text style={styles.sectionTitle}>Groups</Text>
                 <View style={styles.groupItem}>
                     <Text style={styles.groupName}>🎼 Bangalore Piano Circle</Text>
                     <Text style={styles.groupMembers}>249 Members</Text>
                 </View>
             </View>*/}
-    </ScrollView>
+      </ScrollView>
+      {/* Complete Profile Modal */}
+      <CompleteProfileModal
+        visible={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        onSubmit={() => {
+          // Modal handles profile update internally
+          setShowProfileModal(false);
+        }}
+      />
+    </>
   );
 };
 
@@ -290,6 +312,22 @@ const createStyles = (colors) =>
       fontSize: 12,
       color: colors.textSecondary,
       marginTop: 2,
+    },
+    editProfileButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      marginTop: 16,
+      gap: 6,
+    },
+    editProfileButtonText: {
+      color: colors.primaryText,
+      fontSize: 14,
+      fontWeight: "600",
     },
     statsRow: {
       flexDirection: "row",

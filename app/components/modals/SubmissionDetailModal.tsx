@@ -7,12 +7,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
-  Alert,
   ActivityIndicator,
   Linking,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { gradeSubmission } from "../../services/assignment";
+import { useToast } from "../../context/ToastContext";
 
 interface Student {
   id: string;
@@ -57,10 +57,11 @@ const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
   const [selectedGrade, setSelectedGrade] = useState(submission?.grade || 0);
   const [feedback, setFeedback] = useState(submission?.feedback || "");
   const [submitting, setSubmitting] = useState(false);
+  const { showError, showSuccess } = useToast();
 
   const handleGradeSubmit = async () => {
     if (!submission || selectedGrade === 0) {
-      Alert.alert("Error", "Please select a grade before submitting.");
+      showError("Please select a grade before submitting.");
       return;
     }
 
@@ -73,15 +74,12 @@ const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
       };
 
       await gradeSubmission(assignmentId, gradeData);
-      Alert.alert("Success", "Grade submitted successfully!");
+      showSuccess("Grade submitted successfully!");
       onGradeSubmitted();
       onClose();
     } catch (error: any) {
       console.error("Error submitting grade:", error);
-      Alert.alert(
-        "Error",
-        error.message || "Failed to submit grade. Please try again."
-      );
+      showError(error.message || "Failed to submit grade. Please try again.");
     } finally {
       setSubmitting(false);
     }

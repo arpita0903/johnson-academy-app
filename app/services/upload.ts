@@ -38,9 +38,6 @@ const uploadProfilePicture = async (
     const token = await getToken();
 
     // Use native fetch instead of axios for better FormData support in React Native
-    console.log("Uploading to:", `${process.env.EXPO_PUBLIC_API_URL}/upload`);
-    console.log("Token:", token);
-    console.log("FormData:", formData);
 
     try {
       const response = await fetch(

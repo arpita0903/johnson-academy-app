@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,6 +13,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { Calendar } from "react-native-calendars";
 import { useTheme } from "../context/ThemeContext";
 import { useAppContext } from "../context/AppContext";
+import { useToast } from "../context/ToastContext";
 import { ThemeColors } from "../theme/colors";
 import { createAssignment } from "../services/assignment";
 
@@ -26,6 +26,7 @@ const PublishAssignment = ({ route, navigation }: PublishAssignmentProps) => {
   const { batch } = route.params;
   const { colors } = useTheme();
   const { user } = useAppContext();
+  const { showSuccess, showError } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [attachment, setAttachment] =
@@ -119,21 +120,16 @@ const PublishAssignment = ({ route, navigation }: PublishAssignmentProps) => {
           createdBy: user?.id,
         };
 
-        console.log("Assignment Payload:", assignmentPayload);
-        const result = await createAssignment(assignmentPayload);
+        await createAssignment(assignmentPayload);
 
-        Alert.alert("Success", "Assignment created successfully!", [
-          {
-            text: "OK",
-            onPress: () => navigation.goBack(),
-          },
-        ]);
+        showSuccess("Assignment created successfully!");
+        navigation.goBack();
       } catch (error: any) {
         console.error("Error creating assignment:", error);
         const errorMessage =
           error?.message || "Failed to create assignment. Please try again.";
         setSubmitError(errorMessage);
-        Alert.alert("Error", errorMessage);
+        showError(errorMessage);
       } finally {
         setIsLoading(false);
       }

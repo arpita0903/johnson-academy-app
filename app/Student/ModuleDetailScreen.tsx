@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Linking,
-  Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { getStudentProgress } from "../services/student";
@@ -18,6 +17,7 @@ import { useAppContext } from "../context/AppContext";
 import { useTheme } from "../context/ThemeContext";
 import { ThemeColors } from "../theme/colors";
 import StarRating from "../components/StarRating";
+import { useToast } from "../context/ToastContext";
 
 interface ModuleDetailScreenProps {
   route: {
@@ -61,6 +61,7 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
   const [selectedModuleForEnd, setSelectedModuleForEnd] =
     useState<Module | null>(null);
   const { user } = useAppContext();
+  const { showError, showSuccess, showInfo } = useToast();
   const { colors } = useTheme();
 
   useEffect(() => {
@@ -88,30 +89,28 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
   const handleStartCourse = async (module: Module) => {
     try {
       if (!user?.id) {
-        Alert.alert("Error", "User ID not found. Please try again.");
+        showError("User ID not found. Please try again.");
         return;
       }
 
       // Get syllabus ID from the progress data
       const syllabusId = progressData?.syllabusProgress?.[0]?.syllabusId?.id;
       if (!syllabusId) {
-        Alert.alert("Error", "Syllabus ID not found. Please try again.");
+        showError("Syllabus ID not found. Please try again.");
         return;
       }
 
       await startModule(progressId, module.moduleId.id, syllabusId);
 
-      Alert.alert(
-        "Module Started",
-        `Module "${module.moduleId.title}" has been started successfully.`,
-        [{ text: "OK" }]
+      showSuccess(
+        `Module "${module.moduleId.title}" has been started successfully.`
       );
 
       // Refresh the data to update the status
       await fetchProgressData();
     } catch (error) {
       console.error("Error starting module:", error);
-      Alert.alert("Error", "Failed to start the module. Please try again.");
+      showError("Failed to start the module. Please try again.");
     }
   };
 
@@ -123,23 +122,20 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
   const confirmEndModule = async () => {
     try {
       if (!user?.id || !selectedModuleForEnd) {
-        Alert.alert("Error", "User ID or module not found. Please try again.");
+        showError("User ID or module not found. Please try again.");
         return;
       }
 
       // Validate minimum star rating
-      if (starRating < 2) {
-        Alert.alert(
-          "Validation Error",
-          "Please provide a rating of at least 2 stars."
-        );
+      if (starRating < 3) {
+        showError("Please provide a rating of at least 3 stars.");
         return;
       }
 
       // Get syllabus ID from the progress data
       const syllabusId = progressData?.syllabusProgress?.[0]?.syllabusId?.id;
       if (!syllabusId) {
-        Alert.alert("Error", "Syllabus ID not found. Please try again.");
+        showError("Syllabus ID not found. Please try again.");
         return;
       }
 
@@ -150,10 +146,8 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
         starRating.toString()
       );
 
-      Alert.alert(
-        "Module Ended",
-        `Module "${selectedModuleForEnd.moduleId.title}" has been ended successfully.`,
-        [{ text: "OK" }]
+      showSuccess(
+        `Module "${selectedModuleForEnd.moduleId.title}" has been ended successfully.`
       );
 
       // Clear the form and close modal
@@ -165,7 +159,7 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
       await fetchProgressData();
     } catch (error) {
       console.error("Error ending module:", error);
-      Alert.alert("Error", "Failed to end the module. Please try again.");
+      showError("Failed to end the module. Please try again.");
     }
   };
 
@@ -200,23 +194,15 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
         if (supported) {
           await Linking.openURL(resource.file);
         } else {
-          Alert.alert(
-            "Cannot Open PDF",
-            "No PDF viewer app found on your device. Please install a PDF reader app.",
-            [{ text: "OK" }]
+          showInfo(
+            "No PDF viewer app found on your device. Please install a PDF reader app."
           );
         }
       } else {
-        Alert.alert(
-          "No PDF File",
-          "PDF file path is not available for this resource.",
-          [{ text: "OK" }]
-        );
+        showError("PDF file path is not available for this resource.");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to open PDF. Please try again.", [
-        { text: "OK" },
-      ]);
+      showError("Failed to open PDF. Please try again.");
     }
   };
 

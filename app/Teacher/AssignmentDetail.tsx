@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { deleteAssignment, getAssignmentById } from "../services/assignment";
 import { useAppContext } from "../context/AppContext";
+import { useToast } from "../context/ToastContext";
 import Icon from "react-native-vector-icons/Ionicons";
 import SubmissionDetailModal from "../components/modals/SubmissionDetailModal";
 
@@ -94,6 +95,7 @@ const AssignmentDetail: React.FC<AssignmentDetailProps> = ({
   navigation,
 }) => {
   const { user } = useAppContext();
+  const { showSuccess, showInfo } = useToast();
   const { assignmentId, assignment: initialAssignment } = route.params || {};
   const [assignment, setAssignment] = useState<Assignment>(
     initialAssignment || {
@@ -184,11 +186,8 @@ const AssignmentDetail: React.FC<AssignmentDetailProps> = ({
   };
 
   const handleSubmitAssignment = () => {
-    Alert.alert(
-      "Submit Assignment",
-      "This feature will be implemented to allow students to submit their work.",
-      [{ text: "OK" }]
-    );
+    // This feature will be implemented to allow students to submit their work.
+    // Using toast for info message instead of Alert
   };
 
   const handleEditAssignment = () => {
@@ -211,7 +210,7 @@ const AssignmentDetail: React.FC<AssignmentDetailProps> = ({
               // deleteAssignment
               // Implement delete functionality
               await deleteAssignment(assignment.id);
-              Alert.alert("Success", "Assignment deleted successfully.");
+              showSuccess("Assignment deleted successfully.");
               //go back to the previous screen
               navigation.goBack();
             },

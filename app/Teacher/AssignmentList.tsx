@@ -6,10 +6,10 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { getAssignmentsByClass } from "../services/assignment";
 import { useAppContext } from "../context/AppContext";
+import { useToast } from "../context/ToastContext";
 import TeacherAssignmentCard from "../components/TeacherAssignmentCard";
 
 interface Assignment {
@@ -47,6 +47,7 @@ const AssignmentList = React.memo<AssignmentListProps>(
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { showError } = useToast();
 
     useEffect(() => {
       fetchAssignments();
@@ -65,7 +66,7 @@ const AssignmentList = React.memo<AssignmentListProps>(
       } catch (err: any) {
         console.error("Error fetching assignments:", err);
         setError(err?.message || "Failed to fetch assignments");
-        Alert.alert("Error", "Failed to load assignments. Please try again.");
+        showError("Failed to load assignments. Please try again.");
       } finally {
         setLoading(false);
       }

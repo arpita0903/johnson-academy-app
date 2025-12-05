@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   Linking,
   TextInput,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 import { useAppContext } from "../context/AppContext";
+import { useToast } from "../context/ToastContext";
 import { ThemeColors } from "../theme/colors";
 import { Assignment } from "../types/assignment";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -32,6 +32,7 @@ const StudentAssignmentDetailScreen: React.FC<
 > = ({ route, navigation }) => {
   const { colors } = useTheme();
   const { userId } = useAppContext();
+  const { showError, showSuccess, showInfo } = useToast();
   const dynamicStyles = createStyles(colors);
   const { assignment, onSubmissionSuccess } = route.params;
 
@@ -92,7 +93,7 @@ const StudentAssignmentDetailScreen: React.FC<
 
   const handleSubmitAssignment = async () => {
     if (!fileUrl || !fileUrl.trim()) {
-      Alert.alert("Error", "Please enter a valid file URL.");
+      showError("Please enter a valid file URL.");
       return;
     }
 
@@ -100,7 +101,7 @@ const StudentAssignmentDetailScreen: React.FC<
     try {
       new URL(fileUrl.trim());
     } catch {
-      Alert.alert("Error", "Please enter a valid URL format.");
+      showError("Please enter a valid URL format.");
       return;
     }
 
@@ -109,30 +110,19 @@ const StudentAssignmentDetailScreen: React.FC<
 
       const result = await submitAssignment(assignment.id, fileUrl.trim());
 
-      Alert.alert(
-        "Success",
-        "Your assignment has been submitted successfully!",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              // Call the callback to refresh assignment data
-              if (onSubmissionSuccess) {
-                onSubmissionSuccess();
-              }
-              // Navigate back to the previous screen
-              navigation.goBack();
-            },
-          },
-        ]
-      );
+      showSuccess("Your assignment has been submitted successfully!");
+
+      // Call the callback to refresh assignment data
+      if (onSubmissionSuccess) {
+        onSubmissionSuccess();
+      }
+      // Navigate back to the previous screen
+      navigation.goBack();
     } catch (error) {
       console.error("Error submitting assignment:", error);
-      Alert.alert(
-        "Error",
+      showError(
         (error as Error).message ||
-          "Failed to submit assignment. Please try again.",
-        [{ text: "OK" }]
+          "Failed to submit assignment. Please try again."
       );
     } finally {
       setSubmitting(false);
@@ -142,7 +132,7 @@ const StudentAssignmentDetailScreen: React.FC<
   const handleOpenAttachment = async (attachment: string) => {
     try {
       if (!attachment) {
-        Alert.alert("Error", "No valid URL found for this attachment.");
+        showError("No valid URL found for this attachment.");
         return;
       }
 
@@ -150,14 +140,11 @@ const StudentAssignmentDetailScreen: React.FC<
       if (supported) {
         await Linking.openURL(attachment);
       } else {
-        Alert.alert(
-          "Error",
-          "Cannot open this attachment. Please check the URL."
-        );
+        showInfo("Cannot open this attachment. Please check the URL.");
       }
     } catch (error) {
       console.error("Error opening attachment:", error);
-      Alert.alert("Error", "Failed to open attachment. Please try again.");
+      showError("Failed to open attachment. Please try again.");
     }
   };
 

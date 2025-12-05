@@ -15,9 +15,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppContext } from "../context/AppContext";
 import { useTheme } from "../context/ThemeContext";
+import { useToast } from "../context/ToastContext";
 import { ThemeColors } from "../theme/colors";
 import { loginUser } from "../services/auth";
-import { Alert } from "react-native";
 
 interface LoginProps {
   navigation: any;
@@ -36,6 +36,7 @@ const Login = ({ navigation }: LoginProps) => {
   const [error, setError] = useState<ErrorState>({});
   const { setUser, login } = useAppContext();
   const { colors } = useTheme();
+  const { showError } = useToast();
 
   useEffect(() => {
     const setInitialRole = async () => {
@@ -79,7 +80,7 @@ const Login = ({ navigation }: LoginProps) => {
       setPassword("");
     } catch (err: any) {
       console.error("err", JSON.stringify(err));
-      Alert.alert("Login Failed", err.message || "Invalid credentials");
+      showError(err.message || "Invalid credentials");
     }
   };
 

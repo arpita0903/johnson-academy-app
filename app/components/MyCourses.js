@@ -66,9 +66,16 @@ const MyCourses = ({ userId }) => {
     try {
       setLoading(true);
       const data = await getStudentProfile(userId);
-      setCourses(data.courses);
+      setCourses(data.courses || []);
       setProgress(data.progress || []);
-      setActiveInstrument(data.courses[0].instrument);
+      // Only set active instrument if courses array exists and has at least one element
+      if (
+        data.courses &&
+        Array.isArray(data.courses) &&
+        data.courses.length > 0
+      ) {
+        setActiveInstrument(data.courses[0].instrument);
+      }
     } catch (error) {
       console.error("Error fetching progress data:", error);
     } finally {
@@ -106,111 +113,121 @@ const MyCourses = ({ userId }) => {
   return (
     <View style={dynamicStyles.card}>
       <Text style={dynamicStyles.sectionTitle}>My Courses</Text>
-      <View
-        style={{
-          marginTop: 20,
-          flexDirection: "row",
-          justifyContent: "space-between",
-        }}
-      >
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          {courses.map((course, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => setActiveInstrument(course.instrument)}
-              style={[
-                dynamicStyles.instrumentTab,
-                activeInstrument === course.instrument &&
-                  dynamicStyles.instrumentTabActive,
-              ]}
-            >
-              <Text
-                style={[
-                  dynamicStyles.instrumentTabText,
-                  activeInstrument === course.instrument &&
-                    dynamicStyles.instrumentTabTextActive,
-                ]}
-              >
-                {course.instrument}
-              </Text>
-            </TouchableOpacity>
-          ))}
+      {courses.length === 0 ? (
+        <View style={dynamicStyles.emptyContainer}>
+          <Text style={dynamicStyles.emptyText}>No courses available</Text>
         </View>
-      </View>
-
-      {/* Active Course Details */}
-      {getActiveCourse() && (
-        <View style={dynamicStyles.courseDetails}>
-          <Text style={dynamicStyles.courseName}>{getActiveCourse().name}</Text>
-
-          {/* Progress Section */}
-          <View style={dynamicStyles.progressSection}>
-            <View style={dynamicStyles.progressHeader}>
-              <Text style={dynamicStyles.progressLabel}>Progress</Text>
-              <Text style={dynamicStyles.progressPercentage}>
-                {getActiveCourse().progress}%
-              </Text>
-            </View>
-            <View style={dynamicStyles.progressBarContainer}>
-              <View
-                style={[
-                  dynamicStyles.progressBar,
-                  { width: `${getActiveCourse().progress}%` },
-                ]}
-              />
-            </View>
-
-            {/* Module Statistics */}
-            <View style={dynamicStyles.moduleStats}>
-              <View style={dynamicStyles.moduleStatItem}>
-                <View
+      ) : (
+        <>
+          <View
+            style={{
+              marginTop: 20,
+              flexDirection: "row",
+              justifyContent: "space-between",
+            }}
+          >
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              {courses.map((course, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => setActiveInstrument(course.instrument)}
                   style={[
-                    dynamicStyles.moduleStatDot,
-                    { backgroundColor: colors.success },
+                    dynamicStyles.instrumentTab,
+                    activeInstrument === course.instrument &&
+                      dynamicStyles.instrumentTabActive,
                   ]}
-                />
-                <Text style={dynamicStyles.moduleStatText}>
-                  {getActiveCourse().completedModules} Completed
-                </Text>
-              </View>
-
-              <View style={dynamicStyles.moduleStatItem}>
-                <View
-                  style={[
-                    dynamicStyles.moduleStatDot,
-                    { backgroundColor: colors.warning },
-                  ]}
-                />
-                <Text style={dynamicStyles.moduleStatText}>
-                  {getActiveCourse().inProgressModules} In Progress
-                </Text>
-              </View>
-
-              <View style={dynamicStyles.moduleStatItem}>
-                <View
-                  style={[
-                    dynamicStyles.moduleStatDot,
-                    { backgroundColor: colors.textMuted },
-                  ]}
-                />
-                <Text style={dynamicStyles.moduleStatText}>
-                  {getActiveCourse().upcomingModules} Upcoming
-                </Text>
-              </View>
-            </View>
-
-            {/* Total Modules */}
-            <View style={dynamicStyles.totalModules}>
-              <Text style={dynamicStyles.totalModulesText}>
-                Total: {getActiveCourse().totalModules} modules
-              </Text>
+                >
+                  <Text
+                    style={[
+                      dynamicStyles.instrumentTabText,
+                      activeInstrument === course.instrument &&
+                        dynamicStyles.instrumentTabTextActive,
+                    ]}
+                  >
+                    {course.instrument}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
-          {/* <Text style={dynamicStyles.courseDescription}>
+          {/* Active Course Details */}
+          {getActiveCourse() && (
+            <View style={dynamicStyles.courseDetails}>
+              <Text style={dynamicStyles.courseName}>
+                {getActiveCourse().name}
+              </Text>
+
+              {/* Progress Section */}
+              <View style={dynamicStyles.progressSection}>
+                <View style={dynamicStyles.progressHeader}>
+                  <Text style={dynamicStyles.progressLabel}>Progress</Text>
+                  <Text style={dynamicStyles.progressPercentage}>
+                    {getActiveCourse().progress}%
+                  </Text>
+                </View>
+                <View style={dynamicStyles.progressBarContainer}>
+                  <View
+                    style={[
+                      dynamicStyles.progressBar,
+                      { width: `${getActiveCourse().progress}%` },
+                    ]}
+                  />
+                </View>
+
+                {/* Module Statistics */}
+                <View style={dynamicStyles.moduleStats}>
+                  <View style={dynamicStyles.moduleStatItem}>
+                    <View
+                      style={[
+                        dynamicStyles.moduleStatDot,
+                        { backgroundColor: colors.success },
+                      ]}
+                    />
+                    <Text style={dynamicStyles.moduleStatText}>
+                      {getActiveCourse().completedModules} Completed
+                    </Text>
+                  </View>
+
+                  <View style={dynamicStyles.moduleStatItem}>
+                    <View
+                      style={[
+                        dynamicStyles.moduleStatDot,
+                        { backgroundColor: colors.warning },
+                      ]}
+                    />
+                    <Text style={dynamicStyles.moduleStatText}>
+                      {getActiveCourse().inProgressModules} In Progress
+                    </Text>
+                  </View>
+
+                  <View style={dynamicStyles.moduleStatItem}>
+                    <View
+                      style={[
+                        dynamicStyles.moduleStatDot,
+                        { backgroundColor: colors.textMuted },
+                      ]}
+                    />
+                    <Text style={dynamicStyles.moduleStatText}>
+                      {getActiveCourse().upcomingModules} Upcoming
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Total Modules */}
+                <View style={dynamicStyles.totalModules}>
+                  <Text style={dynamicStyles.totalModulesText}>
+                    Total: {getActiveCourse().totalModules} modules
+                  </Text>
+                </View>
+              </View>
+
+              {/* <Text style={dynamicStyles.courseDescription}>
               {getActiveCourse().description}
             </Text> */}
-        </View>
+            </View>
+          )}
+        </>
       )}
     </View>
   );
@@ -355,6 +372,16 @@ const createStyles = (colors) =>
       fontSize: 12,
       color: colors.textMuted,
       fontWeight: "500",
+    },
+    emptyContainer: {
+      alignItems: "center",
+      paddingVertical: 40,
+      marginTop: 20,
+    },
+    emptyText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: "center",
     },
   });
 

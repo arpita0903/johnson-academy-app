@@ -23,6 +23,7 @@ import ProfileDrawer from "./components/ProfileDrawer";
 import { AppProvider, useAppContext } from "./context/AppContext";
 import { TeacherProvider } from "./context/TeacherContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
+import { ToastProvider } from "./context/ToastContext";
 import { Provider as PaperProvider } from "react-native-paper";
 import { Image, TouchableOpacity } from "react-native";
 import AssignmentList from "./Teacher/AssignmentList";
@@ -102,7 +103,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
         name="Homepage"
         options={{
           headerShown: true,
-          headerTitle: "Johnson Music Academy",
+          headerTitle: "Johnson Academy",
           headerLeft: () => (
             <Image
               source={require("../assets/images/logo.png")}
@@ -322,22 +323,24 @@ const App = () => {
       <StatusBar style="auto" />
       <PaperProvider>
         <ThemeProvider>
-          <AppProvider>
-            <TeacherProvider>
-              {/*<NavigationContainer>*/}
-              <Drawer.Navigator
-                screenOptions={{ drawerPosition: "right" }}
-                drawerContent={(props) => <ProfileDrawer {...props} />}
-              >
-                <Drawer.Screen
-                  name="Main"
-                  component={StackScreens}
-                  options={{ headerShown: false }}
-                />
-              </Drawer.Navigator>
-              {/*</NavigationContainer>*/}
-            </TeacherProvider>
-          </AppProvider>
+          <ToastProvider>
+            <AppProvider>
+              <TeacherProvider>
+                {/*<NavigationContainer>*/}
+                <Drawer.Navigator
+                  screenOptions={{ drawerPosition: "right" }}
+                  drawerContent={(props) => <ProfileDrawer {...props} />}
+                >
+                  <Drawer.Screen
+                    name="Main"
+                    component={StackScreens}
+                    options={{ headerShown: false }}
+                  />
+                </Drawer.Navigator>
+                {/*</NavigationContainer>*/}
+              </TeacherProvider>
+            </AppProvider>
+          </ToastProvider>
         </ThemeProvider>
       </PaperProvider>
     </SafeAreaProvider>
