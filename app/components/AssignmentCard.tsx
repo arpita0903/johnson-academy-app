@@ -51,11 +51,8 @@ const AssignmentCard = ({ assignment, onPress }: AssignmentCardProps) => {
 
   const getAssignmentStatus = (assignment: Assignment) => {
     // Check if current user has submitted this assignment
-    const hasSubmitted = assignment.submissions?.some(
-      (submission) => submission.student.id === userId
-    );
 
-    if (hasSubmitted) {
+    if (assignment.status === "submitted") {
       return "submitted";
     }
 
@@ -94,7 +91,9 @@ const AssignmentCard = ({ assignment, onPress }: AssignmentCardProps) => {
         </View>
 
         <View style={dynamicStyles.infoRow}>
-          <Text style={dynamicStyles.className}>{assignment.classId.name}</Text>
+          <Text style={dynamicStyles.className}>
+            {assignment.classId?.name || "Unknown Class"}
+          </Text>
           <Text
             style={[
               dynamicStyles.dueDate,

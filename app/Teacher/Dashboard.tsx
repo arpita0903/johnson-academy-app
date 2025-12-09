@@ -134,10 +134,10 @@ const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
                   <View style={dynamicStyles.classInfo}>
                     <Text style={dynamicStyles.className}>{item.name}</Text>
                     <Text style={dynamicStyles.courseName}>
-                      {item.courseId.name}
+                      {item.courseId?.name}
                     </Text>
                   </View>
-                  {item.courseId.image && (
+                  {item.courseId?.image && (
                     <View>
                       <Image
                         source={{ uri: item.courseId.image }}

@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 import { ThemeColors } from "../theme/colors";
-import { Assignment, AssignmentCardProps } from "../types/assignment";
+import { AssignmentCardProps } from "../types/assignment";
 
 const TeacherAssignmentCard = ({
   assignment,
@@ -62,7 +62,7 @@ const TeacherAssignmentCard = ({
       total: totalStudents,
       submitted: submittedCount,
       graded: gradedCount,
-      pending: totalStudents - submittedCount,
+      pending: Math.max(0, totalStudents - submittedCount),
     };
   };
 

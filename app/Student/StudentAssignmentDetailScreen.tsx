@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Linking,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 import { useAppContext } from "../context/AppContext";
@@ -157,116 +159,191 @@ const StudentAssignmentDetailScreen: React.FC<
   );
 
   return (
-    <ScrollView
+    <KeyboardAvoidingView
       style={dynamicStyles.container}
-      showsVerticalScrollIndicator={false}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
-      {/* Header */}
-      <View style={dynamicStyles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" size={28} color={colors.primary} />
-        </TouchableOpacity>
-        <Text style={dynamicStyles.headerTitle}>Assignment Details</Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <ScrollView
+        style={dynamicStyles.container}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View style={dynamicStyles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" size={28} color={colors.primary} />
+          </TouchableOpacity>
+          <Text style={dynamicStyles.headerTitle}>Assignment Details</Text>
+          <View style={{ width: 28 }} />
+        </View>
 
-      {/* Assignment Content */}
-      <View style={dynamicStyles.content}>
-        {/* Title and Status */}
-        <View style={dynamicStyles.titleSection}>
-          <Text style={dynamicStyles.title}>{assignment.title}</Text>
+        {/* Assignment Content */}
+        <View style={dynamicStyles.content}>
+          {/* Title and Status */}
+          <View style={dynamicStyles.titleSection}>
+            <Text style={dynamicStyles.title}>{assignment.title}</Text>
+            <View
+              style={[
+                dynamicStyles.statusBadge,
+                { backgroundColor: getStatusColor(currentStatus) },
+              ]}
+            >
+              <Text style={dynamicStyles.statusText}>
+                {getStatusText(currentStatus)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Class Information */}
+          <View style={dynamicStyles.infoCard}>
+            <View style={dynamicStyles.infoRow}>
+              <Text style={dynamicStyles.infoLabel}>Class</Text>
+              <Text style={dynamicStyles.infoValue}>
+                {assignment.classId.name}
+              </Text>
+            </View>
+            <View style={dynamicStyles.infoRow}>
+              <Text style={dynamicStyles.infoLabel}>Instructor</Text>
+              <Text style={dynamicStyles.infoValue}>
+                {assignment.teacherId.name}
+              </Text>
+            </View>
+          </View>
+
+          {/* Due Date */}
           <View
             style={[
-              dynamicStyles.statusBadge,
-              { backgroundColor: getStatusColor(currentStatus) },
-            ]}
-          >
-            <Text style={dynamicStyles.statusText}>
-              {getStatusText(currentStatus)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Class Information */}
-        <View style={dynamicStyles.infoCard}>
-          <View style={dynamicStyles.infoRow}>
-            <Text style={dynamicStyles.infoLabel}>Class</Text>
-            <Text style={dynamicStyles.infoValue}>
-              {assignment.classId.name}
-            </Text>
-          </View>
-          <View style={dynamicStyles.infoRow}>
-            <Text style={dynamicStyles.infoLabel}>Instructor</Text>
-            <Text style={dynamicStyles.infoValue}>
-              {assignment.teacherId.name}
-            </Text>
-          </View>
-        </View>
-
-        {/* Due Date */}
-        <View
-          style={[
-            dynamicStyles.dueDateCard,
-            {
-              borderLeftColor: isOverdue(assignment.dueDate)
-                ? colors.error
-                : colors.primary,
-            },
-          ]}
-        >
-          <View style={dynamicStyles.dueDateHeader}>
-            <Icon name="calendar-outline" size={20} color={colors.primary} />
-            <Text style={dynamicStyles.dueDateLabel}>Due Date</Text>
-          </View>
-          <Text
-            style={[
-              dynamicStyles.dueDate,
+              dynamicStyles.dueDateCard,
               {
-                color: isOverdue(assignment.dueDate)
+                borderLeftColor: isOverdue(assignment.dueDate)
                   ? colors.error
-                  : colors.text,
+                  : colors.primary,
               },
             ]}
           >
-            {formatDate(assignment.dueDate)}
-          </Text>
-          {isOverdue(assignment.dueDate) && (
-            <Text style={dynamicStyles.overdueText}>
-              This assignment is overdue
+            <View style={dynamicStyles.dueDateHeader}>
+              <Icon name="calendar-outline" size={20} color={colors.primary} />
+              <Text style={dynamicStyles.dueDateLabel}>Due Date</Text>
+            </View>
+            <Text
+              style={[
+                dynamicStyles.dueDate,
+                {
+                  color: isOverdue(assignment.dueDate)
+                    ? colors.error
+                    : colors.text,
+                },
+              ]}
+            >
+              {formatDate(assignment.dueDate)}
             </Text>
-          )}
-        </View>
-
-        {/* Description */}
-        {assignment.description && (
-          <View style={dynamicStyles.descriptionCard}>
-            <Text style={dynamicStyles.descriptionLabel}>Description</Text>
-            <Text style={dynamicStyles.description}>
-              {assignment.description}
-            </Text>
+            {isOverdue(assignment.dueDate) && (
+              <Text style={dynamicStyles.overdueText}>
+                This assignment is overdue
+              </Text>
+            )}
           </View>
-        )}
 
-        {/* Attachments */}
-        {assignment.attachments && assignment.attachments.length > 0 && (
-          <View style={dynamicStyles.attachmentsCard}>
-            <Text style={dynamicStyles.sectionTitle}>Assignment Files</Text>
-            {assignment.attachments.map((attachment, index) => (
+          {/* Description */}
+          {assignment.description && (
+            <View style={dynamicStyles.descriptionCard}>
+              <Text style={dynamicStyles.descriptionLabel}>Description</Text>
+              <Text style={dynamicStyles.description}>
+                {assignment.description}
+              </Text>
+            </View>
+          )}
+
+          {/* Attachments */}
+          {assignment.attachments && assignment.attachments.length > 0 && (
+            <View style={dynamicStyles.attachmentsCard}>
+              <Text style={dynamicStyles.sectionTitle}>Assignment Files</Text>
+              {assignment.attachments.map((attachment, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={dynamicStyles.attachmentItem}
+                  onPress={() => handleOpenAttachment(attachment)}
+                  activeOpacity={0.7}
+                >
+                  <Icon
+                    name="document-outline"
+                    size={20}
+                    color={colors.primary}
+                  />
+                  <Text style={dynamicStyles.attachmentText}>
+                    {attachment.includes("http")
+                      ? `Attachment ${index + 1}`
+                      : attachment}
+                  </Text>
+                  <Icon
+                    name="open-outline"
+                    size={16}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* Submission Status */}
+          <View style={dynamicStyles.submissionCard}>
+            <Text style={dynamicStyles.sectionTitle}>Your Submission</Text>
+            {hasUserSubmitted ? (
+              <View style={dynamicStyles.submittedStatus}>
+                <Icon
+                  name="checkmark-circle"
+                  size={24}
+                  color={colors.success || "#4CAF50"}
+                />
+                <View style={dynamicStyles.submittedInfo}>
+                  <Text style={dynamicStyles.submittedText}>
+                    Assignment Submitted
+                  </Text>
+                  <Text style={dynamicStyles.submittedDate}>
+                    Submitted on{" "}
+                    {userSubmission?.submittedAt
+                      ? new Date(
+                          userSubmission.submittedAt
+                        ).toLocaleDateString()
+                      : "Unknown date"}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <View style={dynamicStyles.pendingStatus}>
+                <Icon
+                  name="time-outline"
+                  size={24}
+                  color={colors.warning || "#FF9800"}
+                />
+                <Text style={dynamicStyles.pendingText}>
+                  Assignment Pending
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Student Submitted Attachment */}
+          {hasUserSubmitted && userSubmission?.fileUrl && (
+            <View style={dynamicStyles.submittedAttachmentCard}>
+              <Text style={dynamicStyles.sectionTitle}>
+                Your Submitted File
+              </Text>
               <TouchableOpacity
-                key={index}
-                style={dynamicStyles.attachmentItem}
-                onPress={() => handleOpenAttachment(attachment)}
+                style={dynamicStyles.submittedAttachmentItem}
+                onPress={() => handleOpenAttachment(userSubmission.fileUrl)}
                 activeOpacity={0.7}
               >
                 <Icon
                   name="document-outline"
                   size={20}
-                  color={colors.primary}
+                  color={colors.success || "#4CAF50"}
                 />
-                <Text style={dynamicStyles.attachmentText}>
-                  {attachment.includes("http")
-                    ? `Attachment ${index + 1}`
-                    : attachment}
+                <Text style={dynamicStyles.submittedAttachmentText}>
+                  {userSubmission.fileUrl.includes("http")
+                    ? `Your submitted file`
+                    : userSubmission.fileUrl}
                 </Text>
                 <Icon
                   name="open-outline"
@@ -274,115 +351,57 @@ const StudentAssignmentDetailScreen: React.FC<
                   color={colors.textSecondary}
                 />
               </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Submission Status */}
-        <View style={dynamicStyles.submissionCard}>
-          <Text style={dynamicStyles.sectionTitle}>Your Submission</Text>
-          {hasUserSubmitted ? (
-            <View style={dynamicStyles.submittedStatus}>
-              <Icon
-                name="checkmark-circle"
-                size={24}
-                color={colors.success || "#4CAF50"}
-              />
-              <View style={dynamicStyles.submittedInfo}>
-                <Text style={dynamicStyles.submittedText}>
-                  Assignment Submitted
-                </Text>
-                <Text style={dynamicStyles.submittedDate}>
-                  Submitted on{" "}
-                  {userSubmission?.submittedAt
-                    ? new Date(userSubmission.submittedAt).toLocaleDateString()
-                    : "Unknown date"}
-                </Text>
-              </View>
             </View>
-          ) : (
-            <View style={dynamicStyles.pendingStatus}>
-              <Icon
-                name="time-outline"
-                size={24}
-                color={colors.warning || "#FF9800"}
+          )}
+
+          {/* Submission Form */}
+          {!hasUserSubmitted && (
+            <View style={dynamicStyles.submissionForm}>
+              <Text style={dynamicStyles.sectionTitle}>Submit Your Work</Text>
+              <TextInput
+                style={dynamicStyles.urlInput}
+                placeholder="Enter file URL (e.g., https://example.com/your-file.pdf)"
+                placeholderTextColor={colors.textSecondary}
+                value={fileUrl}
+                onChangeText={setFileUrl}
+                keyboardType="url"
+                autoCapitalize="none"
+                autoCorrect={false}
               />
-              <Text style={dynamicStyles.pendingText}>Assignment Pending</Text>
+              <TouchableOpacity
+                style={[
+                  dynamicStyles.submitButton,
+                  {
+                    backgroundColor: isOverdue(assignment.dueDate)
+                      ? colors.error
+                      : colors.primary,
+                  },
+                ]}
+                onPress={handleSubmitAssignment}
+                disabled={submitting || !fileUrl.trim()}
+              >
+                {submitting ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <>
+                    <Icon
+                      name="cloud-upload-outline"
+                      size={20}
+                      color="#ffffff"
+                    />
+                    <Text style={dynamicStyles.submitButtonText}>
+                      {isOverdue(assignment.dueDate)
+                        ? "Submit Late"
+                        : "Submit Assignment"}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
           )}
         </View>
-
-        {/* Student Submitted Attachment */}
-        {hasUserSubmitted && userSubmission?.fileUrl && (
-          <View style={dynamicStyles.submittedAttachmentCard}>
-            <Text style={dynamicStyles.sectionTitle}>Your Submitted File</Text>
-            <TouchableOpacity
-              style={dynamicStyles.submittedAttachmentItem}
-              onPress={() => handleOpenAttachment(userSubmission.fileUrl)}
-              activeOpacity={0.7}
-            >
-              <Icon
-                name="document-outline"
-                size={20}
-                color={colors.success || "#4CAF50"}
-              />
-              <Text style={dynamicStyles.submittedAttachmentText}>
-                {userSubmission.fileUrl.includes("http")
-                  ? `Your submitted file`
-                  : userSubmission.fileUrl}
-              </Text>
-              <Icon
-                name="open-outline"
-                size={16}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Submission Form */}
-        {!hasUserSubmitted && (
-          <View style={dynamicStyles.submissionForm}>
-            <Text style={dynamicStyles.sectionTitle}>Submit Your Work</Text>
-            <TextInput
-              style={dynamicStyles.urlInput}
-              placeholder="Enter file URL (e.g., https://example.com/your-file.pdf)"
-              placeholderTextColor={colors.textSecondary}
-              value={fileUrl}
-              onChangeText={setFileUrl}
-              keyboardType="url"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <TouchableOpacity
-              style={[
-                dynamicStyles.submitButton,
-                {
-                  backgroundColor: isOverdue(assignment.dueDate)
-                    ? colors.error
-                    : colors.primary,
-                },
-              ]}
-              onPress={handleSubmitAssignment}
-              disabled={submitting || !fileUrl.trim()}
-            >
-              {submitting ? (
-                <ActivityIndicator color="#ffffff" size="small" />
-              ) : (
-                <>
-                  <Icon name="cloud-upload-outline" size={20} color="#ffffff" />
-                  <Text style={dynamicStyles.submitButtonText}>
-                    {isOverdue(assignment.dueDate)
-                      ? "Submit Late"
-                      : "Submit Assignment"}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 

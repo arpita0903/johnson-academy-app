@@ -2,7 +2,7 @@
   "expo": {
     "name": "Johnson Academy",
     "slug": "johnson-academy-app",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "johnsonacademy",
@@ -10,13 +10,8 @@
     "newArchEnabled": true,
     "jsEngine": "hermes",
     "description": "Johnson Academy - Music Education Platform",
-    "privacy": "public",
     "ios": {
       "supportsTablet": true,
-      "statusBar": {
-        "style": "dark",
-        "backgroundColor": "#ffffff"
-      },
       "bundleIdentifier": "com.johnsonacademy.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

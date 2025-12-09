@@ -42,7 +42,6 @@ interface AssignmentListProps {
 
 const AssignmentList = React.memo<AssignmentListProps>(
   ({ route, navigation }) => {
-    const { user } = useAppContext();
     const { batch } = route.params;
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [loading, setLoading] = useState(true);
@@ -60,7 +59,6 @@ const AssignmentList = React.memo<AssignmentListProps>(
 
         // Use batch.id as classId for fetching assignments
         const classId = batch.id;
-
         const fetchedAssignments = await getAssignmentsByClass(classId);
         setAssignments(fetchedAssignments || []);
       } catch (err: any) {

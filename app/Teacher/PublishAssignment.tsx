@@ -7,6 +7,8 @@ import {
   StyleSheet,
   Platform,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as DocumentPicker from "expo-document-picker";
@@ -140,145 +142,165 @@ const PublishAssignment = ({ route, navigation }: PublishAssignmentProps) => {
 
   return (
     <SafeAreaView style={dynamicStyles.safeArea} edges={["top"]}>
-      <View style={dynamicStyles.container}>
-        <Text style={dynamicStyles.title}>Create Assignment</Text>
-        <Text style={dynamicStyles.batchName}>Class: {batch.name}</Text>
-
-        <View>
-          <TextInput
-            style={[
-              dynamicStyles.input,
-              errors.title && dynamicStyles.inputError,
-            ]}
-            placeholder="Assignment Title"
-            placeholderTextColor={colors.placeholderText}
-            value={title}
-            onChangeText={(text) => {
-              setTitle(text);
-              clearError("title");
-              clearSubmitError();
-            }}
-          />
-          {errors.title ? (
-            <Text style={dynamicStyles.errorText}>{errors.title}</Text>
-          ) : null}
-        </View>
-
-        <View>
-          <TextInput
-            style={[
-              dynamicStyles.input,
-              dynamicStyles.multilineInput,
-              errors.description && dynamicStyles.inputError,
-            ]}
-            placeholder="Description"
-            placeholderTextColor={colors.placeholderText}
-            multiline
-            value={description}
-            onChangeText={(text) => {
-              setDescription(text);
-              clearError("description");
-              clearSubmitError();
-            }}
-          />
-          {errors.description ? (
-            <Text style={dynamicStyles.errorText}>{errors.description}</Text>
-          ) : null}
-        </View>
-
-        <View>
-          <TouchableOpacity
-            onPress={() => {
-              setShowCalendar(!showCalendar);
-              clearError("dueDate");
-              clearSubmitError();
-            }}
-            style={[
-              dynamicStyles.dateButton,
-              errors.dueDate && dynamicStyles.dateButtonError,
-            ]}
-          >
-            <Text style={dynamicStyles.dateButtonText}>
-              Due Date: {formatDate(dueDate)}
-            </Text>
-            <Text style={dynamicStyles.dateButtonSubtext}>Tap to change</Text>
-          </TouchableOpacity>
-          {errors.dueDate ? (
-            <Text style={dynamicStyles.errorText}>{errors.dueDate}</Text>
-          ) : null}
-        </View>
-
-        {showCalendar && (
-          <View style={dynamicStyles.calendarContainer}>
-            <Calendar
-              onDayPress={handleDateSelect}
-              markedDates={{
-                [dueDate]: { selected: true, selectedColor: colors.primary },
-              }}
-              minDate={new Date().toISOString().split("T")[0]}
-              theme={{
-                backgroundColor: colors.card,
-                calendarBackground: colors.card,
-                textSectionTitleColor: colors.text,
-                selectedDayBackgroundColor: colors.primary,
-                selectedDayTextColor: colors.primaryText,
-                todayTextColor: colors.primary,
-                dayTextColor: colors.text,
-                textDisabledColor: colors.textMuted,
-                dotColor: colors.primary,
-                selectedDotColor: colors.primaryText,
-                arrowColor: colors.primary,
-                monthTextColor: colors.text,
-                indicatorColor: colors.primary,
-                textDayFontWeight: "500",
-                textMonthFontWeight: "bold",
-                textDayHeaderFontWeight: "600",
-                textDayFontSize: 16,
-                textMonthFontSize: 18,
-                textDayHeaderFontSize: 14,
-              }}
-              style={dynamicStyles.calendar}
-            />
-          </View>
-        )}
-
-        <TouchableOpacity
-          onPress={handleFileUpload}
-          style={dynamicStyles.uploadButton}
+      <KeyboardAvoidingView
+        style={dynamicStyles.keyboardAvoidingView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <ScrollView
+          style={dynamicStyles.scrollView}
+          contentContainerStyle={dynamicStyles.scrollViewContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={dynamicStyles.uploadText}>
-            {attachment && !attachment.canceled
-              ? attachment.assets?.[0]?.name || "PDF Selected"
-              : "Upload PDF"}
-          </Text>
-        </TouchableOpacity>
+          <View style={dynamicStyles.container}>
+            <Text style={dynamicStyles.title}>Create Assignment</Text>
+            <Text style={dynamicStyles.batchName}>Class: {batch.name}</Text>
 
-        {submitError ? (
-          <View style={dynamicStyles.errorContainer}>
-            <Text style={dynamicStyles.errorText}>{submitError}</Text>
-          </View>
-        ) : null}
-
-        <TouchableOpacity
-          onPress={handleSubmit}
-          style={[
-            dynamicStyles.submitButton,
-            isLoading && dynamicStyles.submitButtonDisabled,
-          ]}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <View style={dynamicStyles.loadingContainer}>
-              <ActivityIndicator color={colors.primaryText} size="small" />
-              <Text style={[dynamicStyles.submitText, { marginLeft: 8 }]}>
-                Creating...
-              </Text>
+            <View>
+              <TextInput
+                style={[
+                  dynamicStyles.input,
+                  errors.title && dynamicStyles.inputError,
+                ]}
+                placeholder="Assignment Title"
+                placeholderTextColor={colors.placeholderText}
+                value={title}
+                onChangeText={(text) => {
+                  setTitle(text);
+                  clearError("title");
+                  clearSubmitError();
+                }}
+              />
+              {errors.title ? (
+                <Text style={dynamicStyles.errorText}>{errors.title}</Text>
+              ) : null}
             </View>
-          ) : (
-            <Text style={dynamicStyles.submitText}>Create Assignment</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+
+            <View>
+              <TextInput
+                style={[
+                  dynamicStyles.input,
+                  dynamicStyles.multilineInput,
+                  errors.description && dynamicStyles.inputError,
+                ]}
+                placeholder="Description"
+                placeholderTextColor={colors.placeholderText}
+                multiline
+                value={description}
+                onChangeText={(text) => {
+                  setDescription(text);
+                  clearError("description");
+                  clearSubmitError();
+                }}
+              />
+              {errors.description ? (
+                <Text style={dynamicStyles.errorText}>
+                  {errors.description}
+                </Text>
+              ) : null}
+            </View>
+
+            <View>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowCalendar(!showCalendar);
+                  clearError("dueDate");
+                  clearSubmitError();
+                }}
+                style={[
+                  dynamicStyles.dateButton,
+                  errors.dueDate && dynamicStyles.dateButtonError,
+                ]}
+              >
+                <Text style={dynamicStyles.dateButtonText}>
+                  Due Date: {formatDate(dueDate)}
+                </Text>
+                <Text style={dynamicStyles.dateButtonSubtext}>
+                  Tap to change
+                </Text>
+              </TouchableOpacity>
+              {errors.dueDate ? (
+                <Text style={dynamicStyles.errorText}>{errors.dueDate}</Text>
+              ) : null}
+            </View>
+
+            {showCalendar && (
+              <View style={dynamicStyles.calendarContainer}>
+                <Calendar
+                  onDayPress={handleDateSelect}
+                  markedDates={{
+                    [dueDate]: {
+                      selected: true,
+                      selectedColor: colors.primary,
+                    },
+                  }}
+                  minDate={new Date().toISOString().split("T")[0]}
+                  theme={{
+                    backgroundColor: colors.card,
+                    calendarBackground: colors.card,
+                    textSectionTitleColor: colors.text,
+                    selectedDayBackgroundColor: colors.primary,
+                    selectedDayTextColor: colors.primaryText,
+                    todayTextColor: colors.primary,
+                    dayTextColor: colors.text,
+                    textDisabledColor: colors.textMuted,
+                    dotColor: colors.primary,
+                    selectedDotColor: colors.primaryText,
+                    arrowColor: colors.primary,
+                    monthTextColor: colors.text,
+                    indicatorColor: colors.primary,
+                    textDayFontWeight: "500",
+                    textMonthFontWeight: "bold",
+                    textDayHeaderFontWeight: "600",
+                    textDayFontSize: 16,
+                    textMonthFontSize: 18,
+                    textDayHeaderFontSize: 14,
+                  }}
+                  style={dynamicStyles.calendar}
+                />
+              </View>
+            )}
+
+            <TouchableOpacity
+              onPress={handleFileUpload}
+              style={dynamicStyles.uploadButton}
+            >
+              <Text style={dynamicStyles.uploadText}>
+                {attachment && !attachment.canceled
+                  ? attachment.assets?.[0]?.name || "PDF Selected"
+                  : "Upload PDF"}
+              </Text>
+            </TouchableOpacity>
+
+            {submitError ? (
+              <View style={dynamicStyles.errorContainer}>
+                <Text style={dynamicStyles.errorText}>{submitError}</Text>
+              </View>
+            ) : null}
+
+            <TouchableOpacity
+              onPress={handleSubmit}
+              style={[
+                dynamicStyles.submitButton,
+                isLoading && dynamicStyles.submitButtonDisabled,
+              ]}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <View style={dynamicStyles.loadingContainer}>
+                  <ActivityIndicator color={colors.primaryText} size="small" />
+                  <Text style={[dynamicStyles.submitText, { marginLeft: 8 }]}>
+                    Creating...
+                  </Text>
+                </View>
+              ) : (
+                <Text style={dynamicStyles.submitText}>Create Assignment</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -291,8 +313,16 @@ const createStyles = (colors: ThemeColors) =>
       flex: 1,
       backgroundColor: colors.background,
     },
-    container: {
+    keyboardAvoidingView: {
       flex: 1,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollViewContent: {
+      flexGrow: 1,
+    },
+    container: {
       padding: 20,
       backgroundColor: colors.background,
     },

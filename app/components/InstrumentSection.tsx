@@ -136,7 +136,7 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
               <Text style={dynamicStyles.instrumentName}>{item.name}</Text>
               // ellipsis one line text
               <Text style={dynamicStyles.courseName} numberOfLines={1}>
-                {item.courseId.name}
+                {item.courseId?.name}
               </Text>
             </View>
           </TouchableOpacity>
