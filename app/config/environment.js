@@ -5,17 +5,17 @@ import Constants from "expo-constants";
 
 const ENV = {
   development: {
-    API_BASE_URL: "https://johnson-academy-be-latest-1.onrender.com/v1",
+    API_BASE_URL: "https://api-dev.johnsonsacademy.in/v1",
     API_TIMEOUT: 10000,
     DEBUG: true,
   },
   preview: {
-    API_BASE_URL: "https://johnson-academy-be-latest-1.onrender.com/v1",
+    API_BASE_URL: "https://api-dev.johnsonsacademy.in/v1",
     API_TIMEOUT: 15000,
     DEBUG: false,
   },
   production: {
-    API_BASE_URL: "https://johnson-academy-be-latest-1.onrender.com/v1",
+    API_BASE_URL: "https://api-dev.johnsonsacademy.in/v1",
     API_TIMEOUT: 20000,
     DEBUG: false,
   },
