@@ -25,7 +25,6 @@
     },
     "production": {
       "android": {
-        "buildType": "apk",
         "gradleCommand": ":app:bundleRelease"
       },
       "ios": {
