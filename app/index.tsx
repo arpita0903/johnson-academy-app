@@ -26,10 +26,6 @@ import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { ToastProvider } from "./context/ToastContext";
 import { Provider as PaperProvider } from "react-native-paper";
 import { Image, TouchableOpacity } from "react-native";
-import AssignmentList from "./Teacher/AssignmentList";
-import AssignmentDetail from "./Teacher/AssignmentDetail";
-import PublishAssignment from "./Teacher/PublishAssignment";
-import StudentAssignmentDetailScreen from "./Student/StudentAssignmentDetailScreen";
 
 import Icon from "react-native-vector-icons/Foundation";
 import StudentDetailsScreen from "./Teacher/StudentDetailsScreen";
@@ -75,7 +71,6 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
       />
       <Stack.Screen
         name="Course"
-        component={CourseDetails}
         options={({ route, navigation }) => ({
           headerRight:
             user?.role === "teacher"
@@ -97,17 +92,24 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
                 )
               : undefined,
         })}
-      />
+      >
+        {(props) => <CourseDetails {...(props as any)} />}
+      </Stack.Screen>
 
       <Stack.Screen
         name="Homepage"
         options={{
           headerShown: true,
-          headerTitle: "Johnson Academy",
+          headerTitle: "Dashboard",
           headerLeft: () => (
             <Image
               source={require("../assets/images/logo.png")}
-              style={{ width: 32, height: 32 }}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                overflow: "hidden",
+              }}
             />
           ),
           headerRight: () => (
@@ -132,11 +134,24 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
         )}
       </Stack.Screen>
       <Stack.Screen name="Detail" component={DetailScreen} />
-      <Stack.Screen name="ModuleDetail" component={ModuleDetailScreen} />
+      <Stack.Screen name="ModuleDetail">
+        {(props) => <ModuleDetailScreen {...(props as any)} />}
+      </Stack.Screen>
       <Stack.Screen
         name="TeacherDashboard"
         options={{
-          headerTitle: "Teacher Dashboard",
+          headerTitle: "Dashboard",
+          headerLeft: () => (
+            <Image
+              source={require("../assets/images/logo.png")}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                overflow: "hidden",
+              }}
+            />
+          ),
           headerRight: () => (
             <TouchableOpacity onPress={() => navigation.openDrawer()}>
               <Icon
@@ -162,7 +177,6 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
         name="StudentList"
         options={{
           headerTitle: "Student List",
-
           headerRight: () => (
             <TouchableOpacity onPress={() => navigation.openDrawer()}>
               <Icon
@@ -210,53 +224,6 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
         )}
       </Stack.Screen>
       <Stack.Screen
-        name="PublishAssignment"
-        options={{
-          headerTitle: "Publish Assignment",
-          headerRight: () => (
-            <TouchableOpacity onPress={() => navigation.openDrawer()}>
-              <Icon
-                name="list"
-                size={32}
-                color={colors.primary}
-                style={{ width: 40, marginRight: 10 }}
-              />
-            </TouchableOpacity>
-          ),
-        }}
-      >
-        {(props) => (
-          <ProtectedWrapper {...props} requiredRole="teacher">
-            <PublishAssignment {...props} />
-          </ProtectedWrapper>
-        )}
-      </Stack.Screen>
-      <Stack.Screen
-        name="AssignmentList"
-        options={{
-          headerTitle: "Assignment List",
-          headerRight: () => (
-            <TouchableOpacity onPress={() => navigation.openDrawer()}>
-              <Icon
-                name="list"
-                size={32}
-                color={colors.primary}
-                style={{ width: 40, marginRight: 10 }}
-              />
-            </TouchableOpacity>
-          ),
-        }}
-      >
-        {(props) => (
-          <ProtectedWrapper
-            navigation={props.navigation}
-            requiredRole="teacher"
-          >
-            <AssignmentList {...props} />
-          </ProtectedWrapper>
-        )}
-      </Stack.Screen>
-      <Stack.Screen
         name="StudentDetailsScreen"
         options={{
           headerTitle: "Student Details",
@@ -277,39 +244,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
             navigation={props.navigation}
             requiredRole="teacher"
           >
-            <StudentDetailsScreen {...props} />
-          </ProtectedWrapper>
-        )}
-      </Stack.Screen>
-      <Stack.Screen
-        name="AssignmentDetail"
-        options={{
-          title: "Assignment Details",
-          headerShown: false, // We're using custom header in the component
-        }}
-      >
-        {(props) => (
-          <ProtectedWrapper
-            navigation={props.navigation}
-            requiredRole={user?.role}
-          >
-            <AssignmentDetail {...props} />
-          </ProtectedWrapper>
-        )}
-      </Stack.Screen>
-      <Stack.Screen
-        name="StudentAssignmentDetail"
-        options={{
-          title: "Assignment Details",
-          headerShown: false, // We're using custom header in the component
-        }}
-      >
-        {(props) => (
-          <ProtectedWrapper
-            navigation={props.navigation}
-            requiredRole="student"
-          >
-            <StudentAssignmentDetailScreen {...props} />
+            <StudentDetailsScreen />
           </ProtectedWrapper>
         )}
       </Stack.Screen>

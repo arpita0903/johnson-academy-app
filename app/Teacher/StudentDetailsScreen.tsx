@@ -132,7 +132,32 @@ const StudentDetailsScreen = () => {
   ]);
 
   const handleChange = (key: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
+    // For numeric fields (excluding remarks), validate input in real-time
+    if (key !== "remarks") {
+      // Allow empty string for clearing
+      if (value === "") {
+        setFormData((prev) => ({ ...prev, [key]: value }));
+        return;
+      }
+
+      // Only allow numeric input
+      const numericValue = value.replace(/[^0-9]/g, "");
+      if (numericValue === "") {
+        setFormData((prev) => ({ ...prev, [key]: "" }));
+        return;
+      }
+
+      const num = parseInt(numericValue);
+      // Enforce max value of 5
+      if (num > 5) {
+        return; // Don't update if value exceeds 5
+      }
+
+      setFormData((prev) => ({ ...prev, [key]: numericValue }));
+    } else {
+      // For remarks, allow any text
+      setFormData((prev) => ({ ...prev, [key]: value }));
+    }
   };
 
   const handleSubmit = async () => {
@@ -161,14 +186,20 @@ const StudentDetailsScreen = () => {
       return;
     }
 
-    // Validate score ranges (1-5)
+    // Validate remarks field (mandatory)
+    if (!formData.remarks || formData.remarks.trim() === "") {
+      alert("Please fill in the Remarks field");
+      return;
+    }
+
+    // Validate score ranges (> 2 and max 5, so 3-5)
     const invalidScores = requiredFields.filter((field) => {
       const score = parseInt(formData[field]);
-      return score < 1 || score > 5;
+      return score <= 2 || score > 5;
     });
 
     if (invalidScores.length > 0) {
-      alert("All scores must be between 1 and 5");
+      alert("All scores must be more than 2 and maximum 5 (valid range: 3-5)");
       return;
     }
 
@@ -371,6 +402,8 @@ const StudentDetailsScreen = () => {
                             onPress={() => setMenuVisible(true)}
                             style={dynamicStyles.dropdown}
                             contentStyle={{ justifyContent: "flex-start" }}
+                            textColor={colors.text}
+                            buttonColor="transparent"
                           >
                             {selectedMonth
                               ? filteredMonths.find(
@@ -431,16 +464,14 @@ const StudentDetailsScreen = () => {
                 ].map((field, idx) => (
                   <View key={field} style={dynamicStyles.inputGroup}>
                     <Text style={dynamicStyles.inputLabel}>
-                      {field === "remarks" ? "Remarks" : `${field} *`}
+                      {field === "remarks" ? "Remarks *" : `${field} *`}
                     </Text>
                     <TextInput
                       style={dynamicStyles.input}
                       value={formData[field]}
                       onChangeText={(text) => handleChange(field, text)}
                       placeholder={
-                        field === "remarks"
-                          ? "Enter remarks (optional)"
-                          : `Max marks: 5`
+                        field === "remarks" ? "Enter remarks" : `Range: 3-5`
                       }
                       placeholderTextColor={colors.placeholderText}
                       keyboardType={field === "remarks" ? "default" : "numeric"}
@@ -718,7 +749,7 @@ const createStyles = (colors: ThemeColors) =>
     dropdownLabel: {
       fontSize: 14,
       fontWeight: "600",
-      marginBottom: 4,
+      marginBottom: 10,
       color: colors.text,
     },
     noMonthsContainer: {

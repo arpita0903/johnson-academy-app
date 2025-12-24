@@ -271,16 +271,25 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
             </View>
           </View>
         )}
+        {/* Status */}
+        <View style={[dynamicStyles.section, dynamicStyles.sectionBgAlt]}>
+          <View style={dynamicStyles.labelRow}>
+            <Text style={dynamicStyles.label}>Status</Text>
+            <View style={dynamicStyles.statusContainer}>
+              {getStatusIcon(selectedModule.status)}
+              <Text style={dynamicStyles.statusText}>
+                {selectedModule.status.charAt(0).toUpperCase() +
+                  selectedModule.status.slice(1)}
+              </Text>
+            </View>
+          </View>
+        </View>
         {/* Resources Section */}
         {selectedModule.moduleId.resources &&
           selectedModule.moduleId.resources.length > 0 && (
             <View style={[dynamicStyles.section, dynamicStyles.sectionBgAlt]}>
-              <Text style={dynamicStyles.label}>Resources</Text>
               {selectedModule.moduleId.resources.map((resource, index) => (
-                <View
-                  key={resource.key || index}
-                  style={dynamicStyles.resourceItem}
-                >
+                <View key={resource.key || index}>
                   <View style={dynamicStyles.resourceHeader}>
                     <MaterialIcons
                       name="picture-as-pdf"
@@ -321,20 +330,6 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
               ))}
             </View>
           )}
-
-        {/* Status */}
-        <View style={[dynamicStyles.section, dynamicStyles.sectionBgAlt]}>
-          <View style={dynamicStyles.labelRow}>
-            <Text style={dynamicStyles.label}>Status</Text>
-            <View style={dynamicStyles.statusContainer}>
-              {getStatusIcon(selectedModule.status)}
-              <Text style={dynamicStyles.statusText}>
-                {selectedModule.status.charAt(0).toUpperCase() +
-                  selectedModule.status.slice(1)}
-              </Text>
-            </View>
-          </View>
-        </View>
 
         {/* Teacher Controls - Only show if user is a teacher */}
         {user?.role === "teacher" && (

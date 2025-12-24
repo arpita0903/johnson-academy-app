@@ -3,7 +3,6 @@ import { View, Text, ScrollView, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { fetchUser, User } from "../services/auth";
 import InstrumentSection from "../components/InstrumentSection";
-import AssignmentSection from "../components/AssignmentSection";
 import { ProfileData } from "../components/modals/completeProfile";
 import { useTheme } from "../context/ThemeContext";
 import { ThemeColors } from "../theme/colors";
@@ -20,7 +19,6 @@ const Homepage = ({ navigation }: HomepageProps) => {
 
   const handleSubmit = (classData: any) => {
     // You can now use the progressId to fetch progress data or navigate with it
-
     navigation.navigate("Course", { studentClass: classData });
   };
 
@@ -43,7 +41,6 @@ const Homepage = ({ navigation }: HomepageProps) => {
     <SafeAreaView style={dynamicStyles.safeArea} edges={["top"]}>
       <ScrollView style={dynamicStyles.container}>
         <View style={dynamicStyles.header}>
-          <Text style={dynamicStyles.welcome}>Welcome,</Text>
           <Text style={dynamicStyles.username}>
             Hello,{" "}
             <Text style={{ fontWeight: "bold", color: colors.primary }}>
@@ -52,33 +49,9 @@ const Homepage = ({ navigation }: HomepageProps) => {
           </Text>
         </View>
 
-        {/* Offer Banner */}
-        {/* <TouchableOpacity style={dynamicStyles.banner}>
-          <View>
-            <Text style={dynamicStyles.bannerTitle}>
-              Musical Instruments Offer
-            </Text>
-            <Text style={dynamicStyles.bannerTitle}>Click to Grab now!!</Text>
-          </View>
-          <Image
-            source={require("../../assets/images/instruments.png")}
-            style={{ width: 150, height: 120 }}
-          />
-        </TouchableOpacity> */}
-
         {/* Instruments Section */}
         <InstrumentSection onInstrumentPress={handleSubmit} />
-
-        {/* Assignment Section */}
-        <AssignmentSection navigation={navigation} studentId={user?.id} />
       </ScrollView>
-
-      {/* Profile Completion Modal */}
-      {/* <CompleteProfileModal
-        visible={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-        onSubmit={handleProfileSubmit}
-      /> */}
     </SafeAreaView>
   );
 };

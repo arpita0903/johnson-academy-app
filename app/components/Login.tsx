@@ -10,9 +10,11 @@ import {
   Keyboard,
   ScrollView,
   Platform,
+  Image,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Icon from "react-native-vector-icons/MaterialIcons";
 import { useAppContext } from "../context/AppContext";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
@@ -33,6 +35,7 @@ interface ErrorState {
 const Login = ({ navigation }: LoginProps) => {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<ErrorState>({});
   const { setUser, login } = useAppContext();
   const { colors } = useTheme();
@@ -50,7 +53,7 @@ const Login = ({ navigation }: LoginProps) => {
 
     //if (!role)
     //  return setError({ role: "Please select your role (Student or Teacher)" });
-    if (!name) return setError({ name: "Please enter your name" });
+    if (!name) return setError({ name: "Please enter your email" });
     if (!password) return setError({ password: "Please enter your password" });
 
     try {
@@ -99,53 +102,19 @@ const Login = ({ navigation }: LoginProps) => {
             keyboardShouldPersistTaps="handled"
           >
             <View style={dynamicStyles.container}>
+              <Image
+                source={require("../../assets/images/logo.png")}
+                style={dynamicStyles.logo}
+                resizeMode="contain"
+              />
               <Text style={dynamicStyles.title}>
                 Welcome to Johnson Academy!
               </Text>
               <Text style={dynamicStyles.loginText}>Login to your account</Text>
 
-              {/* <View style={styles.roleContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.roleCard,
-                    user.role === "student" && styles.selectedRole,
-                  ]}
-                  onPress={() => setRole("student")}
-                >
-                  <Text
-                    style={[
-                      styles.roleText,
-                      role === "student" && styles.selectedRoleText,
-                    ]}
-                  >
-                    🎓 Student
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.roleCard,
-                    role === "teacher" && styles.selectedRole,
-                  ]}
-                  onPress={() => setRole("teacher")}
-                >
-                  <Text
-                    style={[
-                      styles.roleText,
-                      role === "teacher" && styles.selectedRoleText,
-                    ]}
-                  >
-                    🧑‍🏫 Teacher
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              {error?.role && (
-                <Text style={styles.errorText}>{error.role}</Text>
-              )} */}
-
               <TextInput
                 style={dynamicStyles.input}
-                placeholder="Enter your name"
+                placeholder="john@example.com"
                 placeholderTextColor={colors.placeholderText}
                 value={name}
                 onChangeText={setName}
@@ -154,14 +123,26 @@ const Login = ({ navigation }: LoginProps) => {
                 <Text style={dynamicStyles.errorText}>{error.name}</Text>
               )}
 
-              <TextInput
-                style={dynamicStyles.input}
-                placeholder="Enter your password"
-                placeholderTextColor={colors.placeholderText}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
+              <View style={dynamicStyles.passwordContainer}>
+                <TextInput
+                  style={dynamicStyles.passwordInput}
+                  placeholder="Password"
+                  placeholderTextColor={colors.placeholderText}
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={setPassword}
+                />
+                <TouchableOpacity
+                  style={dynamicStyles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Icon
+                    name={showPassword ? "visibility" : "visibility-off"}
+                    size={24}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
               {error?.password && (
                 <Text style={dynamicStyles.errorText}>{error.password}</Text>
               )}
@@ -216,17 +197,24 @@ const createStyles = (colors: ThemeColors) =>
       shadowRadius: 8,
       elevation: 8,
     },
+    logo: {
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+      marginBottom: 20,
+      overflow: "hidden",
+    },
     title: {
       fontSize: 28,
       textAlign: "center",
       fontWeight: "bold",
-      color: colors.primary,
+      color: colors.text,
       marginBottom: 8,
     },
     loginText: {
       fontSize: 16,
-      color: colors.textSecondary,
-      marginBottom: 25,
+      color: colors.primary,
+      marginBottom: 10,
     },
     roleContainer: {
       flexDirection: "row",
@@ -264,6 +252,26 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.text,
       backgroundColor: colors.inputBackground,
       fontSize: 16,
+    },
+    passwordContainer: {
+      width: "100%",
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1.5,
+      borderColor: colors.inputBorder,
+      borderRadius: 10,
+      marginTop: 15,
+      backgroundColor: colors.inputBackground,
+    },
+    passwordInput: {
+      flex: 1,
+      padding: 15,
+      color: colors.text,
+      fontSize: 16,
+    },
+    eyeIcon: {
+      padding: 15,
+      paddingLeft: 10,
     },
     errorText: {
       alignSelf: "flex-start",

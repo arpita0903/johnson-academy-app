@@ -1,20 +1,17 @@
-import React, { useRef, useMemo, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  Pressable,
   Image,
 } from "react-native";
-import Icon from "react-native-vector-icons/AntDesign";
 // import BottomSheet from "@gorhom/bottom-sheet";
 // import AttendanceCalendar from "../components/AttendanceCalendar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useTheme } from "../context/ThemeContext";
 import { ThemeColors } from "../theme/colors";
-import AssignmentModal from "./AssignmentModal";
 import { useTeacherContext } from "../context/TeacherContext";
 
 const StudentList = ({
@@ -33,26 +30,7 @@ const StudentList = ({
   //   id: "",
   // });
   // const [detailsModalVisible, setDetailsModalVisible] = useState(false);
-  const [fabVisible, setFabVisible] = useState(false);
   const { selectStudent } = useTeacherContext();
-
-  const handleFabPress = () => {
-    setFabVisible(true);
-  };
-
-  const handleCloseFab = () => {
-    setFabVisible(false);
-  };
-
-  const handleViewAssignments = () => {
-    setFabVisible(false);
-    navigation.navigate("AssignmentList", { batch });
-  };
-
-  const handlePublishAssignment = () => {
-    setFabVisible(false);
-    navigation.navigate("PublishAssignment", { batch });
-  };
 
   const handleStudentPress = (student: any) => {
     selectStudent(student);
@@ -81,11 +59,6 @@ const StudentList = ({
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={dynamicStyles.container}>
           <Text style={dynamicStyles.header}>{batch.name} - Students</Text>
-
-          <TouchableOpacity style={dynamicStyles.fab} onPress={handleFabPress}>
-            <Icon name="plus" size={24} color={colors.primaryText} />
-          </TouchableOpacity>
-          {/* FAB Action Modal */}
 
           <FlatList
             data={batch.students}
@@ -152,12 +125,6 @@ const StudentList = ({
           )} */}
         </View>
       </GestureHandlerRootView>
-      <AssignmentModal
-        fabVisible={fabVisible}
-        handleCloseFab={handleCloseFab}
-        handlePublishAssignment={handlePublishAssignment}
-        handleViewAssignments={handleViewAssignments}
-      />
     </>
   );
 };
@@ -182,7 +149,7 @@ const createStyles = (colors: ThemeColors) =>
       textAlign: "center",
     },
     listContent: {
-      paddingBottom: 100, // Extra space for FAB
+      paddingBottom: 20,
     },
     sheetTitle: {
       fontSize: 24,
@@ -270,20 +237,6 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.primaryText,
       fontWeight: "bold",
       fontSize: 14,
-    },
-    fab: {
-      position: "absolute",
-      bottom: 30,
-      right: 20,
-      backgroundColor: colors.primary,
-      padding: 18,
-      borderRadius: 32,
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.4,
-      shadowRadius: 8,
-      elevation: 8,
-      zIndex: 100,
     },
     studentImage: {
       width: 56,
