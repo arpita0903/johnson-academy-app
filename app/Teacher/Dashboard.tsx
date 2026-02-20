@@ -1,19 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   ScrollView,
-  Image,
 } from "react-native";
+import { getTopLevelPrefixes } from "../utils/folderUtils";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppContext } from "../context/AppContext";
 import { useTheme } from "../context/ThemeContext";
 import { ThemeColors } from "../theme/colors";
 import { getClassesByTeacher, getTeacherById } from "../services/teacher";
 import { useTeacherContext } from "../context/TeacherContext";
+import Icon from "react-native-vector-icons/Ionicons";
 
 interface TeacherDashboardProps {
   navigation: any;
@@ -54,6 +55,7 @@ const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
       try {
         if (user && user.id) {
           const classesData = await getClassesByTeacher(user.id);
+          console.log("classesData", JSON.stringify(classesData));
           setClasses(classesData);
         }
       } catch (error) {
@@ -66,15 +68,19 @@ const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
     fetchTeacherData();
   }, [user]);
 
-  const handleClassPress = (classItem: ClassData) => {
-    navigation.navigate("StudentList", {
-      batch: {
-        id: classItem.id,
-        name: classItem.name,
-        students: classItem.students,
-      },
+  const classNames = useMemo(() => classes.map((c) => c.name), [classes]);
+  const prefixes = useMemo(() => getTopLevelPrefixes(classNames), [classNames]);
+
+  const getClassCountByPrefix = (prefix: string) =>
+    classes.filter(
+      (c) => c.name === prefix || c.name.startsWith(`${prefix}/`)
+    ).length;
+
+  const handlePrefixPress = (prefix: string) => {
+    navigation.navigate("FolderItems", {
+      prefix,
+      classes,
     });
-    selectClass(classItem);
   };
 
   const dynamicStyles = createStyles(colors);
@@ -96,7 +102,7 @@ const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
           Welcome, {user?.name || "Teacher"} 👋
         </Text>
 
-        {classes.length === 0 ? (
+        {prefixes.length === 0 ? (
           <View style={dynamicStyles.noClassesContainer}>
             <Text style={dynamicStyles.noClassesText}>No classes found</Text>
             <Text style={dynamicStyles.noClassesSubtext}>
@@ -105,63 +111,51 @@ const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
           </View>
         ) : (
           <View style={dynamicStyles.classesContainer}>
-            <View style={dynamicStyles.summaryContainer}>
-              <Text style={dynamicStyles.summaryTitle}>Dashboard Summary</Text>
-              <View style={dynamicStyles.summaryStats}>
-                <View style={dynamicStyles.statItem}>
-                  <Text style={dynamicStyles.statNumber}>{classes.length}</Text>
-                  <Text style={dynamicStyles.statLabel}>Total Classes</Text>
-                </View>
-                <View style={dynamicStyles.statItem}>
-                  <Text style={dynamicStyles.statNumber}>
-                    {classes.reduce(
-                      (total, cls) => total + cls.students.length,
-                      0
-                    )}
-                  </Text>
-                  <Text style={dynamicStyles.statLabel}>Total Students</Text>
-                </View>
-              </View>
-            </View>
-
-            {classes.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={dynamicStyles.classCard}
-                onPress={() => handleClassPress(item)}
-              >
-                <View style={dynamicStyles.cardHeader}>
-                  <View style={dynamicStyles.classInfo}>
-                    <Text style={dynamicStyles.className}>{item.name}</Text>
-                    <Text style={dynamicStyles.courseName}>
-                      {item.courseId?.name}
-                    </Text>
-                  </View>
-                  {item.courseId?.image && (
-                    <View>
-                      <Image
-                        source={{ uri: item.courseId.image }}
-                        style={dynamicStyles.courseImageContainer}
+            <Text style={dynamicStyles.sectionTitle}>Browse by batch</Text>
+            <FlatList
+              data={prefixes}
+              keyExtractor={(item) => item}
+              scrollEnabled={false}
+              renderItem={({ item: prefix }) => {
+                const count = getClassCountByPrefix(prefix);
+                return (
+                  <Pressable
+                    style={({ pressed }) => [
+                      dynamicStyles.prefixRow,
+                      pressed && dynamicStyles.prefixRowPressed,
+                    ]}
+                    onPress={() => handlePrefixPress(prefix)}
+                  >
+                    <View style={dynamicStyles.prefixIconContainer}>
+                      <Icon
+                        name="folder-open"
+                        size={26}
+                        color={colors.primary}
                       />
                     </View>
-                  )}
-                </View>
-
-                <View style={dynamicStyles.cardFooter}>
-                  <View style={dynamicStyles.studentInfo}>
-                    <Text style={dynamicStyles.studentCount}>
-                      {item.students.length} student
-                      {item.students.length !== 1 ? "s" : ""}
-                    </Text>
-                  </View>
-                  <View style={dynamicStyles.actionButton}>
-                    <Text style={dynamicStyles.viewStudents}>
-                      View Students →
-                    </Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+                    <View style={dynamicStyles.prefixContent}>
+                      <Text style={dynamicStyles.prefixLabel} numberOfLines={1}>
+                        {prefix}
+                      </Text>
+                      <View style={dynamicStyles.prefixMetaRow}>
+                        <View style={dynamicStyles.prefixBadge}>
+                          <Text style={dynamicStyles.prefixBadgeText}>
+                            {count} {count === 1 ? "class" : "classes"}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                    <View style={dynamicStyles.chevronContainer}>
+                      <Icon
+                        name="chevron-forward"
+                        size={22}
+                        color={colors.primary}
+                      />
+                    </View>
+                  </Pressable>
+                );
+              }}
+            />
           </View>
         )}
       </ScrollView>
@@ -231,8 +225,81 @@ const createStyles = (colors: ThemeColors) =>
       textAlign: "center",
       opacity: 0.9,
     },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: "#ffffff",
+      marginBottom: 12,
+    },
     classesContainer: {
-      // Container for all classes content
+      marginTop: 8,
+    },
+    prefixRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 18,
+      marginBottom: 12,
+      backgroundColor: "#252525",
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.06)",
+      overflow: "hidden",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    prefixRowPressed: {
+      opacity: 0.88,
+      backgroundColor: "#2a2a2a",
+    },
+    prefixIconContainer: {
+      width: 52,
+      height: 52,
+      borderRadius: 14,
+      backgroundColor: `${colors.primary}22`,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 16,
+    },
+    prefixContent: {
+      flex: 1,
+      minWidth: 0,
+    },
+    prefixLabel: {
+      fontSize: 17,
+      fontWeight: "700",
+      color: "#ffffff",
+      letterSpacing: 0.3,
+      marginBottom: 6,
+    },
+    prefixMetaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: "wrap",
+    },
+    prefixBadge: {
+      backgroundColor: "rgba(255, 255, 255, 0.08)",
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 20,
+      alignSelf: "flex-start",
+    },
+    prefixBadgeText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: "rgba(255, 255, 255, 0.75)",
+      letterSpacing: 0.2,
+    },
+    chevronContainer: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: "rgba(255, 255, 255, 0.06)",
+      alignItems: "center",
+      justifyContent: "center",
+      marginLeft: 8,
     },
     classCard: {
       backgroundColor: "#2a2a2a",
@@ -261,51 +328,6 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: "space-between",
       alignItems: "center",
       marginTop: 8,
-    },
-    summaryContainer: {
-      backgroundColor: "#2a2a2a",
-      padding: 20,
-      borderRadius: 15,
-      marginBottom: 24,
-      borderWidth: 1,
-      borderColor: "#404040",
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 8,
-      elevation: 6,
-    },
-    summaryTitle: {
-      fontSize: 20,
-      fontWeight: "600",
-      color: "#ffffff",
-      marginBottom: 20,
-      textAlign: "center",
-    },
-    summaryStats: {
-      flexDirection: "row",
-      justifyContent: "space-around",
-    },
-    statItem: {
-      alignItems: "center",
-      backgroundColor: "#1e1e1e",
-      paddingVertical: 16,
-      paddingHorizontal: 20,
-      borderRadius: 12,
-      minWidth: 120,
-    },
-    statNumber: {
-      fontSize: 28,
-      fontWeight: "bold",
-      color: "#ffffff",
-      marginBottom: 6,
-    },
-    statLabel: {
-      fontSize: 14,
-      color: "#ffffff",
-      textAlign: "center",
-      fontWeight: "500",
-      opacity: 0.9,
     },
     classInfo: {
       flex: 1,

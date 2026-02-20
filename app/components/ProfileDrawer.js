@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { logout } from "../services/auth";
 import { useAppContext } from "../context/AppContext";
 import { useTheme } from "../context/ThemeContext";
+import { getClassesByTeacher } from "../services/teacher";
 import MyCourses from "./MyCourses";
 import CompleteProfileModal from "./modals/completeProfile";
 
@@ -18,6 +19,21 @@ const MusicProfile = ({ navigation }) => {
   const { user } = useAppContext();
   const { colors } = useTheme();
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [classes, setClasses] = useState([]);
+
+  useEffect(() => {
+    const fetchClasses = async () => {
+      if (user?.role === "teacher" && user?.id) {
+        try {
+          const classesData = await getClassesByTeacher(user.id);
+          setClasses(classesData);
+        } catch (error) {
+          console.error("Error fetching classes:", error);
+        }
+      }
+    };
+    fetchClasses();
+  }, [user]);
 
   // use image from user.profilePicture
   const dynamicStyles = createStyles(colors);
@@ -66,7 +82,35 @@ const MusicProfile = ({ navigation }) => {
               Edit Profile
             </Text>
           </TouchableOpacity> */}
-          {/* <View style={dynamicStyles.statsRow}>
+        </View>
+
+        {/* Dashboard Summary - Teacher only */}
+        {user?.role === "teacher" && (
+          <View style={dynamicStyles.summaryContainer}>
+            <Text style={dynamicStyles.summaryTitle}>Dashboard Summary</Text>
+            <View style={dynamicStyles.summaryStats}>
+              <View style={dynamicStyles.statItem}>
+                <Text style={dynamicStyles.summaryStatNumber}>
+                  {classes.length}
+                </Text>
+                <Text style={dynamicStyles.summaryStatLabel}>Total Classes</Text>
+              </View>
+              <View style={dynamicStyles.statItem}>
+                <Text style={dynamicStyles.summaryStatNumber}>
+                  {classes.reduce(
+                    (total, cls) => total + (cls.students?.length || 0),
+                    0
+                  )}
+                </Text>
+                <Text style={dynamicStyles.summaryStatLabel}>
+                  Total Students
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* <View style={dynamicStyles.statsRow}>
           {user?.role === "teacher" ? (
             <>
               <StatItem
@@ -111,7 +155,6 @@ const MusicProfile = ({ navigation }) => {
             </>
           )}
         </View> */}
-        </View>
 
         {/* My courses Section */}
         {user?.role === "student" && <MyCourses userId={user?.id} />}
@@ -341,6 +384,51 @@ const createStyles = (colors) =>
     },
     statLabel: {
       fontSize: 12,
+    },
+    summaryContainer: {
+      backgroundColor: "#2a2a2a",
+      padding: 20,
+      borderRadius: 15,
+      marginBottom: 24,
+      borderWidth: 1,
+      borderColor: "#404040",
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.3,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    summaryTitle: {
+      fontSize: 20,
+      fontWeight: "600",
+      color: "#ffffff",
+      marginBottom: 20,
+      textAlign: "center",
+    },
+    summaryStats: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+    },
+    statItem: {
+      alignItems: "center",
+      backgroundColor: "#1e1e1e",
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      borderRadius: 12,
+      minWidth: 120,
+    },
+    summaryStatNumber: {
+      fontSize: 28,
+      fontWeight: "bold",
+      color: "#ffffff",
+      marginBottom: 6,
+    },
+    summaryStatLabel: {
+      fontSize: 14,
+      color: "#ffffff",
+      textAlign: "center",
+      fontWeight: "500",
+      opacity: 0.9,
     },
     logoutButton: {
       backgroundColor: colors.error,

@@ -17,6 +17,7 @@ import DetailScreen from "./Student/DetailScreen";
 import ModuleDetailScreen from "./Student/ModuleDetailScreen";
 import TeacherDashboard from "./Teacher/Dashboard";
 import StudentList from "./Teacher/StudentList";
+import FolderItemsScreen from "./Teacher/FolderItemsScreen";
 import TeacherCourseDetail from "./Teacher/TeacherCourseDetail";
 import ProfileDrawer from "./components/ProfileDrawer";
 
@@ -195,6 +196,31 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
             requiredRole="teacher"
           >
             <StudentList {...props} />
+          </ProtectedWrapper>
+        )}
+      </Stack.Screen>
+      <Stack.Screen
+        name="FolderItems"
+        options={({ route }) => ({
+          headerTitle: (route.params as any)?.prefix ?? "Classes",
+          headerRight: () => (
+            <TouchableOpacity onPress={() => navigation.openDrawer()}>
+              <Icon
+                name="list"
+                size={32}
+                color={colors.primary}
+                style={{ width: 40, marginRight: 10 }}
+              />
+            </TouchableOpacity>
+          ),
+        })}
+      >
+        {(props) => (
+          <ProtectedWrapper
+            navigation={props.navigation}
+            requiredRole="teacher"
+          >
+            <FolderItemsScreen {...props} />
           </ProtectedWrapper>
         )}
       </Stack.Screen>
