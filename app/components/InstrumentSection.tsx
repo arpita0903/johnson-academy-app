@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   Image,
-  FlatList,
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
@@ -120,28 +119,28 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
         {/* <Text style={styles.seeAll}>See all</Text> */}
       </View>
 
-      <FlatList
-        data={studentClasses}
-        keyExtractor={(item) => item.id}
-        horizontal
-        showsHorizontalScrollIndicator={true}
-        contentContainerStyle={{ paddingVertical: 8 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => onInstrumentPress(item)}>
+      <View style={dynamicStyles.listContent}>
+        {studentClasses.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            onPress={() => onInstrumentPress(item)}
+            activeOpacity={0.7}
+          >
             <View style={dynamicStyles.instrumentCard}>
               <Image
                 source={{ uri: item?.courseId?.image }}
                 style={dynamicStyles.instrumentIcon}
               />
-              <Text style={dynamicStyles.instrumentName}>{item.name}</Text>
-              // ellipsis one line text
-              <Text style={dynamicStyles.courseName} numberOfLines={1}>
-                {item.courseId?.name}
-              </Text>
+              <View style={dynamicStyles.cardTextContent}>
+                <Text style={dynamicStyles.instrumentName}>{item.name}</Text>
+                <Text style={dynamicStyles.courseName} numberOfLines={1}>
+                  {item.courseId?.name}
+                </Text>
+              </View>
             </View>
           </TouchableOpacity>
-        )}
-      />
+        ))}
+      </View>
     </View>
   );
 };
@@ -168,14 +167,17 @@ const createStyles = (colors: ThemeColors) =>
       color: "#FF7043",
       fontWeight: "600" as const,
     },
+    listContent: {
+      paddingVertical: 8,
+      paddingBottom: 24,
+    },
     instrumentCard: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
       backgroundColor: "#F8F9FA",
       borderRadius: 16,
       padding: 12,
-      paddingBottom: 20,
-      width: 180,
-      marginRight: 12,
-      alignItems: "center" as const,
+      marginBottom: 12,
       shadowColor: "#000",
       shadowOffset: {
         width: 0,
@@ -188,20 +190,24 @@ const createStyles = (colors: ThemeColors) =>
       borderColor: "#E9ECEF",
     },
     instrumentIcon: {
-      width: 150,
-      height: 150,
-      marginBottom: 8,
-      resizeMode: "contain" as const,
-      borderRadius: 100,
+      width: 64,
+      height: 64,
+      marginRight: 12,
+      resizeMode: "cover" as const,
+      borderRadius: 12,
+    },
+    cardTextContent: {
+      flex: 1,
+      justifyContent: "center" as const,
+      minWidth: 0,
     },
     instrumentName: {
       fontWeight: "bold" as const,
-      fontSize: 20,
+      fontSize: 18,
     },
     courseName: {
       fontSize: 14,
       color: "#666",
-      textAlign: "center" as const,
       marginTop: 4,
     },
     loadingContainer: {

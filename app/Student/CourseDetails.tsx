@@ -210,7 +210,8 @@ const CourseDetails = ({
     }
     return modules.map((module) => {
       const isUpcoming = module.status === "upcoming";
-      const shouldDisable = isUpcoming && role === "student";
+      // Disable upcoming modules for students; only teachers can access them. Treat null/undefined role as student (safe default).
+      const shouldDisable = isUpcoming && role !== "teacher";
 
       return (
         <TouchableOpacity

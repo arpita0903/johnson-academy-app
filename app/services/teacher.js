@@ -7,7 +7,7 @@ import api from "./axiosInstance";
 /**
  * Get classes by teacher ID
  * @param {string} teacherId - The ID of the teacher
- * @returns {Promise<Array>} Array of classes taught by the teacher
+ * @returns {Promise<import("../types/classes").GetClassesByTeacherResponse>} Array of classes taught by the teacher
  */
 export const getClassesByTeacher = async (teacherId) => {
   try {

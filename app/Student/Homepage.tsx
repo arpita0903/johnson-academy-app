@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Alert } from "react-native";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { fetchUser, User } from "../services/auth";
 import InstrumentSection from "../components/InstrumentSection";
-import { ProfileData } from "../components/modals/completeProfile";
 import { useTheme } from "../context/ThemeContext";
 import { ThemeColors } from "../theme/colors";
 
@@ -13,7 +12,6 @@ interface HomepageProps {
 
 const Homepage = ({ navigation }: HomepageProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const { colors } = useTheme();
   const dynamicStyles = createStyles(colors);
 
@@ -27,10 +25,6 @@ const Homepage = ({ navigation }: HomepageProps) => {
       const userData = await fetchUser();
       if (userData) {
         setUser(userData);
-        // Show modal if profile is incomplete
-        if (!userData.isCompleteProfile) {
-          setShowProfileModal(true);
-        }
       }
     };
 

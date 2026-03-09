@@ -14,7 +14,7 @@ const AuthNavigator: React.FC<AuthNavigatorProps> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const { setUser } = useAppContext();
+  const { login } = useAppContext();
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -23,10 +23,10 @@ const AuthNavigator: React.FC<AuthNavigatorProps> = ({ navigation }) => {
         setIsAuth(authenticated);
 
         if (authenticated) {
-          // Fetch user data to determine role
+          // Fetch user data and restore full context (user, role, userId, isAuthenticated)
           const userData = await fetchUser();
           if (userData) {
-            setUser(userData);
+            login(userData);
             setUserRole(userData.role);
           }
         }
@@ -39,7 +39,7 @@ const AuthNavigator: React.FC<AuthNavigatorProps> = ({ navigation }) => {
     };
 
     checkAuthStatus();
-  }, [setUser]);
+  }, [login]);
 
   if (isLoading) {
     return (

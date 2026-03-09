@@ -15,39 +15,17 @@ import { ThemeColors } from "../theme/colors";
 import { getClassesByTeacher, getTeacherById } from "../services/teacher";
 import { useTeacherContext } from "../context/TeacherContext";
 import Icon from "react-native-vector-icons/Ionicons";
+import type { GetClassesByTeacherResponse } from "../types/classes";
 
 interface TeacherDashboardProps {
   navigation: any;
-}
-
-interface ClassData {
-  id: string;
-  name: string;
-  teacherId: {
-    name: string;
-    email: string;
-    role: string;
-    id: string;
-  };
-  courseId: {
-    name: string;
-    description: string;
-    image: string;
-    id: string;
-  };
-  students: Array<{
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-  }>;
 }
 
 const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
   const { user } = useAppContext();
   const { selectClass } = useTeacherContext();
   const { colors } = useTheme();
-  const [classes, setClasses] = useState<ClassData[]>([]);
+  const [classes, setClasses] = useState<GetClassesByTeacherResponse>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

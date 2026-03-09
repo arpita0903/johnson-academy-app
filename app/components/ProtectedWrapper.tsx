@@ -20,7 +20,7 @@ const ProtectedWrapper: React.FC<ProtectedWrapperProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const { setUser } = useAppContext();
+  const { login } = useAppContext();
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -29,10 +29,10 @@ const ProtectedWrapper: React.FC<ProtectedWrapperProps> = ({
         setIsAuth(authenticated);
 
         if (authenticated) {
-          // Fetch user data to determine role
+          // Fetch user data and restore full context (user, role, userId, isAuthenticated)
           const userData = await fetchUser();
           if (userData) {
-            setUser(userData);
+            login(userData);
             setUserRole(userData.role);
           }
         }
@@ -44,7 +44,7 @@ const ProtectedWrapper: React.FC<ProtectedWrapperProps> = ({
     };
 
     checkAuthStatus();
-  }, [setUser]);
+  }, [login]);
 
   // Show loading spinner while checking authentication
   if (isLoading) {

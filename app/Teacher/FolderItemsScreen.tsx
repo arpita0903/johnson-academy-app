@@ -16,27 +16,10 @@ import {
   groupClassesByLastSegment,
 } from "../utils/folderUtils";
 import Icon from "react-native-vector-icons/Ionicons";
-
-interface ClassData {
-  id: string;
-  name: string;
-  teacherId: { name: string; email: string; role: string; id: string };
-  courseId: {
-    name: string;
-    description: string;
-    image: string;
-    id: string;
-  };
-  students: Array<{
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-  }>;
-}
+import type { ClassByTeacher } from "../types/classes";
 
 interface FolderItemsScreenProps {
-  route: { params: { prefix: string; classes: ClassData[] } };
+  route: { params: { prefix: string; classes: ClassByTeacher[] } };
   navigation: any;
 }
 
@@ -56,7 +39,7 @@ const FolderItemsScreen = ({ route, navigation }: FolderItemsScreenProps) => {
     [filteredClasses],
   );
 
-  const handleClassPress = (classItem: ClassData) => {
+  const handleClassPress = (classItem: ClassByTeacher) => {
     navigation.navigate("StudentList", {
       batch: {
         id: classItem.id,
@@ -75,7 +58,7 @@ const FolderItemsScreen = ({ route, navigation }: FolderItemsScreenProps) => {
 
   const dynamicStyles = createStyles(colors);
 
-  const renderClassCard = (item: ClassData) => (
+  const renderClassCard = (item: ClassByTeacher) => (
     <Pressable
       key={item.id}
       style={({ pressed }) => [
