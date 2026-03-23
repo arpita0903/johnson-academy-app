@@ -40,20 +40,19 @@ const FolderItemsScreen = ({ route, navigation }: FolderItemsScreenProps) => {
   );
 
   const handleClassPress = (classItem: ClassByTeacher) => {
+    console.log("classItem", JSON.stringify(classItem));
     navigation.navigate("StudentList", {
       batch: {
         id: classItem.id,
         name: classItem.name,
-        students: classItem.students,
+        students: classItem.studentsInClass,
       },
     });
     selectClass(classItem);
   };
 
   const toggleGroup = (groupKey: string) => {
-    setExpandedGroupKey((prev) =>
-      prev === groupKey ? null : groupKey,
-    );
+    setExpandedGroupKey((prev) => (prev === groupKey ? null : groupKey));
   };
 
   const dynamicStyles = createStyles(colors);
@@ -90,8 +89,8 @@ const FolderItemsScreen = ({ route, navigation }: FolderItemsScreenProps) => {
       </View>
       <View style={dynamicStyles.cardFooter}>
         <Text style={dynamicStyles.studentCount}>
-          {item.students.length} student
-          {item.students.length !== 1 ? "s" : ""}
+          {item.studentsInClass?.length} student
+          {item.studentsInClass?.length !== 1 ? "s" : ""}
         </Text>
         <View style={dynamicStyles.ctaButton}>
           <Text style={dynamicStyles.ctaText}>View Students</Text>
@@ -132,17 +131,10 @@ const FolderItemsScreen = ({ route, navigation }: FolderItemsScreenProps) => {
                     onPress={() => toggleGroup(group.groupKey)}
                   >
                     <View style={dynamicStyles.groupIconContainer}>
-                      <Icon
-                        name="layers"
-                        size={24}
-                        color={colors.primary}
-                      />
+                      <Icon name="layers" size={24} color={colors.primary} />
                     </View>
                     <View style={dynamicStyles.groupContentHeader}>
-                      <Text
-                        style={dynamicStyles.groupKey}
-                        numberOfLines={1}
-                      >
+                      <Text style={dynamicStyles.groupKey} numberOfLines={1}>
                         {group.groupKey}
                       </Text>
                       <View style={dynamicStyles.groupMetaRow}>

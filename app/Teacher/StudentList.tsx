@@ -62,12 +62,12 @@ const StudentList = ({
 
           <FlatList
             data={batch.students}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item._id}
             contentContainerStyle={dynamicStyles.listContent}
             renderItem={({ item }) => (
               <View style={dynamicStyles.studentCard}>
                 <TouchableOpacity
-                  onPress={() => handleStudentPress(item)}
+                  onPress={() => handleStudentPress(item.user)}
                   style={{
                     flexDirection: "row",
                     flex: 1,
@@ -76,8 +76,8 @@ const StudentList = ({
                 >
                   <Image
                     source={
-                      item.profilePicture
-                        ? { uri: item.profilePicture }
+                      item.user.profilePicture
+                        ? { uri: item.user.profilePicture }
                         : require("../../assets/images/profileDefault.png")
                     }
                     style={dynamicStyles.studentImage}
@@ -86,15 +86,20 @@ const StudentList = ({
                     {item.name.charAt(0).toUpperCase()}
                   </Text> */}
                   <View style={dynamicStyles.infoContainer}>
-                    <Text style={dynamicStyles.studentName}>{item.name}</Text>
-                    <Text style={dynamicStyles.studentId}> {item.email}</Text>
+                    <Text style={dynamicStyles.studentName}>
+                      {item.user.name}
+                    </Text>
+                    <Text style={dynamicStyles.studentId}>
+                      {" "}
+                      {item.user.email}
+                    </Text>
                   </View>
                 </TouchableOpacity>
 
                 {/* <View style={{ flexDirection: "row", gap: 12 }}>
                   <TouchableOpacity onPress={() => openAttendanceSheet(item)}>
                     <Icon name="calendar" size={24} color="#6200ee" />
-                  </TouchableOpacity>
+                  </TouchableOpacity> 
                 </View> */}
               </View>
             )}

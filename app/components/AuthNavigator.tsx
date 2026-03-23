@@ -3,8 +3,6 @@ import { View, ActivityIndicator } from "react-native";
 import { useAppContext } from "../context/AppContext";
 import { isAuthenticated, fetchUser } from "../services/auth";
 import Login from "./Login";
-import Homepage from "../Student/Homepage";
-import TeacherDashboard from "../Teacher/Dashboard";
 
 interface AuthNavigatorProps {
   navigation: any;
@@ -39,7 +37,18 @@ const AuthNavigator: React.FC<AuthNavigatorProps> = ({ navigation }) => {
     };
 
     checkAuthStatus();
-  }, [login]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- run only on mount
+
+  useEffect(() => {
+    if (!isLoading && isAuth && userRole) {
+      // Navigate to the proper Stack screen so the header (Dashboard title, logo, menu) is shown
+      if (userRole === "teacher") {
+        navigation.replace("TeacherDashboard");
+      } else {
+        navigation.replace("Homepage");
+      }
+    }
+  }, [isLoading, isAuth, userRole, navigation]);
 
   if (isLoading) {
     return (
@@ -53,12 +62,12 @@ const AuthNavigator: React.FC<AuthNavigatorProps> = ({ navigation }) => {
     return <Login navigation={navigation} />;
   }
 
-  // User is authenticated, redirect based on role
-  if (userRole === "teacher") {
-    return <TeacherDashboard navigation={navigation} />;
-  } else {
-    return <Homepage navigation={navigation} />;
-  }
+  // Brief loading while navigation.replace() completes
+  return (
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <ActivityIndicator size="large" color="#8a1dc2" />
+    </View>
+  );
 };
 
 export default AuthNavigator;

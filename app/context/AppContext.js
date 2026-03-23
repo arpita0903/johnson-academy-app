@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext, useCallback, useMemo } from "react";
 
 const AppContext = createContext();
 
@@ -8,32 +8,35 @@ export const AppProvider = ({ children }) => {
   const [userId, setUserId] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const login = (userData) => {
+  const login = useCallback((userData) => {
     setUser(userData);
     setRole(userData.role);
     setUserId(userData.id);
     setIsAuthenticated(true);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setRole(null);
     setUserId(null);
     setIsAuthenticated(false);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      user,
+      setUser,
+      role,
+      userId,
+      isAuthenticated,
+      login,
+      logout,
+    }),
+    [user, role, userId, isAuthenticated, login, logout]
+  );
 
   return (
-    <AppContext.Provider
-      value={{
-        user,
-        setUser,
-        role,
-        userId,
-        isAuthenticated,
-        login,
-        logout,
-      }}
-    >
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );

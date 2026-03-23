@@ -5,7 +5,7 @@ import Constants from "expo-constants";
 
 const ENV = {
   development: {
-    API_BASE_URL: "https://dev-api.johnsonsacademy.online/v1",
+    API_BASE_URL: "http://10.0.2.2:8000/v1",
     API_TIMEOUT: 10000,
     DEBUG: true,
   },

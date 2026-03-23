@@ -58,5 +58,14 @@ export interface ClassByTeacher {
   studentsInClass?: StudentInClassEntry[];
 }
 
+export interface ClassByStudent {
+  _id: string;
+  name: string;
+  teacherId: TeacherRef;
+  courseId: CourseRef;
+  students: StudentRef[];
+  studentsInClass?: StudentInClassEntry[];
+}
+
 /** Response type for getClassesByTeacher(teacherId) */
 export type GetClassesByTeacherResponse = ClassByTeacher[];

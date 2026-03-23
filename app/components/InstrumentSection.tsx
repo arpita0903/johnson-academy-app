@@ -11,6 +11,7 @@ import { getStudentClasses } from "../services/student";
 import { getUserId } from "../services/auth";
 import { ThemeColors } from "../theme/colors";
 import { useTheme } from "../context/ThemeContext";
+import { CourseRef, StudentRef } from "../types/classes";
 
 interface StudentClass {
   name: string;
@@ -34,6 +35,11 @@ interface StudentClass {
     progress: string[];
     id: string;
   };
+  studentsInClass: {
+    _id: string;
+    user: StudentRef;
+    course: CourseRef;
+  }[];
   id: string;
 }
 
@@ -58,6 +64,7 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
           return;
         }
         const data = await getStudentClasses(userId);
+        console.log("dataaaa", JSON.stringify(data));
         setStudentClasses(data);
       } catch (err: any) {
         setError(err.message || "Failed to fetch classes");

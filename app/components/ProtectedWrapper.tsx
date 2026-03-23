@@ -44,7 +44,7 @@ const ProtectedWrapper: React.FC<ProtectedWrapperProps> = ({
     };
 
     checkAuthStatus();
-  }, [login]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- run only on mount
 
   // Show loading spinner while checking authentication
   if (isLoading) {

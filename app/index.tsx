@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -7,6 +7,11 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { focusManager } from "@tanstack/react-query";
+import { AppState, Platform } from "react-native";
+
+import { queryClient } from "./config/queryClient";
 
 import AuthNavigator from "./components/AuthNavigator";
 import ProtectedWrapper from "./components/ProtectedWrapper";
@@ -279,16 +284,26 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
 };
 
 const App = () => {
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (status) => {
+      if (Platform.OS !== "web") {
+        focusManager.setFocused(status === "active");
+      }
+    });
+    return () => subscription.remove();
+  }, []);
+
   return (
-    <SafeAreaProvider>
-      <StatusBar style="auto" />
-      <PaperProvider>
-        <ThemeProvider>
-          <ToastProvider>
-            <AppProvider>
-              <TeacherProvider>
-                {/*<NavigationContainer>*/}
-                <Drawer.Navigator
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <PaperProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <AppProvider>
+                <TeacherProvider>
+                  {/*<NavigationContainer>*/}
+                  <Drawer.Navigator
                   screenOptions={{ drawerPosition: "right" }}
                   drawerContent={(props) => <ProfileDrawer {...props} />}
                 >
@@ -305,6 +320,7 @@ const App = () => {
         </ThemeProvider>
       </PaperProvider>
     </SafeAreaProvider>
+    </QueryClientProvider>
   );
 };
 

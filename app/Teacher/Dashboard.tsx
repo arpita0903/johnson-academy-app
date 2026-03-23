@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,6 @@ import { useAppContext } from "../context/AppContext";
 import { useTheme } from "../context/ThemeContext";
 import { ThemeColors } from "../theme/colors";
 import { getClassesByTeacher, getTeacherById } from "../services/teacher";
-import { useTeacherContext } from "../context/TeacherContext";
 import Icon from "react-native-vector-icons/Ionicons";
 import type { GetClassesByTeacherResponse } from "../types/classes";
 
@@ -23,36 +22,59 @@ interface TeacherDashboardProps {
 
 const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
   const { user } = useAppContext();
-  const { selectClass } = useTeacherContext();
   const { colors } = useTheme();
   const [classes, setClasses] = useState<GetClassesByTeacherResponse>([]);
   const [loading, setLoading] = useState(true);
+  const lastFetchedUserIdRef = useRef<string | null>(null);
+
+  // Use user?.id (primitive) instead of user object to avoid infinite loops
+  // when context returns new object references on each render
+  const userId = user?.id ?? null;
 
   useEffect(() => {
+    if (!userId || typeof userId !== "string") {
+      lastFetchedUserIdRef.current = null; // Reset when no user (e.g. logout)
+      setLoading(false);
+      return;
+    }
+
+    // Prevent duplicate fetches for the same user (e.g. from re-renders)
+    if (lastFetchedUserIdRef.current === userId) {
+      return;
+    }
+    lastFetchedUserIdRef.current = userId;
+
+    let cancelled = false;
     const fetchTeacherData = async () => {
       try {
-        if (user && user.id) {
-          const classesData = await getClassesByTeacher(user.id);
-          console.log("classesData", JSON.stringify(classesData));
+        const classesData = await getClassesByTeacher(userId);
+        if (!cancelled) {
           setClasses(classesData);
         }
       } catch (error) {
-        console.error("Error fetching classes data:", error);
+        if (!cancelled) {
+          console.error("Error fetching classes data:", error);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
+    setLoading(true);
     fetchTeacherData();
-  }, [user]);
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   const classNames = useMemo(() => classes.map((c) => c.name), [classes]);
   const prefixes = useMemo(() => getTopLevelPrefixes(classNames), [classNames]);
 
   const getClassCountByPrefix = (prefix: string) =>
-    classes.filter(
-      (c) => c.name === prefix || c.name.startsWith(`${prefix}/`)
-    ).length;
+    classes.filter((c) => c.name === prefix || c.name.startsWith(`${prefix}/`))
+      .length;
 
   const handlePrefixPress = (prefix: string) => {
     navigation.navigate("FolderItems", {
