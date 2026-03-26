@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import { createDrawerNavigator } from "@react-navigation/drawer";
-import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import {
   SafeAreaProvider,
@@ -13,18 +12,18 @@ import { AppState, Platform } from "react-native";
 
 import { queryClient } from "./config/queryClient";
 
-import AuthNavigator from "./components/AuthNavigator";
-import ProtectedWrapper from "./components/ProtectedWrapper";
-import Login from "./components/Login";
-import Homepage from "./Student/Homepage";
-import CourseDetails from "./Student/CourseDetails";
-import DetailScreen from "./Student/DetailScreen";
-import ModuleDetailScreen from "./Student/ModuleDetailScreen";
-import TeacherDashboard from "./Teacher/Dashboard";
-import StudentList from "./Teacher/StudentList";
-import FolderItemsScreen from "./Teacher/FolderItemsScreen";
-import TeacherCourseDetail from "./Teacher/TeacherCourseDetail";
-import ProfileDrawer from "./components/ProfileDrawer";
+import AuthNavigator from "./features/auth/components/AuthNavigator";
+import ProtectedWrapper from "./features/auth/components/ProtectedWrapper";
+import Login from "./features/auth/components/Login";
+import Homepage from "./features/student/screens/Homepage";
+import CourseDetails from "./features/student/screens/CourseDetails";
+import DetailScreen from "./features/student/screens/DetailScreen";
+import ModuleDetailScreen from "./features/student/screens/ModuleDetailScreen";
+import TeacherDashboard from "./features/teacher/screens/Dashboard";
+import StudentList from "./features/teacher/screens/StudentList";
+import FolderItemsScreen from "./features/teacher/screens/FolderItemsScreen";
+import TeacherCourseDetail from "./features/teacher/screens/TeacherCourseDetail";
+import ProfileDrawer from "./features/profile/components/ProfileDrawer";
 
 import { AppProvider, useAppContext } from "./context/AppContext";
 import { TeacherProvider } from "./context/TeacherContext";
@@ -34,10 +33,25 @@ import { Provider as PaperProvider } from "react-native-paper";
 import { Image, TouchableOpacity } from "react-native";
 
 import Icon from "react-native-vector-icons/Foundation";
-import StudentDetailsScreen from "./Teacher/StudentDetailsScreen";
+import StudentDetailsScreen from "./features/teacher/screens/StudentDetailsScreen";
+import type { ClassByTeacher } from "./types/classes";
+
+type MainStackParamList = {
+  Home: undefined;
+  Login: undefined;
+  Course: Record<string, unknown> | undefined;
+  Homepage: undefined;
+  Detail: Record<string, unknown> | undefined;
+  ModuleDetail: Record<string, unknown> | undefined;
+  TeacherDashboard: undefined;
+  StudentList: Record<string, unknown> | undefined;
+  FolderItems: { prefix: string; classes: ClassByTeacher[] };
+  TeacherCourseDetail: Record<string, unknown> | undefined;
+  StudentDetailsScreen: Record<string, unknown> | undefined;
+};
 
 const Drawer = createDrawerNavigator();
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<MainStackParamList>();
 
 interface StackScreensProps {
   navigation: any;
@@ -107,6 +121,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
         options={{
           headerShown: true,
           headerTitle: "Dashboard",
+          headerLeftContainerStyle: { paddingLeft: 12 },
           headerLeft: () => (
             <Image
               source={require("../assets/images/logo.png")}
@@ -147,6 +162,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
         name="TeacherDashboard"
         options={{
           headerTitle: "Dashboard",
+          headerLeftContainerStyle: { paddingLeft: 12 },
           headerLeft: () => (
             <Image
               source={require("../assets/images/logo.png")}
@@ -302,24 +318,23 @@ const App = () => {
             <ToastProvider>
               <AppProvider>
                 <TeacherProvider>
-                  {/*<NavigationContainer>*/}
+                  {/* NavigationContainer provided by Expo Router - do not nest */}
                   <Drawer.Navigator
-                  screenOptions={{ drawerPosition: "right" }}
-                  drawerContent={(props) => <ProfileDrawer {...props} />}
-                >
-                  <Drawer.Screen
-                    name="Main"
-                    component={StackScreens}
-                    options={{ headerShown: false }}
-                  />
-                </Drawer.Navigator>
-                {/*</NavigationContainer>*/}
-              </TeacherProvider>
-            </AppProvider>
-          </ToastProvider>
-        </ThemeProvider>
-      </PaperProvider>
-    </SafeAreaProvider>
+                    screenOptions={{ drawerPosition: "right" }}
+                    drawerContent={(props) => <ProfileDrawer {...props} />}
+                  >
+                    <Drawer.Screen
+                      name="Main"
+                      component={StackScreens}
+                      options={{ headerShown: false }}
+                    />
+                  </Drawer.Navigator>
+                </TeacherProvider>
+              </AppProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </PaperProvider>
+      </SafeAreaProvider>
     </QueryClientProvider>
   );
 };

@@ -1,4 +1,10 @@
-import React, { createContext, useState, useContext } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useCallback,
+  useMemo,
+} from "react";
 
 const TeacherContext = createContext();
 
@@ -6,44 +12,52 @@ export const TeacherProvider = ({ children }) => {
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
 
-  const selectClass = (classData) => {
+  const selectClass = useCallback((classData) => {
     setSelectedClass(classData);
-    // Clear selected student when a new class is selected
     setSelectedStudent(null);
-  };
+  }, []);
 
-  const selectStudent = (studentData) => {
+  const selectStudent = useCallback((studentData) => {
     setSelectedStudent(studentData);
-  };
+  }, []);
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     setSelectedClass(null);
     setSelectedStudent(null);
-  };
+  }, []);
 
-  const clearStudentSelection = () => {
+  const clearStudentSelection = useCallback(() => {
     setSelectedStudent(null);
-  };
+  }, []);
 
-  const clearClassSelection = () => {
+  const clearClassSelection = useCallback(() => {
     setSelectedClass(null);
     setSelectedStudent(null);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      selectedClass,
+      selectedStudent,
+      selectClass,
+      selectStudent,
+      clearSelection,
+      clearStudentSelection,
+      clearClassSelection,
+    }),
+    [
+      selectedClass,
+      selectedStudent,
+      selectClass,
+      selectStudent,
+      clearSelection,
+      clearStudentSelection,
+      clearClassSelection,
+    ]
+  );
 
   return (
-    <TeacherContext.Provider
-      value={{
-        selectedClass,
-        selectedStudent,
-        selectClass,
-        selectStudent,
-        clearSelection,
-        clearStudentSelection,
-        clearClassSelection,
-      }}
-    >
-      {children}
-    </TeacherContext.Provider>
+    <TeacherContext.Provider value={value}>{children}</TeacherContext.Provider>
   );
 };
 

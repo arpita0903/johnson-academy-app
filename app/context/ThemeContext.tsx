@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+  ReactNode,
+} from "react";
 import { Colors, ColorScheme, ThemeColors } from "../theme/colors";
 
 interface ThemeContextType {
@@ -15,21 +22,24 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [colorScheme, setColorScheme] = useState<ColorScheme>("dark"); // Default to dark mode
+  const [colorScheme, setColorScheme] = useState<ColorScheme>("dark");
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setColorScheme((current) => (current === "light" ? "dark" : "light"));
-  };
+  }, []);
 
   const colors = Colors[colorScheme];
   const isDark = colorScheme === "dark";
 
-  const value: ThemeContextType = {
-    colorScheme,
-    colors,
-    toggleTheme,
-    isDark,
-  };
+  const value = useMemo<ThemeContextType>(
+    () => ({
+      colorScheme,
+      colors,
+      toggleTheme,
+      isDark,
+    }),
+    [colorScheme, colors, toggleTheme, isDark]
+  );
 
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
