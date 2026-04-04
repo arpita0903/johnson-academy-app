@@ -193,7 +193,7 @@ const createStyles = (colors: ThemeColors) =>
     logo: {
       width: 120,
       height: 120,
-      borderRadius: 60,
+      borderRadius: 20,
       marginBottom: 20,
       overflow: "hidden",
     },
