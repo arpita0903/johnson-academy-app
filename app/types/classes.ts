@@ -52,7 +52,7 @@ export interface StudentInClassEntry {
 export interface ClassByTeacher {
   id: string;
   name: string;
-  teacherId: TeacherRef;
+  teacherId: TeacherRef[];
   courseId: CourseRef;
   students: StudentRef[];
   studentsInClass?: StudentInClassEntry[];

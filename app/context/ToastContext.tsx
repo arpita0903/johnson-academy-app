@@ -31,14 +31,14 @@ const ToastProviderInner: React.FC<{ children: ReactNode }> = ({
       Toast.show({
         type: "success",
         text1: message,
-        position: "top",
+        position: "bottom",
         visibilityTime: duration,
         backgroundColor: colors.success,
         textColor: colors.white,
         autoHide: true,
       });
     },
-    [colors.success]
+    [colors.success],
   );
 
   const showError = useCallback(
@@ -46,14 +46,14 @@ const ToastProviderInner: React.FC<{ children: ReactNode }> = ({
       Toast.show({
         type: "error",
         text1: message,
-        position: "top",
+        position: "bottom",
         visibilityTime: duration,
         backgroundColor: colors.error,
         textColor: colors.white,
         autoHide: true,
       });
     },
-    [colors.error]
+    [colors.error],
   );
 
   const showInfo = useCallback(
@@ -61,14 +61,14 @@ const ToastProviderInner: React.FC<{ children: ReactNode }> = ({
       Toast.show({
         type: "info",
         text1: message,
-        position: "top",
+        position: "bottom",
         visibilityTime: duration,
         backgroundColor: colors.primary,
         textColor: colors.white,
         autoHide: true,
       });
     },
-    [colors.primary]
+    [colors.primary],
   );
 
   const showWarning = useCallback(
@@ -76,14 +76,14 @@ const ToastProviderInner: React.FC<{ children: ReactNode }> = ({
       Toast.show({
         type: "warn",
         text1: message,
-        position: "top",
+        position: "bottom",
         visibilityTime: duration,
         backgroundColor: colors.warning,
         textColor: colors.white,
         autoHide: true,
       });
     },
-    [colors.warning]
+    [colors.warning],
   );
 
   const value = useMemo<ToastContextType>(
@@ -93,7 +93,7 @@ const ToastProviderInner: React.FC<{ children: ReactNode }> = ({
       showInfo,
       showWarning,
     }),
-    [showSuccess, showError, showInfo, showWarning]
+    [showSuccess, showError, showInfo, showWarning],
   );
 
   return (

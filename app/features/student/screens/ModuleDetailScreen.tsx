@@ -8,17 +8,18 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Linking,
+  Modal,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { startModule, endModule } from "../../../services/student-progress";
-import {
-  StudentProgressResponse,
-  Module,
-  Resource,
-} from "../../../types/studentProgress";
+import { Module, Resource } from "../../../types/studentProgress";
 import { useAppContext } from "../../../context/AppContext";
 import { useTheme } from "../../../context/ThemeContext";
-import { ThemeColors } from "../../../theme/colors";
+import { ThemeColors, loginButtonGradientColors } from "../../../theme/colors";
+import { ScreenGradientBackground } from "../../../shared/components/ScreenGradientBackground";
 import StarRating from "../../../shared/components/StarRating";
 import { useToast } from "../../../context/ToastContext";
 import { useQueryClient } from "@tanstack/react-query";
@@ -65,7 +66,7 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
     useState<Module | null>(null);
   const { user } = useAppContext();
   const { showError, showSuccess, showInfo } = useToast();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const queryClient = useQueryClient();
 
   const {
@@ -103,9 +104,7 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
 
       await startModule(progressId, module.moduleId.id, syllabusId);
 
-      showSuccess(
-        `Module "${module.moduleId.title}" has been started successfully.`,
-      );
+      showSuccess(`Module has been started successfully.`);
 
       await queryClient.invalidateQueries({
         queryKey: queryKeys.moduleProgress(progressId),
@@ -116,7 +115,7 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
           progressData.classId?.id ?? null,
         ),
       });
-    } catch (error) {
+    } catch {
       showError("Failed to start the module. Please try again.");
     }
   };
@@ -153,9 +152,7 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
         starRating.toString(),
       );
 
-      showSuccess(
-        `Module "${selectedModuleForEnd.moduleId.title}" has been ended successfully.`,
-      );
+      showSuccess(`Module has been ended successfully.`);
 
       // Clear the form and close modal
       setStarRating(0);
@@ -171,26 +168,8 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
           progressData.classId?.id ?? null,
         ),
       });
-    } catch (error) {
+    } catch {
       showError("Failed to end the module. Please try again.");
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <MaterialIcons name="check-circle" size={20} color="#27ae60" />;
-      case "inprogress":
-        return <MaterialIcons name="timelapse" size={20} color="#f39c12" />;
-      case "upcoming":
-      default:
-        return (
-          <MaterialIcons
-            name="radio-button-unchecked"
-            size={20}
-            color="#95a5a6"
-          />
-        );
     }
   };
 
@@ -214,29 +193,43 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
       } else {
         showError("PDF file path is not available for this resource.");
       }
-    } catch (error) {
+    } catch {
       showError("Failed to open PDF. Please try again.");
     }
   };
 
-  const dynamicStyles = createStyles(colors);
+  const s = createStyles(colors, isDark);
 
   if (loading) {
     return (
-      <View style={dynamicStyles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={dynamicStyles.loadingText}>Loading module details...</Text>
-      </View>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaView style={s.safeArea} edges={["top"]}>
+          <ScreenGradientBackground isDark={isDark} />
+          <View style={s.centeredFallback}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={s.loadingText}>Loading module details...</Text>
+          </View>
+        </SafeAreaView>
+      </GestureHandlerRootView>
     );
   }
 
   if (!progressData && !loading) {
     return (
-      <View style={dynamicStyles.errorContainer}>
-        <Text style={dynamicStyles.errorText}>
-          Failed to load module details
-        </Text>
-      </View>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaView style={s.safeArea} edges={["top"]}>
+          <ScreenGradientBackground isDark={isDark} />
+          <View style={s.centeredFallback}>
+            <Icon
+              name="error-outline"
+              size={48}
+              color={colors.error}
+              style={{ marginBottom: 12 }}
+            />
+            <Text style={s.errorTextBold}>Failed to load module details</Text>
+          </View>
+        </SafeAreaView>
+      </GestureHandlerRootView>
     );
   }
 
@@ -244,695 +237,796 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
     return null;
   }
 
-  const student = progressData.studentId;
-  const course = progressData.courseId;
-  const classInfo = progressData.classId;
-  const syllabus = progressData.syllabusProgress?.[0];
+  const courseMeta =
+    progressData.courseId &&
+    typeof progressData.courseId === "object" &&
+    progressData.courseId !== null &&
+    ("title" in progressData.courseId || "name" in progressData.courseId)
+      ? String(
+          (progressData.courseId as { title?: string; name?: string }).title ??
+            (progressData.courseId as { title?: string; name?: string }).name ??
+            "",
+        ).trim()
+      : "";
+
+  const statusLabel =
+    displayModule.status.charAt(0).toUpperCase() +
+    displayModule.status.slice(1);
+
+  const heroSubtitleSecondary = [
+    `Session ${displayModule.moduleId.session}`,
+    statusLabel,
+  ].join(" · ");
+
+  const aboutCopy = displayModule.moduleId.description?.trim() ?? "";
+  const pdfList = displayModule.moduleId.resources ?? [];
+  const showAboutCard = aboutCopy.length > 0 || pdfList.length > 0;
 
   return (
-    <ScrollView
-      contentContainerStyle={dynamicStyles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={["#6200ee"]}
-          tintColor="#6200ee"
-        />
-      }
-    >
-      <View style={dynamicStyles.card}>
-        <Text style={dynamicStyles.title}>{displayModule.moduleId.title}</Text>
-
-        {displayModule.moduleId.description && (
-          <View style={dynamicStyles.section}>
-            <View style={dynamicStyles.labelRow}>
-              <Text style={dynamicStyles.label}>Description</Text>
-              <View style={dynamicStyles.pillContainer}>
-                <Text style={dynamicStyles.pillText}>
-                  Session {displayModule.moduleId.session}
-                </Text>
-              </View>
-            </View>
-            <Text style={dynamicStyles.text}>
-              {displayModule.moduleId.description}
-            </Text>
-          </View>
-        )}
-        {!displayModule.moduleId.description && (
-          <View style={dynamicStyles.pillPostion}>
-            <View style={[dynamicStyles.pillContainer]}>
-              <Text style={dynamicStyles.pillText}>
-                Session {displayModule.moduleId.session}
-              </Text>
-            </View>
-          </View>
-        )}
-        {/* Status */}
-        <View style={[dynamicStyles.section, dynamicStyles.sectionBgAlt]}>
-          <View style={dynamicStyles.labelRow}>
-            <Text style={dynamicStyles.label}>Status</Text>
-            <View style={dynamicStyles.statusContainer}>
-              {getStatusIcon(displayModule.status)}
-              <Text style={dynamicStyles.statusText}>
-                {displayModule.status.charAt(0).toUpperCase() +
-                  displayModule.status.slice(1)}
-              </Text>
-            </View>
-          </View>
-        </View>
-        {/* Resources Section */}
-        {displayModule.moduleId.resources &&
-          displayModule.moduleId.resources.length > 0 && (
-            <View style={[dynamicStyles.section, dynamicStyles.sectionBgAlt]}>
-              {displayModule.moduleId.resources?.map(
-                (resource: Resource, index: number) => (
-                  <View key={resource.key || index}>
-                    <View style={dynamicStyles.resourceHeader}>
-                      <MaterialIcons
-                        name="picture-as-pdf"
-                        size={20}
-                        color="#d32f2f"
-                      />
-                    </View>
-                    <Text style={dynamicStyles.resourceDescription}>
-                      {resource.key || `Resource ${index + 1}`}
-                    </Text>
-                    <View style={dynamicStyles.resourceActions}>
-                      <TouchableOpacity
-                        style={[
-                          dynamicStyles.resourceLink,
-                          dynamicStyles.viewButton,
-                        ]}
-                        onPress={() => handleViewPDF(resource)}
-                      >
-                        <MaterialIcons
-                          name="visibility"
-                          size={16}
-                          color={colors.success}
-                        />
-                        <Text
-                          style={[
-                            dynamicStyles.resourceLinkText,
-                            dynamicStyles.viewButtonText,
-                          ]}
-                        >
-                          View PDF
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={s.safeArea} edges={["top"]}>
+        <ScreenGradientBackground isDark={isDark} />
+        <ScrollView
+          contentContainerStyle={s.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
+        >
+          <View style={s.heroOuter}>
+            <LinearGradient
+              colors={
+                !isDark
+                  ? ["rgba(94, 234, 212, 0.14)", "rgba(167, 139, 250, 0.16)"]
+                  : ["rgba(45, 212, 191, 0.14)", "rgba(167, 139, 250, 0.12)"]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={s.heroGradientFill}
+            >
+              <View style={s.heroInner}>
+                <View style={s.heroTopRow}>
+                  <View style={s.heroIconWell}>
+                    <Icon
+                      name="menu-book"
+                      size={28}
+                      color={
+                        isDark
+                          ? "rgba(167, 139, 250, 0.95)"
+                          : "rgba(109, 40, 217, 0.85)"
+                      }
+                    />
                   </View>
-                ),
-              )}
+                  <View style={s.heroTextBlock}>
+                    <Text style={s.heroTitle} numberOfLines={3}>
+                      {displayModule.moduleId.title}
+                    </Text>
+                    <View style={s.heroSubRow}>
+                      <Icon
+                        name="schedule"
+                        size={16}
+                        color={
+                          isDark
+                            ? "rgba(148, 163, 184, 0.95)"
+                            : "rgba(71, 85, 105, 0.9)"
+                        }
+                        style={s.heroSubIcon}
+                      />
+                      <Text style={s.heroSubtitle} numberOfLines={2}>
+                        {heroSubtitleSecondary}
+                      </Text>
+                    </View>
+                    {courseMeta.length > 0 && (
+                      <Text style={s.heroCourseLine} numberOfLines={2}>
+                        {courseMeta}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              </View>
+            </LinearGradient>
+          </View>
+
+          {showAboutCard ? (
+            <View style={[s.glassSection, s.sectionSpacing]}>
+              <View style={s.sectionTitleRow}>
+                <Text style={s.sectionHeading}>About this module</Text>
+              </View>
+              {aboutCopy.length > 0 ? (
+                <Text style={s.bodyText}>{aboutCopy}</Text>
+              ) : null}
+              {pdfList.length > 0 ? (
+                <View
+                  style={[
+                    s.aboutPdfRow,
+                    aboutCopy.length > 0 ? s.aboutPdfRowAfterBody : null,
+                  ]}
+                >
+                  {pdfList.map((resource: Resource, index: number) => (
+                    <TouchableOpacity
+                      key={resource.key ?? `pdf-${index}`}
+                      activeOpacity={0.82}
+                      onPress={() => handleViewPDF(resource)}
+                      style={s.aboutPdfIcon}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        resource.key
+                          ? `Open PDF: ${resource.key}`
+                          : `Open PDF ${index + 1}`
+                      }
+                    >
+                      <Icon
+                        name="picture-as-pdf"
+                        size={26}
+                        color={colors.error}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
+          {user?.role === "teacher" ? (
+            <View style={[s.glassSection, s.sectionSpacing, s.teacherPanel]}>
+              <Text style={s.sectionHeading}>Teacher actions</Text>
+              <View style={s.buttonRow}>
+                <TouchableOpacity
+                  activeOpacity={0.88}
+                  onPress={() => handleStartCourse(displayModule)}
+                  disabled={displayModule.status !== "upcoming"}
+                  style={[
+                    s.teacherButtonShell,
+                    displayModule.status !== "upcoming" && s.disabledButton,
+                  ]}
+                >
+                  <LinearGradient
+                    colors={[...loginButtonGradientColors]}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={s.teacherGradientFill}
+                  >
+                    <Icon name="play-arrow" size={18} color="#FFFFFF" />
+                    <Text style={s.gradientButtonLabel}>Start</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.88}
+                  onPress={() => handleEndCourse(displayModule)}
+                  disabled={displayModule.status !== "inprogress"}
+                  style={[
+                    s.teacherEndButton,
+                    displayModule.status !== "inprogress" && s.disabledButton,
+                  ]}
+                >
+                  <Icon name="stop" size={18} color="#FFFFFF" />
+                  <Text style={s.gradientButtonLabel}>End</Text>
+                </TouchableOpacity>
+              </View>
+
+              {displayModule.status === "completed" ? (
+                <View style={s.teacherNotice}>
+                  <Icon
+                    name="info-outline"
+                    size={18}
+                    color={colors.primary}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={s.teacherNoticeText}>
+                    This module has been completed and cannot be modified.
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
+          {(displayModule.startDate ||
+            displayModule.endDate ||
+            displayModule.dateTakenToComplete) && (
+            <View style={[s.glassSection, s.sectionSpacing]}>
+              <Text style={[s.sectionHeading, s.sectionHeadingStandalone]}>
+                Timeline
+              </Text>
+              {displayModule.startDate ? (
+                <View style={s.dateRow}>
+                  <Icon name="event" size={20} color={colors.primary} />
+                  <Text style={s.dateLabel}>Start</Text>
+                  <View style={s.dateBadge}>
+                    <Text style={s.dateBadgeText}>
+                      {formatDate(displayModule.startDate)}
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
+              {displayModule.endDate ? (
+                <View style={s.dateRow}>
+                  <Icon
+                    name="event-available"
+                    size={20}
+                    color={colors.success}
+                  />
+                  <Text style={s.dateLabel}>End</Text>
+                  <View style={s.dateBadge}>
+                    <Text style={[s.dateBadgeText, { color: colors.success }]}>
+                      {formatDate(displayModule.endDate)}
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
+              {displayModule.dateTakenToComplete ? (
+                <View style={s.dateRow}>
+                  <Icon name="schedule" size={20} color={colors.warning} />
+                  <Text style={s.dateLabel}>Days to complete</Text>
+                  <View style={s.dateBadge}>
+                    <Text style={[s.dateBadgeText, { color: colors.warning }]}>
+                      {displayModule.dateTakenToComplete} days
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
             </View>
           )}
 
-        {/* Teacher Controls - Only show if user is a teacher */}
-        {user?.role === "teacher" && (
-          <View style={[dynamicStyles.section, dynamicStyles.teacherControls]}>
-            <Text style={dynamicStyles.label}>Teacher Actions</Text>
-            <View style={dynamicStyles.buttonRow}>
-              <TouchableOpacity
-                style={[
-                  dynamicStyles.teacherButton,
-                  dynamicStyles.startButton,
-                  displayModule.status !== "upcoming" &&
-                    dynamicStyles.disabledButton,
-                ]}
-                onPress={() => handleStartCourse(displayModule)}
-                disabled={displayModule.status !== "upcoming"}
-              >
-                <MaterialIcons
-                  name="play-arrow"
-                  size={18}
-                  color={colors.text}
+          {displayModule.score ? (
+            <View style={[s.glassSection, s.sectionSpacing]}>
+              <Text style={s.sectionHeading}>Rating</Text>
+              <View style={s.scoreDisplayContainer}>
+                <StarRating
+                  rating={convertScoreToStars(displayModule.score)}
+                  size={24}
+                  colors={colors}
+                  readonly={true}
                 />
-                <Text style={dynamicStyles.buttonText}>Start</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  dynamicStyles.teacherButton,
-                  dynamicStyles.endButton,
-                  displayModule.status !== "inprogress" &&
-                    dynamicStyles.disabledButton,
-                ]}
-                onPress={() => handleEndCourse(displayModule)}
-                disabled={displayModule.status !== "inprogress"}
-              >
-                <MaterialIcons name="stop" size={18} color={colors.text} />
-                <Text style={dynamicStyles.buttonText}>End</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Status-based message */}
-            {displayModule.status === "completed" && (
-              <View style={dynamicStyles.statusMessage}>
-                <Text style={dynamicStyles.statusMessageText}>
-                  This module has been completed and cannot be modified.
+                <Text style={s.scoreSupportingText}>
+                  {convertScoreToStars(displayModule.score)} out of 5 stars
                 </Text>
               </View>
-            )}
-          </View>
-        )}
-
-        {/* Start Date */}
-        {displayModule.startDate && (
-          <View style={[dynamicStyles.section, dynamicStyles.dateContainer]}>
-            <MaterialIcons name="event" size={20} color={colors.primary} />
-            <Text style={dynamicStyles.dateLabel}>Start Date:</Text>
-            <View style={dynamicStyles.dateBadge}>
-              <Text style={dynamicStyles.dateText}>
-                {formatDate(displayModule.startDate)}
-              </Text>
             </View>
-          </View>
-        )}
+          ) : null}
 
-        {/* End Date */}
-        {displayModule.endDate && (
-          <View style={[dynamicStyles.section, dynamicStyles.dateContainer]}>
-            <MaterialIcons
-              name="event-available"
-              size={20}
-              color={colors.primary}
-            />
-            <Text style={dynamicStyles.dateLabel}>End Date:</Text>
-            <View
-              style={[
-                dynamicStyles.dateBadge,
-                { backgroundColor: colors.surface },
-              ]}
-            >
-              <Text style={[dynamicStyles.dateText, { color: "#2d8659" }]}>
-                {formatDate(displayModule.endDate)}
-              </Text>
+          {displayModule.remark ? (
+            <View style={[s.glassSection, s.sectionSpacing]}>
+              <Text style={s.sectionHeading}>Remark</Text>
+              <Text style={s.bodyText}>{displayModule.remark}</Text>
             </View>
-          </View>
-        )}
+          ) : null}
 
-        {/* Days to Complete */}
-        {displayModule.dateTakenToComplete && (
-          <View style={[dynamicStyles.section, dynamicStyles.dateContainer]}>
-            <MaterialIcons name="schedule" size={20} color={colors.primary} />
-            <Text style={dynamicStyles.dateLabel}>Days to Complete:</Text>
-            <View
-              style={[
-                dynamicStyles.dateBadge,
-                { backgroundColor: colors.surface },
-              ]}
-            >
-              <Text style={[dynamicStyles.dateText, { color: "#d35400" }]}>
-                {displayModule.dateTakenToComplete} days
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* Score */}
-        {displayModule.score && (
-          <View style={[dynamicStyles.section, dynamicStyles.sectionBgAlt]}>
-            <Text style={dynamicStyles.label}>Rating</Text>
-            <View style={dynamicStyles.scoreDisplayContainer}>
-              <StarRating
-                rating={convertScoreToStars(displayModule.score)}
-                size={24}
-                colors={colors}
-                readonly={true}
-              />
-              <Text style={dynamicStyles.scoreText}>
-                {convertScoreToStars(displayModule.score)} out of 5 stars
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* Remark */}
-        {displayModule.remark && (
-          <View style={[dynamicStyles.section, dynamicStyles.sectionBgAlt]}>
-            <Text style={dynamicStyles.label}>Remark</Text>
-            <Text style={dynamicStyles.text}>{displayModule.remark}</Text>
-          </View>
-        )}
-
-        {/* Progress Overview */}
-        <View style={[dynamicStyles.section, dynamicStyles.sectionBgAlt]}>
-          <Text style={dynamicStyles.label}>Progress Overview</Text>
-          <View style={dynamicStyles.progressRow}>
-            <View style={dynamicStyles.progressItem}>
-              <Text style={dynamicStyles.progressNumber}>
-                {progressData.totalModules}
-              </Text>
-              <Text style={dynamicStyles.progressLabel}>Total</Text>
-            </View>
-            <View style={dynamicStyles.progressItem}>
-              <Text style={dynamicStyles.progressNumber}>
-                {progressData.completedModules}
-              </Text>
-              <Text style={dynamicStyles.progressLabel}>Completed</Text>
-            </View>
-            <View style={dynamicStyles.progressItem}>
-              <Text style={dynamicStyles.progressNumber}>
-                {progressData.inProgressModules}
-              </Text>
-              <Text style={dynamicStyles.progressLabel}>In Progress</Text>
-            </View>
-            <View style={dynamicStyles.progressItem}>
-              <Text style={dynamicStyles.progressNumber}>
-                {progressData.upcomingModules}
-              </Text>
-              <Text style={dynamicStyles.progressLabel}>Upcoming</Text>
-            </View>
-          </View>
-          <View style={dynamicStyles.overallProgress}>
-            <Text style={dynamicStyles.label}>Overall Progress:</Text>
-            <Text style={dynamicStyles.progressPercentage}>
-              {progressData.progress}%
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* End Module Modal */}
-      {showEndModal && (
-        <View style={dynamicStyles.modalOverlay}>
-          <View style={dynamicStyles.modalContent}>
-            <Text style={dynamicStyles.modalTitle}>End Module</Text>
-            <Text style={dynamicStyles.modalSubtitle}>
-              {selectedModuleForEnd?.moduleId.title}
-            </Text>
-
-            <View style={dynamicStyles.inputContainer}>
-              <Text style={dynamicStyles.inputLabel}>Rating</Text>
-              <View style={dynamicStyles.starRatingContainer}>
-                <StarRating
-                  rating={starRating}
-                  onRatingChange={setStarRating}
-                  size={32}
-                  colors={colors}
-                />
-                {starRating > 0 && (
-                  <Text style={dynamicStyles.ratingText}>
-                    {starRating} out of 5 stars
-                  </Text>
-                )}
+          <View
+            style={[s.glassSection, s.sectionSpacing, s.sectionSpacingBottom]}
+          >
+            <Text style={s.sectionHeading}>Progress overview</Text>
+            <View style={s.progressGrid}>
+              <View style={s.progressCell}>
+                <Text style={s.progressNumber}>
+                  {progressData.totalModules}
+                </Text>
+                <Text style={s.progressFootnote}>Total</Text>
+              </View>
+              <View style={s.progressCell}>
+                <Text style={s.progressNumber}>
+                  {progressData.completedModules}
+                </Text>
+                <Text style={s.progressFootnote}>Completed</Text>
+              </View>
+              <View style={s.progressCell}>
+                <Text style={s.progressNumber}>
+                  {progressData.inProgressModules}
+                </Text>
+                <Text style={s.progressFootnote}>In progress</Text>
+              </View>
+              <View style={s.progressCell}>
+                <Text style={s.progressNumber}>
+                  {progressData.upcomingModules}
+                </Text>
+                <Text style={s.progressFootnote}>Upcoming</Text>
               </View>
             </View>
-
-            <View style={dynamicStyles.modalButtonRow}>
-              <TouchableOpacity
-                style={[dynamicStyles.modalButton, dynamicStyles.cancelButton]}
-                onPress={() => {
-                  setShowEndModal(false);
-                  setSelectedModuleForEnd(null);
-                  setStarRating(0);
-                }}
-              >
-                <Text style={dynamicStyles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[dynamicStyles.modalButton, dynamicStyles.confirmButton]}
-                onPress={confirmEndModule}
-              >
-                <Text style={dynamicStyles.confirmButtonText}>End Module</Text>
-              </TouchableOpacity>
+            <View style={s.overallProgress}>
+              <Text style={s.overallProgressLabel}>Overall progress</Text>
+              <Text style={s.progressPercentage}>{progressData.progress}%</Text>
             </View>
           </View>
-        </View>
-      )}
-    </ScrollView>
+        </ScrollView>
+
+        <Modal
+          visible={showEndModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            setShowEndModal(false);
+            setSelectedModuleForEnd(null);
+            setStarRating(0);
+          }}
+        >
+          <View style={s.modalOverlay}>
+            <View style={s.modalCard}>
+              <Text style={s.modalTitle}>End module</Text>
+              <Text style={s.modalSubtitle} numberOfLines={3}>
+                {selectedModuleForEnd?.moduleId.title}
+              </Text>
+
+              <View style={s.modalField}>
+                <Text style={s.modalFieldLabel}>Rating</Text>
+                <View style={s.starRatingContainer}>
+                  <StarRating
+                    rating={starRating}
+                    onRatingChange={setStarRating}
+                    size={32}
+                    colors={colors}
+                  />
+                  {starRating > 0 ? (
+                    <Text style={s.ratingText}>
+                      {starRating} out of 5 stars
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+
+              <View style={s.modalButtonRow}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={[s.modalButton, s.cancelButton]}
+                  onPress={() => {
+                    setShowEndModal(false);
+                    setSelectedModuleForEnd(null);
+                    setStarRating(0);
+                  }}
+                >
+                  <Text style={s.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.88}
+                  onPress={confirmEndModule}
+                  style={s.modalGradientButtonShell}
+                >
+                  <LinearGradient
+                    colors={[...loginButtonGradientColors]}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={s.modalGradientButtonFill}
+                  >
+                    <Text style={s.confirmGradientText}>End module</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 };
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: ThemeColors, isDark: boolean) =>
   StyleSheet.create({
-    container: {
-      padding: 20,
-      backgroundColor: colors.background,
-      flexGrow: 1,
+    safeArea: {
+      flex: 1,
+      backgroundColor: isDark ? "#040814" : colors.background,
+      paddingTop: 8,
     },
-    loadingContainer: {
+    scrollContent: {
+      flexGrow: 1,
+      paddingHorizontal: 16,
+      paddingTop: 4,
+      paddingBottom: 28,
+    },
+    centeredFallback: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      backgroundColor: colors.background,
+      paddingHorizontal: 24,
     },
     loadingText: {
+      marginTop: 14,
+      fontSize: 15,
+      fontWeight: "600",
+      color: isDark ? "#CBD5E1" : colors.textSecondary,
+    },
+    errorTextBold: {
       fontSize: 16,
-      color: colors.textSecondary,
-      marginTop: 10,
-    },
-    errorContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: colors.background,
-    },
-    errorText: {
-      fontSize: 16,
-      color: "#d32f2f",
-    },
-    card: {
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 24,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 6,
-      elevation: 3,
-    },
-    title: {
-      fontSize: 26,
       fontWeight: "700",
-      color: colors.primary,
-      marginBottom: 28,
+      color: colors.error,
       textAlign: "center",
     },
-    section: {
+    heroOuter: {
+      borderRadius: 20,
+      overflow: "hidden",
       marginBottom: 18,
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(167, 139, 250, 0.18)"
+        : "rgba(167, 139, 250, 0.22)",
+      backgroundColor: isDark
+        ? "rgba(13, 17, 34, 0.85)"
+        : "rgba(255, 255, 255, 0.88)",
     },
-    label: {
-      fontSize: 16,
+    heroGradientFill: {
+      borderRadius: 19,
+    },
+    heroInner: {
+      paddingHorizontal: 16,
+      paddingVertical: 18,
+    },
+    heroTopRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    heroIconWell: {
+      width: 56,
+      height: 56,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 14,
+      borderWidth: 1.5,
+      borderColor: isDark
+        ? "rgba(167, 139, 250, 0.4)"
+        : "rgba(45, 212, 191, 0.4)",
+      backgroundColor: isDark
+        ? "rgba(167, 139, 250, 0.08)"
+        : "rgba(45, 212, 191, 0.08)",
+    },
+    heroTextBlock: {
+      flex: 1,
+      minWidth: 0,
+    },
+    heroTitle: {
+      fontSize: 22,
+      fontWeight: "800",
+      letterSpacing: -0.35,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+    },
+    heroSubRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 10,
+    },
+    heroSubIcon: {
+      marginRight: 6,
+    },
+    heroSubtitle: {
+      fontSize: 13,
       fontWeight: "600",
-      color: colors.text,
+      flex: 1,
+      color: isDark ? "#CBD5E1" : "#64748B",
+    },
+    heroCourseLine: {
+      marginTop: 8,
+      fontSize: 13,
+      fontWeight: "700",
+      letterSpacing: -0.15,
+      color: isDark ? "rgba(167, 139, 250, 0.95)" : "rgba(109, 40, 217, 0.82)",
+    },
+    glassSection: {
+      overflow: "hidden",
+      backgroundColor: isDark
+        ? "rgba(13, 17, 34, 0.92)"
+        : "rgba(255, 255, 255, 0.94)",
+      borderRadius: 20,
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(255, 255, 255, 0.28)"
+        : "rgba(255, 255, 255, 1)",
+    },
+    sectionSpacing: {
+      marginBottom: 14,
+    },
+    sectionSpacingBottom: {
       marginBottom: 6,
     },
-    labelRow: {
+    sectionTitleRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: 6,
+      gap: 12,
     },
-    text: {
+    sectionHeading: {
       fontSize: 16,
-      color: colors.textSecondary,
+      fontWeight: "800",
+      letterSpacing: -0.3,
+      marginBottom: 10,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+    },
+    sectionHeadingStandalone: {
+      marginBottom: 14,
+    },
+    bodyText: {
+      fontSize: 15,
       lineHeight: 22,
+      fontWeight: "500",
+      color: isDark ? "#CBD5E1" : "#475569",
     },
-    pillContainer: {
-      backgroundColor: colors.surface,
+    aboutPdfRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      gap: 10,
+    },
+    aboutPdfRowAfterBody: {
+      marginTop: 16,
+    },
+    aboutPdfIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1.5,
+      borderColor: isDark
+        ? "rgba(239, 68, 68, 0.45)"
+        : "rgba(220, 38, 38, 0.35)",
+      backgroundColor: isDark
+        ? "rgba(255, 255, 255, 0.06)"
+        : "rgba(248, 250, 252, 1)",
+    },
+    teacherPanel: {
+      paddingBottom: 18,
+    },
+    buttonRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 4,
+      gap: 12,
+    },
+    teacherButtonShell: {
+      flex: 1,
+      borderRadius: 14,
+      overflow: "hidden",
+      minHeight: 50,
+    },
+    teacherGradientFill: {
+      flex: 1,
+      minHeight: 50,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
       paddingHorizontal: 12,
-      paddingVertical: 4,
-      borderRadius: 20,
-    },
-    pillPostion: {
-      flexDirection: "row",
-      justifyContent: "flex-end",
-      marginBottom: 18,
-    },
-    pillText: {
-      color: colors.primary,
-      fontWeight: "600",
-      fontSize: 14,
-    },
-    sectionBgAlt: {
-      backgroundColor: colors.surface,
-      padding: 12,
-      marginTop: 20,
-      borderRadius: 8,
-    },
-    dateContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-    },
-    dateLabel: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.textSecondary,
-    },
-    dateBadge: {
-      backgroundColor: colors.surface,
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 4,
-      marginLeft: 8,
-    },
-    dateText: {
-      color: colors.primary,
-      fontSize: 14,
-      fontWeight: "600",
-    },
-    statusContainer: {
-      flexDirection: "row",
-      alignItems: "center",
       gap: 8,
     },
-    statusText: {
-      fontSize: 16,
-      color: "#7f8c8d",
-    },
-    progressRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginBottom: 20,
-    },
-    progressItem: {
-      alignItems: "center",
+    teacherEndButton: {
       flex: 1,
+      borderRadius: 14,
+      overflow: "hidden",
+      minHeight: 50,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 12,
+      gap: 8,
+      backgroundColor: colors.error,
     },
-    progressNumber: {
-      fontSize: 24,
-      fontWeight: "bold",
+    gradientButtonLabel: {
+      color: "#FFFFFF",
+      fontSize: 15,
+      fontWeight: "800",
+    },
+    disabledButton: {
+      opacity: 0.55,
+    },
+    teacherNotice: {
+      marginTop: 14,
+      flexDirection: "row",
+      alignItems: "flex-start",
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: 14,
+      backgroundColor: isDark
+        ? "rgba(255, 107, 53, 0.1)"
+        : "rgba(255, 107, 53, 0.08)",
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(255, 107, 53, 0.25)"
+        : "rgba(255, 107, 53, 0.2)",
+    },
+    teacherNoticeText: {
+      flex: 1,
+      fontSize: 13,
+      fontWeight: "600",
+      lineHeight: 19,
+      color: isDark ? "#E2E8F0" : "#334155",
+    },
+    dateRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 10,
+    },
+    dateLabel: {
+      flex: 1,
+      fontSize: 14,
+      fontWeight: "700",
+      color: isDark ? "#CBD5E1" : "#475569",
+    },
+    dateBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+      backgroundColor: isDark
+        ? "rgba(148, 163, 184, 0.12)"
+        : "rgba(148, 163, 184, 0.14)",
+    },
+    dateBadgeText: {
+      fontSize: 13,
+      fontWeight: "800",
       color: colors.primary,
     },
-    progressLabel: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      marginTop: 4,
+    scoreDisplayContainer: {
+      alignItems: "center",
+      gap: 10,
+      paddingTop: 6,
+    },
+    scoreSupportingText: {
+      fontSize: 14,
+      fontWeight: "600",
+      textAlign: "center",
+      color: isDark ? "#94A3B8" : "#64748B",
+    },
+    progressGrid: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: 8,
+      marginTop: 8,
+    },
+    progressCell: {
+      flex: 1,
+      alignItems: "center",
+      paddingVertical: 10,
+      borderRadius: 14,
+      backgroundColor: isDark
+        ? "rgba(148, 163, 184, 0.08)"
+        : "rgba(241, 245, 249, 0.9)",
+    },
+    progressNumber: {
+      fontSize: 20,
+      fontWeight: "900",
+      letterSpacing: -0.4,
+      color: colors.primary,
+    },
+    progressFootnote: {
+      marginTop: 6,
+      fontSize: 11,
+      fontWeight: "700",
+      textAlign: "center",
+      color: isDark ? "#94A3B8" : "#64748B",
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
     },
     overallProgress: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
+      marginTop: 18,
       paddingTop: 16,
-      borderTopWidth: 1,
-      borderTopColor: colors.inputBorder,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: isDark
+        ? "rgba(148, 163, 184, 0.35)"
+        : "rgba(148, 163, 184, 0.45)",
+    },
+    overallProgressLabel: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: isDark ? "#E2E8F0" : "#0f172a",
     },
     progressPercentage: {
       fontSize: 20,
-      fontWeight: "bold",
+      fontWeight: "900",
       color: colors.primary,
     },
-    resourceItem: {
-      backgroundColor: colors.card,
-      padding: 16,
-      borderRadius: 8,
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: colors.inputBorder,
-    },
-    resourceHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 8,
-    },
-    resourceTitle: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-      marginLeft: 8,
-      flex: 1,
-    },
-    resourceDescription: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      lineHeight: 20,
-      marginBottom: 12,
-    },
-    resourceLink: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.surface,
-      paddingVertical: 8,
-      paddingHorizontal: 16,
-      borderRadius: 6,
-      borderWidth: 1,
-      borderColor: colors.inputBorder,
-    },
-    resourceLinkText: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: colors.primary,
-      marginRight: 6,
-    },
-    resourceActions: {
-      flexDirection: "row",
-      gap: 12,
-    },
-    viewButton: {
-      backgroundColor: colors.surface,
-      borderColor: colors.primary,
-    },
-    viewButtonText: {
-      marginLeft: 6,
-      color: colors.primary,
-    },
-    teacherControls: {
-      marginTop: 20,
-      padding: 20,
-      backgroundColor: colors.surface,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.inputBorder,
-      marginHorizontal: 0,
-    },
-    buttonRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginTop: 10,
-      gap: 12,
-    },
-    teacherButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.primary,
-      flex: 1,
-      minHeight: 48,
-    },
-    startButton: {
-      backgroundColor: colors.primary,
-    },
-    endButton: {
-      backgroundColor: colors.error,
-    },
-    disabledButton: {
-      opacity: 0.6,
-    },
-    buttonText: {
-      color: colors.text,
-      fontSize: 14,
-      fontWeight: "600",
-      marginLeft: 6,
-      textAlign: "center",
-    },
-    statusMessage: {
-      marginTop: 10,
-      padding: 10,
-      backgroundColor: colors.surface,
-      borderRadius: 6,
-      borderWidth: 1,
-      borderColor: colors.inputBorder,
-    },
-    statusMessageText: {
-      fontSize: 14,
-      color: colors.primary,
-      textAlign: "center",
-    },
-    // Modal styles
     modalOverlay: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      zIndex: 1000,
+      paddingHorizontal: 20,
+      backgroundColor: "rgba(15, 23, 42, 0.62)",
     },
-    modalContent: {
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 24,
-      margin: 20,
-      width: "90%",
-      maxWidth: 400,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.25,
-      shadowRadius: 8,
-      elevation: 8,
+    modalCard: {
+      width: "100%",
+      maxWidth: 420,
+      borderRadius: 22,
+      paddingHorizontal: 22,
+      paddingVertical: 22,
+      backgroundColor: isDark
+        ? "rgba(13, 17, 34, 0.98)"
+        : "rgba(255, 255, 255, 0.98)",
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(167, 139, 250, 0.35)"
+        : "rgba(167, 139, 250, 0.28)",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.22,
+      shadowRadius: 22,
+      elevation: 14,
     },
     modalTitle: {
       fontSize: 20,
-      fontWeight: "700",
-      color: colors.primary,
+      fontWeight: "900",
+      letterSpacing: -0.4,
       textAlign: "center",
-      marginBottom: 8,
+      marginBottom: 10,
+      color: isDark ? "#F8FAFC" : "#0f172a",
     },
     modalSubtitle: {
-      fontSize: 16,
-      color: colors.textSecondary,
-      textAlign: "center",
-      marginBottom: 24,
-    },
-    inputContainer: {
-      marginBottom: 16,
-    },
-    inputLabel: {
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: "600",
-      color: colors.text,
-      marginBottom: 6,
+      textAlign: "center",
+      marginBottom: 22,
+      color: isDark ? "#CBD5E1" : "#475569",
     },
-    textInput: {
-      borderWidth: 1,
-      borderColor: colors.inputBorder,
-      borderRadius: 8,
-      padding: 12,
-      fontSize: 16,
-      backgroundColor: colors.inputBackground,
-      color: colors.text,
+    modalField: {
+      marginBottom: 12,
+    },
+    modalFieldLabel: {
+      fontSize: 13,
+      fontWeight: "800",
+      marginBottom: 10,
+      letterSpacing: 0.2,
+      color: isDark ? "#E2E8F0" : "#334155",
+    },
+    starRatingContainer: {
+      alignItems: "center",
+      paddingVertical: 8,
+    },
+    ratingText: {
+      fontSize: 13,
+      fontWeight: "700",
+      marginTop: 10,
+      color: isDark ? "#94A3B8" : "#64748B",
     },
     modalButtonRow: {
       flexDirection: "row",
       justifyContent: "space-between",
-      marginTop: 24,
+      marginTop: 18,
       gap: 12,
     },
     modalButton: {
       flex: 1,
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderRadius: 8,
+      paddingVertical: 14,
+      borderRadius: 14,
       alignItems: "center",
       justifyContent: "center",
-      minHeight: 48,
+      minHeight: 50,
     },
     cancelButton: {
-      backgroundColor: colors.inputBackground,
+      backgroundColor: isDark
+        ? "rgba(148, 163, 184, 0.14)"
+        : "rgba(241, 245, 249, 1)",
       borderWidth: 1,
-      borderColor: colors.inputBorder,
-    },
-    confirmButton: {
-      backgroundColor: colors.error,
+      borderColor: isDark
+        ? "rgba(148, 163, 184, 0.35)"
+        : "rgba(148, 163, 184, 0.45)",
     },
     cancelButtonText: {
-      color: colors.textSecondary,
       fontSize: 14,
-      fontWeight: "600",
+      fontWeight: "800",
+      color: isDark ? "#CBD5E1" : "#475569",
     },
-    confirmButtonText: {
-      color: colors.text,
-      fontSize: 14,
-      fontWeight: "600",
+    modalGradientButtonShell: {
+      flex: 1,
+      borderRadius: 14,
+      overflow: "hidden",
+      minHeight: 50,
     },
-    starRatingContainer: {
+    modalGradientButtonFill: {
+      flex: 1,
+      minHeight: 50,
       alignItems: "center",
-      paddingVertical: 12,
+      justifyContent: "center",
+      paddingHorizontal: 12,
     },
-    ratingText: {
+    confirmGradientText: {
       fontSize: 14,
-      color: colors.textSecondary,
-      marginTop: 8,
-      fontWeight: "500",
-    },
-    scoreDisplayContainer: {
-      alignItems: "center",
-      gap: 8,
-    },
-    scoreText: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      fontWeight: "500",
-      textAlign: "center",
+      fontWeight: "900",
+      color: "#FFFFFF",
     },
   });
 

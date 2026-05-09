@@ -1,3 +1,14 @@
+/** Login screen primary CTA gradient stops */
+export const loginGradientOrange = "#FF7A2E";
+export const loginGradientRose = "#FF5C7A";
+export const loginGradientMagenta = "#E11D8C";
+
+export const loginButtonGradientColors = [
+  loginGradientOrange,
+  loginGradientRose,
+  loginGradientMagenta,
+] as const;
+
 export const Colors = {
   light: {
     background: "#ffffff",
@@ -34,6 +45,7 @@ export const Colors = {
     primaryLight: "#ff8c5a", // Lighter orange for accents
     accent: "#ff9966", // Secondary orange
     primaryText: "#ffffff",
+
     border: "#333333",
     inputBackground: "#2a2a2a",
     inputBorder: "#404040",

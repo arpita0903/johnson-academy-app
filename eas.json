@@ -19,6 +19,7 @@
         "gradleCommand": ":app:assembleRelease"
       },
       "ios": {
+        "image": "latest",
         "simulator": false,
         "buildConfiguration": "Release"
       }
@@ -28,6 +29,7 @@
         "gradleCommand": ":app:bundleRelease"
       },
       "ios": {
+        "image": "latest",
         "simulator": false,
         "buildConfiguration": "Release"
       },

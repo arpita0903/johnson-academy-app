@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-// import BottomSheet from "@gorhom/bottom-sheet";
-// import AttendanceCalendar from "../../../shared/components/AttendanceCalendar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import Icon from "react-native-vector-icons/MaterialIcons";
 import { useTheme } from "../../../context/ThemeContext";
 import { ThemeColors } from "../../../theme/colors";
 import { useTeacherContext } from "../../../context/TeacherContext";
+import { ScreenGradientBackground } from "../../../shared/components/ScreenGradientBackground";
 
 const StudentList = ({
   route,
@@ -22,14 +24,10 @@ const StudentList = ({
   navigation: any;
 }) => {
   const { batch } = route.params;
-  const { colors } = useTheme();
-  // const bottomSheetRef = useRef<BottomSheet>(null);
+  const { colors, isDark } = useTheme();
 
-  // const [selectedStudent, setSelectedStudent] = useState({
-  //   name: "",
-  //   id: "",
-  // });
-  // const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const students = useMemo(() => batch?.students ?? [], [batch?.students]);
+
   const { selectStudent } = useTeacherContext();
 
   const handleStudentPress = (student: any) => {
@@ -37,217 +35,308 @@ const StudentList = ({
     navigation.navigate("Course", { student, batch });
   };
 
-  // const openAttendanceSheet = (student: any) => {
-  //   setSelectedStudent(student);
+  const s = createStyles(colors, isDark);
 
-  //   bottomSheetRef.current?.expand();
-  // };
+  const renderHeader = () => (
+    <View style={s.heroOuter}>
+      <LinearGradient
+        colors={
+          !isDark
+            ? ["rgba(94, 234, 212, 0.14)", "rgba(167, 139, 250, 0.16)"]
+            : ["rgba(45, 212, 191, 0.14)", "rgba(167, 139, 250, 0.12)"]
+        }
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={s.heroGradientFill}
+      >
+        <View style={s.heroInner}>
+          <View style={s.heroTopRow}>
+            <View style={s.heroIconWell}>
+              <Icon
+                name="groups"
+                size={28}
+                color={
+                  isDark
+                    ? "rgba(167, 139, 250, 0.95)"
+                    : "rgba(109, 40, 217, 0.85)"
+                }
+              />
+            </View>
+            <View style={s.heroTextBlock}>
+              <Text style={s.heroTitle} numberOfLines={2}>
+                {batch?.name ?? "Class"}
+              </Text>
+              <View style={s.heroSubRow}>
+                <Icon
+                  name="person-outline"
+                  size={16}
+                  color={
+                    isDark
+                      ? "rgba(148, 163, 184, 0.95)"
+                      : "rgba(71, 85, 105, 0.9)"
+                  }
+                  style={s.heroSubIcon}
+                />
+                <Text style={s.heroSubtitle}>
+                  {students.length}{" "}
+                  {students.length === 1 ? "student" : "students"} enrolled
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </LinearGradient>
+    </View>
+  );
 
-  // const openStudentDetails = (student: any) => {
-  //   setSelectedStudent(student);
-  //   setDetailsModalVisible(true);
-  // };
-
-  // const closeStudentDetails = () => {
-  //   setDetailsModalVisible(false);
-  // };
-
-  const dynamicStyles = createStyles(colors);
+  const renderEmpty = () => (
+    <View style={s.emptyState}>
+      <Icon
+        name="sentiment-neutral"
+        size={44}
+        color={
+          isDark ? "rgba(148, 163, 184, 0.65)" : "rgba(100, 116, 139, 0.55)"
+        }
+        style={s.emptyIcon}
+      />
+      <Text style={s.emptyStateText}>No students in this class yet</Text>
+    </View>
+  );
 
   return (
-    <>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <View style={dynamicStyles.container}>
-          <Text style={dynamicStyles.header}>{batch.name} - Students</Text>
-
-          <FlatList
-            data={batch.students}
-            keyExtractor={(item) => item._id}
-            contentContainerStyle={dynamicStyles.listContent}
-            renderItem={({ item }) => (
-              <View style={dynamicStyles.studentCard}>
-                <TouchableOpacity
-                  onPress={() => handleStudentPress(item.user)}
-                  style={{
-                    flexDirection: "row",
-                    flex: 1,
-                    alignItems: "center",
-                  }}
-                >
-                  <Image
-                    source={
-                      item.user.profilePicture
-                        ? { uri: item.user.profilePicture }
-                        : require("../../../../assets/images/profileDefault.png")
-                    }
-                    style={dynamicStyles.studentImage}
-                  />
-                  {/* <Text style={dynamicStyles.studentInitial}>
-                    {item.name.charAt(0).toUpperCase()}
-                  </Text> */}
-                  <View style={dynamicStyles.infoContainer}>
-                    <Text style={dynamicStyles.studentName}>
-                      {item.user.name}
-                    </Text>
-                    <Text style={dynamicStyles.studentId}>
-                      {" "}
-                      {item.user.email}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-
-                {/* <View style={{ flexDirection: "row", gap: 12 }}>
-                  <TouchableOpacity onPress={() => openAttendanceSheet(item)}>
-                    <Icon name="calendar" size={24} color="#6200ee" />
-                  </TouchableOpacity> 
-                </View> */}
-              </View>
-            )}
-          />
-
-          {/* Bottom Sheet for Attendance */}
-          {/* {selectedStudent && (
-            <BottomSheet
-              enableOverDrag
-              enableDynamicSizing
-              enablePanDownToClose
-              ref={bottomSheetRef}
-              index={-1}
-              snapPoints={["75%"]}
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={s.safeArea} edges={["top"]}>
+        <ScreenGradientBackground isDark={isDark} />
+        <FlatList
+          data={students}
+          keyExtractor={(item, index) =>
+            item?._id != null ? String(item._id) : `student-${index}`
+          }
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={renderEmpty}
+          contentContainerStyle={
+            students.length === 0 ? s.listContentEmpty : s.listContent
+          }
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              activeOpacity={0.82}
+              onPress={() => handleStudentPress(item.user)}
+              accessibilityRole="button"
+              style={s.studentCardTouchable}
             >
-              <BottomSheetView style={styles.contentContainer}>
-                <View>
-                  <Text style={styles.sheetTitle}>
-                    Attendance - {selectedStudent?.name}
-                  </Text>
-                  <AttendanceCalendar
-                    studentId={selectedStudent.id}
-                    classId={batch.id}
-                  />
+              <View style={s.studentGlassCard}>
+                <View style={s.studentRow}>
+                  <View style={s.studentMain}>
+                    <View style={s.avatarWell}>
+                      <Image
+                        source={
+                          item.user?.profilePicture
+                            ? { uri: item.user.profilePicture }
+                            : require("../../../../assets/images/profileDefault.png")
+                        }
+                        style={s.studentAvatar}
+                        accessibilityLabel={`Photo of ${item.user?.name ?? "student"}`}
+                      />
+                    </View>
+                    <View style={s.studentTextBlock}>
+                      <Text style={s.studentName} numberOfLines={1}>
+                        {item.user?.name ?? "Student"}
+                      </Text>
+                      <Text style={s.studentEmail} numberOfLines={2}>
+                        {item.user?.rollNumber ?? ""}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={s.trail}>
+                    <Icon
+                      name="chevron-right"
+                      size={26}
+                      color={
+                        isDark
+                          ? "rgba(148, 163, 184, 0.75)"
+                          : "rgba(100, 116, 139, 0.85)"
+                      }
+                    />
+                  </View>
                 </View>
-              </BottomSheetView>
-            </BottomSheet>
-          )} */}
-        </View>
-      </GestureHandlerRootView>
-    </>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 };
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: ThemeColors, isDark: boolean) =>
   StyleSheet.create({
-    container: {
+    safeArea: {
       flex: 1,
-      padding: 16,
-      backgroundColor: colors.background,
-    },
-    contentContainer: {
-      flex: 1,
-      alignItems: "center",
-      backgroundColor: colors.background,
-    },
-    header: {
-      fontSize: 26,
-      fontWeight: "bold",
-      color: colors.primary,
-      marginBottom: 24,
-      textAlign: "center",
+      backgroundColor: isDark ? "#040814" : colors.background,
+      paddingTop: 8,
     },
     listContent: {
-      paddingBottom: 20,
+      paddingHorizontal: 16,
+      paddingTop: 4,
+      paddingBottom: 28,
     },
-    sheetTitle: {
-      fontSize: 24,
-      fontWeight: "600",
-      marginBottom: 10,
-      textAlign: "center",
-      color: colors.text,
+    listContentEmpty: {
+      flexGrow: 1,
+      paddingHorizontal: 16,
+      paddingTop: 4,
+      paddingBottom: 28,
     },
-    studentCard: {
+    heroOuter: {
+      borderRadius: 20,
+      overflow: "hidden",
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(167, 139, 250, 0.18)"
+        : "rgba(167, 139, 250, 0.22)",
+      backgroundColor: isDark
+        ? "rgba(13, 17, 34, 0.85)"
+        : "rgba(255, 255, 255, 0.88)",
+    },
+    heroGradientFill: {
+      borderRadius: 19,
+    },
+    heroInner: {
+      paddingHorizontal: 16,
+      paddingVertical: 18,
+    },
+    heroTopRow: {
       flexDirection: "row",
       alignItems: "center",
-      padding: 18,
-      marginBottom: 16,
-      backgroundColor: colors.card,
-      borderRadius: 15,
-      borderWidth: 1,
-      borderColor: colors.cardBorder,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 8,
-      elevation: 6,
-      justifyContent: "space-between",
     },
-    studentInitial: {
-      backgroundColor: colors.primary,
-      color: colors.primaryText,
-      fontSize: 22,
-      fontWeight: "bold",
-      height: 56,
+    heroIconWell: {
       width: 56,
-      borderRadius: 28,
-      textAlign: "center",
-      textAlignVertical: "center",
-      marginRight: 16,
-      shadowColor: colors.primary,
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
-      elevation: 4,
+      height: 56,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 14,
+      borderWidth: 1.5,
+      borderColor: isDark
+        ? "rgba(167, 139, 250, 0.4)"
+        : "rgba(45, 212, 191, 0.4)",
+      backgroundColor: isDark
+        ? "rgba(167, 139, 250, 0.08)"
+        : "rgba(45, 212, 191, 0.08)",
     },
-    infoContainer: {
+    heroTextBlock: {
+      flex: 1,
+      minWidth: 0,
+    },
+    heroTitle: {
+      fontSize: 22,
+      fontWeight: "800",
+      letterSpacing: -0.35,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+    },
+    heroSubRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 8,
+    },
+    heroSubIcon: {
+      marginRight: 6,
+    },
+    heroSubtitle: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: isDark ? "#CBD5E1" : "#64748B",
       flex: 1,
     },
-    studentName: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: 4,
+    studentCardTouchable: {
+      marginBottom: 14,
     },
-    studentId: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      marginTop: 2,
+    studentGlassCard: {
+      overflow: "hidden",
+      backgroundColor: isDark
+        ? "rgba(13, 17, 34, 0.92)"
+        : "rgba(255, 255, 255, 0.94)",
+      borderRadius: 20,
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(255, 255, 255, 0.28)"
+        : "rgba(255, 255, 255, 1)",
     },
-    publishButton: {
-      backgroundColor: colors.primary,
-      paddingVertical: 8,
-      paddingHorizontal: 16,
-      borderRadius: 10,
-    },
-    publishButtonText: {
-      color: colors.primaryText,
-      fontWeight: "bold",
-      fontSize: 14,
-    },
-    headerRow: {
+    studentRow: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 20,
+      justifyContent: "space-between",
     },
-    actions: {
+    studentMain: {
       flexDirection: "row",
-      gap: 8,
+      alignItems: "center",
+      flex: 1,
+      minWidth: 0,
+      marginRight: 8,
     },
-    headerButton: {
-      backgroundColor: colors.primary,
-      paddingVertical: 8,
-      paddingHorizontal: 14,
-      borderRadius: 10,
-      marginLeft: 8,
+    avatarWell: {
+      width: 52,
+      height: 52,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 14,
+      borderWidth: 1.5,
+      borderColor: isDark
+        ? "rgba(167, 139, 250, 0.4)"
+        : "rgba(45, 212, 191, 0.4)",
+      backgroundColor: isDark
+        ? "rgba(148, 163, 184, 0.06)"
+        : "rgba(148, 163, 184, 0.08)",
     },
-    headerButtonText: {
-      color: colors.primaryText,
-      fontWeight: "bold",
-      fontSize: 14,
+    studentAvatar: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
     },
-    studentImage: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      marginRight: 16,
+    studentTextBlock: {
+      flex: 1,
+      justifyContent: "center",
+      minWidth: 0,
+    },
+    studentName: {
+      fontWeight: "800",
+      fontSize: 17,
+      letterSpacing: -0.35,
+      lineHeight: 22,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+    },
+    studentEmail: {
+      marginTop: 6,
+      fontSize: 12,
+      fontWeight: "600",
+      letterSpacing: 0.3,
+      color: isDark ? "#CBD5E1" : "#64748B",
+    },
+    trail: {
+      justifyContent: "center",
+      paddingLeft: 4,
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingVertical: 48,
+      paddingHorizontal: 24,
+      minHeight: 280,
+    },
+    emptyIcon: {
+      marginBottom: 14,
+    },
+    emptyStateText: {
+      fontSize: 17,
+      color: colors.textMuted,
+      textAlign: "center",
+      fontWeight: "500",
+      maxWidth: 280,
     },
   });
 

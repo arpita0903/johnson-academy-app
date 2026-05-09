@@ -80,7 +80,6 @@ const CompleteProfileModal = ({
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const selectedImage = result.assets[0];
-        console.log("selectedImage", selectedImage.uri);
         setProfileData((prev) => ({
           ...prev,
           profilePicture: selectedImage.uri,
@@ -94,7 +93,6 @@ const CompleteProfileModal = ({
 
   const handleSubmit = async () => {
     setIsUploading(true);
-    console.log("profileData", profileData);
     if (!profileData.name.trim() || !profileData.phoneNumber.trim()) {
       showError("Please fill in all required fields");
       setIsUploading(false);
@@ -113,10 +111,8 @@ const CompleteProfileModal = ({
       const uploadResult = await uploadProfilePicture(
         profileData.profilePicture, // Pass blob directly instead of File
         "student",
-        "profile"
+        "profile",
       );
-
-      console.log("uploadResult", uploadResult);
 
       // Update profile data with the uploaded image URL
       const updatedProfileData = {
@@ -128,7 +124,7 @@ const CompleteProfileModal = ({
       const user = await updateUserProfile(updatedProfileData);
 
       setUser((prev: any) =>
-        prev ? { ...prev, profilePicture: user.profilePicture } : null
+        prev ? { ...prev, profilePicture: user.profilePicture } : null,
       );
 
       // Show success message
@@ -136,7 +132,7 @@ const CompleteProfileModal = ({
     } catch (error: any) {
       console.error("Error uploading profile picture:", error);
       showError(
-        error.message || "Failed to upload profile picture. Please try again."
+        error.message || "Failed to upload profile picture. Please try again.",
       );
     } finally {
       setIsUploading(false);

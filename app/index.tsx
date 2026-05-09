@@ -21,20 +21,21 @@ import DetailScreen from "./features/student/screens/DetailScreen";
 import ModuleDetailScreen from "./features/student/screens/ModuleDetailScreen";
 import TeacherDashboard from "./features/teacher/screens/Dashboard";
 import StudentList from "./features/teacher/screens/StudentList";
-import FolderItemsScreen from "./features/teacher/screens/FolderItemsScreen";
 import TeacherCourseDetail from "./features/teacher/screens/TeacherCourseDetail";
 import ProfileDrawer from "./features/profile/components/ProfileDrawer";
+import ProfileScreen from "./features/profile/screens/ProfileScreen";
 
 import { AppProvider, useAppContext } from "./context/AppContext";
 import { TeacherProvider } from "./context/TeacherContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { ToastProvider } from "./context/ToastContext";
 import { Provider as PaperProvider } from "react-native-paper";
-import { Image, TouchableOpacity } from "react-native";
+import { Image, TouchableOpacity, View } from "react-native";
+
+import { ScreenGradientBackground } from "./shared/components/ScreenGradientBackground";
 
 import Icon from "react-native-vector-icons/Foundation";
 import StudentDetailsScreen from "./features/teacher/screens/StudentDetailsScreen";
-import type { ClassByTeacher } from "./types/classes";
 
 type MainStackParamList = {
   Home: undefined;
@@ -45,9 +46,9 @@ type MainStackParamList = {
   ModuleDetail: Record<string, unknown> | undefined;
   TeacherDashboard: undefined;
   StudentList: Record<string, unknown> | undefined;
-  FolderItems: { prefix: string; classes: ClassByTeacher[] };
   TeacherCourseDetail: Record<string, unknown> | undefined;
   StudentDetailsScreen: Record<string, unknown> | undefined;
+  Profile: undefined;
 };
 
 const Drawer = createDrawerNavigator();
@@ -67,7 +68,8 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: colors.background,
+          // dark blue
+          backgroundColor: "#0c1224",
           borderBottomWidth: 1,
           borderBottomColor: colors.cardBorder,
         },
@@ -124,7 +126,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
           headerLeftContainerStyle: { paddingLeft: 12 },
           headerLeft: () => (
             <Image
-              source={require("../assets/images/logo.png")}
+              source={require("../assets/images/square-logo.png")}
               style={{
                 width: 32,
                 height: 32,
@@ -154,6 +156,28 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
           </ProtectedWrapper>
         )}
       </Stack.Screen>
+      <Stack.Screen
+        name="Profile"
+        options={{
+          headerTitle: "Profile",
+          headerRight: () => (
+            <TouchableOpacity onPress={() => navigation.openDrawer()}>
+              <Icon
+                name="list"
+                size={32}
+                color={colors.primary}
+                style={{ width: 40, marginRight: 10 }}
+              />
+            </TouchableOpacity>
+          ),
+        }}
+      >
+        {(props) => (
+          <ProtectedWrapper navigation={props.navigation}>
+            <ProfileScreen {...props} />
+          </ProtectedWrapper>
+        )}
+      </Stack.Screen>
       <Stack.Screen name="Detail" component={DetailScreen} />
       <Stack.Screen name="ModuleDetail">
         {(props) => <ModuleDetailScreen {...(props as any)} />}
@@ -165,7 +189,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
           headerLeftContainerStyle: { paddingLeft: 12 },
           headerLeft: () => (
             <Image
-              source={require("../assets/images/logo.png")}
+              source={require("../assets/images/square-logo.png")}
               style={{
                 width: 32,
                 height: 32,
@@ -217,31 +241,6 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
             requiredRole="teacher"
           >
             <StudentList {...props} />
-          </ProtectedWrapper>
-        )}
-      </Stack.Screen>
-      <Stack.Screen
-        name="FolderItems"
-        options={({ route }) => ({
-          headerTitle: (route.params as any)?.prefix ?? "Classes",
-          headerRight: () => (
-            <TouchableOpacity onPress={() => navigation.openDrawer()}>
-              <Icon
-                name="list"
-                size={32}
-                color={colors.primary}
-                style={{ width: 40, marginRight: 10 }}
-              />
-            </TouchableOpacity>
-          ),
-        })}
-      >
-        {(props) => (
-          <ProtectedWrapper
-            navigation={props.navigation}
-            requiredRole="teacher"
-          >
-            <FolderItemsScreen {...props} />
           </ProtectedWrapper>
         )}
       </Stack.Screen>
@@ -299,6 +298,25 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
   );
 };
 
+const NavigationLayer: React.FC = () => {
+  const { isDark } = useTheme();
+  return (
+    <View style={{ flex: 1 }}>
+      <ScreenGradientBackground isDark={isDark} />
+      <Drawer.Navigator
+        screenOptions={{ drawerPosition: "right" }}
+        drawerContent={(props) => <ProfileDrawer {...props} />}
+      >
+        <Drawer.Screen
+          name="Main"
+          component={StackScreens}
+          options={{ headerShown: false }}
+        />
+      </Drawer.Navigator>
+    </View>
+  );
+};
+
 const App = () => {
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (status) => {
@@ -319,16 +337,7 @@ const App = () => {
               <AppProvider>
                 <TeacherProvider>
                   {/* NavigationContainer provided by Expo Router - do not nest */}
-                  <Drawer.Navigator
-                    screenOptions={{ drawerPosition: "right" }}
-                    drawerContent={(props) => <ProfileDrawer {...props} />}
-                  >
-                    <Drawer.Screen
-                      name="Main"
-                      component={StackScreens}
-                      options={{ headerShown: false }}
-                    />
-                  </Drawer.Navigator>
+                  <NavigationLayer />
                 </TeacherProvider>
               </AppProvider>
             </ToastProvider>

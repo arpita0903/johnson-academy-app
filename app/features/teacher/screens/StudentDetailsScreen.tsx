@@ -7,12 +7,16 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  TextInput,
+  Modal,
+  Pressable,
+  ActivityIndicator,
+  Image,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { Card, Divider, List, Avatar, Badge } from "react-native-paper";
-
-import { Menu, Button } from "react-native-paper";
-import { TextInput } from "react-native";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTeacherContext } from "../../../context/TeacherContext";
 import { getStudentAttendance } from "../../../services/attendance";
 import {
@@ -24,21 +28,20 @@ import {
 import { AttendanceResponse } from "../../../types/attendance";
 import { submitMRT } from "../../../services/mrt";
 import { useTheme } from "../../../context/ThemeContext";
-import { ThemeColors } from "../../../theme/colors";
+import { ThemeColors, loginButtonGradientColors } from "../../../theme/colors";
+import { ScreenGradientBackground } from "../../../shared/components/ScreenGradientBackground";
 
 const StudentDetailsScreen = () => {
-  const navigation = useNavigation();
-  const route = useRoute();
   const { selectedStudent, selectedClass } = useTeacherContext();
-  const { colors } = useTheme();
-  const dynamicStyles = createStyles(colors);
+  const { colors, isDark } = useTheme();
+  const s = createStyles(colors, isDark);
 
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [attendanceData, setAttendanceData] =
     useState<AttendanceResponse | null>(null);
   const [filteredMonths, setFilteredMonths] = useState<MonthOption[]>([]);
   const [loading, setLoading] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false);
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({
     "SPT & File Submission": "",
     Regularity: "",
@@ -49,7 +52,6 @@ const StudentDetailsScreen = () => {
     remarks: "",
   });
 
-  // Fetch student attendance and generate filtered months
   useEffect(() => {
     const fetchAttendanceAndGenerateMonths = async () => {
       if (!selectedStudent?.id || !selectedClass?.id) return;
@@ -58,29 +60,23 @@ const StudentDetailsScreen = () => {
       try {
         const attendance = await getStudentAttendance(
           selectedStudent.id,
-          selectedClass.id
+          selectedClass.id,
         );
 
         setAttendanceData(attendance as AttendanceResponse);
 
-        // Generate filtered months based on joining date
-        // Check if we have results and the first result has joiningDate
-        const attendanceData = attendance as AttendanceResponse;
+        const attendancePayload = attendance as AttendanceResponse;
         if (
-          attendanceData?.results &&
-          attendanceData.results.length > 0 &&
-          attendanceData.results[0]?.joiningDate
+          attendancePayload?.results &&
+          attendancePayload.results.length > 0 &&
+          attendancePayload.results[0]?.joiningDate
         ) {
-          const joiningDate = attendanceData.results[0].joiningDate;
-
-          // Parse the date properly
+          const joiningDate = attendancePayload.results[0].joiningDate;
           const parsedJoiningDate = new Date(joiningDate);
-
-          // Check if joining date is in the future
           const currentDate = new Date();
           if (parsedJoiningDate > currentDate) {
             console.warn(
-              "Joining date is in the future, using current date as fallback"
+              "Joining date is in the future, using current date as fallback",
             );
             const months = generateFilteredMonths(currentDate);
             setFilteredMonths(months);
@@ -89,19 +85,15 @@ const StudentDetailsScreen = () => {
             }
           } else {
             const months = generateFilteredMonths(parsedJoiningDate);
-
             setFilteredMonths(months);
-
-            // Set first available month as default if months exist
             if (months.length > 0) {
               setSelectedMonth(months[0].value);
             }
           }
         } else {
           console.warn(
-            "No joining date found in attendance data, using student's date_of_joining as fallback"
+            "No joining date found in attendance data, using student's date_of_joining as fallback",
           );
-          // Fallback to student's date_of_joining if attendance data doesn't have joiningDate
           const joiningDate = selectedStudent.date_of_joining;
           if (joiningDate) {
             const months = generateFilteredMonths(joiningDate);
@@ -115,9 +107,6 @@ const StudentDetailsScreen = () => {
         }
       } catch (error) {
         console.error("Error fetching attendance:", error);
-        // Fallback to current year months if API fails
-        const currentYear = new Date().getFullYear();
-
         setFilteredMonths([]);
       } finally {
         setLoading(false);
@@ -132,30 +121,22 @@ const StudentDetailsScreen = () => {
   ]);
 
   const handleChange = (key: string, value: string) => {
-    // For numeric fields (excluding remarks), validate input in real-time
     if (key !== "remarks") {
-      // Allow empty string for clearing
       if (value === "") {
         setFormData((prev) => ({ ...prev, [key]: value }));
         return;
       }
-
-      // Only allow numeric input
       const numericValue = value.replace(/[^0-9]/g, "");
       if (numericValue === "") {
         setFormData((prev) => ({ ...prev, [key]: "" }));
         return;
       }
-
-      const num = parseInt(numericValue);
-      // Enforce max value of 5
+      const num = parseInt(numericValue, 10);
       if (num > 5) {
-        return; // Don't update if value exceeds 5
+        return;
       }
-
       setFormData((prev) => ({ ...prev, [key]: numericValue }));
     } else {
-      // For remarks, allow any text
       setFormData((prev) => ({ ...prev, [key]: value }));
     }
   };
@@ -166,7 +147,6 @@ const StudentDetailsScreen = () => {
       return;
     }
 
-    // Validate all required fields
     const requiredFields = [
       "SPT & File Submission",
       "Regularity",
@@ -178,7 +158,7 @@ const StudentDetailsScreen = () => {
 
     const missingFields = requiredFields.filter((field) => {
       const value = formData[field];
-      return !value || value.trim() === "" || parseInt(value) === 0;
+      return !value || value.trim() === "" || parseInt(value, 10) === 0;
     });
 
     if (missingFields.length > 0) {
@@ -186,15 +166,13 @@ const StudentDetailsScreen = () => {
       return;
     }
 
-    // Validate remarks field (mandatory)
     if (!formData.remarks || formData.remarks.trim() === "") {
       alert("Please fill in the Remarks field");
       return;
     }
 
-    // Validate score ranges (> 2 and max 5, so 3-5)
     const invalidScores = requiredFields.filter((field) => {
-      const score = parseInt(formData[field]);
+      const score = parseInt(formData[field], 10);
       return score <= 2 || score > 5;
     });
 
@@ -204,10 +182,7 @@ const StudentDetailsScreen = () => {
     }
 
     try {
-      // Convert month format from "Jan-2025" to "MM-YYYY"
       const formattedMonth = convertMonthFormat(selectedMonth);
-
-      // Validate the formatted month
       if (formattedMonth.includes("NaN")) {
         throw new Error("Invalid month format. Please select a valid month.");
       }
@@ -216,18 +191,19 @@ const StudentDetailsScreen = () => {
         month: formattedMonth,
         classId: selectedClass.id,
         studentId: selectedStudent.id,
-        sptAndFileSubmission: parseInt(formData["SPT & File Submission"]) || 0,
-        regularity: parseInt(formData.Regularity) || 0,
-        learningSpeed: parseInt(formData["Learning Speed"]) || 0,
-        songLearning: parseInt(formData["Song Learning"]) || 0,
-        assignment: parseInt(formData.Assignment) || 0,
-        theoryAndTechnicals: parseInt(formData["Theory and Technicals"]) || 0,
+        sptAndFileSubmission:
+          parseInt(formData["SPT & File Submission"], 10) || 0,
+        regularity: parseInt(formData.Regularity, 10) || 0,
+        learningSpeed: parseInt(formData["Learning Speed"], 10) || 0,
+        songLearning: parseInt(formData["Song Learning"], 10) || 0,
+        assignment: parseInt(formData.Assignment, 10) || 0,
+        theoryAndTechnicals:
+          parseInt(formData["Theory and Technicals"], 10) || 0,
         remarks: formData.remarks || "",
       };
 
-      const response = await submitMRT(mrtData);
+      await submitMRT(mrtData);
 
-      // Clear form after successful submission
       setFormData({
         "SPT & File Submission": "",
         Regularity: "",
@@ -238,548 +214,712 @@ const StudentDetailsScreen = () => {
         remarks: "",
       });
 
-      // Show success message (you can add a toast or alert here)
       alert("MRT submitted successfully!");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error submitting MRT:", error);
-      alert(error.message || "Failed to submit MRT. Please try again.");
+      const message =
+        error instanceof Error ? error.message : "Failed to submit MRT.";
+      alert(message);
     }
   };
 
+  const studentName =
+    selectedStudent?.name ?? (selectedStudent as { user?: { name?: string } })?.user?.name ?? "Student";
+  const rollNumber =
+    (selectedStudent as { rollNumber?: string })?.rollNumber ??
+    (selectedStudent as { user?: { rollNumber?: string } })?.user?.rollNumber ??
+    "";
+  const profilePic =
+    (selectedStudent as { profilePicture?: string })?.profilePicture ??
+    (selectedStudent as { user?: { profilePicture?: string } })?.user?.profilePicture;
+  const classLabel =
+    (selectedClass as { name?: string })?.name ??
+    (selectedClass as { title?: string })?.title ??
+    "";
+
+  const selectedMonthLabel =
+    selectedMonth &&
+    filteredMonths.find((m) => m.value === selectedMonth)?.label;
+
   if (!selectedStudent) {
     return (
-      <View style={dynamicStyles.container}>
-        <Text style={dynamicStyles.errorText}>No Data Available...</Text>
-      </View>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaView style={s.safeArea} edges={["top"]}>
+          <ScreenGradientBackground isDark={isDark} />
+          <View style={s.centeredFallback}>
+            <Icon name="person-off" size={48} color={colors.error} />
+            <Text style={s.errorFallbackText}>No student selected</Text>
+          </View>
+        </SafeAreaView>
+      </GestureHandlerRootView>
     );
   }
 
+  const firstResult = attendanceData?.results?.[0];
+
   return (
-    <KeyboardAvoidingView
-      style={dynamicStyles.keyboardAvoidingView}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-    >
-      <ScrollView
-        contentContainerStyle={dynamicStyles.container}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {attendanceData && (
-          <Card style={dynamicStyles.attendanceCard}>
-            <Card.Content>
-              <View style={dynamicStyles.attendanceHeader}>
-                <Avatar.Icon
-                  size={40}
-                  icon="calendar-check"
-                  style={dynamicStyles.attendanceIcon}
-                />
-                <View style={dynamicStyles.attendanceTitleContainer}>
-                  <Text style={dynamicStyles.attendanceTitle}>
-                    Attendance Information
-                  </Text>
-                  <Text style={dynamicStyles.attendanceSubtitle}>
-                    Student performance tracking
-                  </Text>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={s.safeArea} edges={["top"]}>
+        <ScreenGradientBackground isDark={isDark} />
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        >
+          <ScrollView
+            contentContainerStyle={s.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={s.heroOuter}>
+              <LinearGradient
+                colors={
+                  !isDark
+                    ? ["rgba(94, 234, 212, 0.14)", "rgba(167, 139, 250, 0.16)"]
+                    : ["rgba(45, 212, 191, 0.14)", "rgba(167, 139, 250, 0.12)"]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={s.heroGradientFill}
+              >
+                <View style={s.heroInner}>
+                  <View style={s.heroTopRow}>
+                    <View style={s.heroAvatarWell}>
+                      {profilePic ? (
+                        <Image
+                          source={{ uri: profilePic }}
+                          style={s.heroAvatar}
+                          accessibilityLabel={`Photo of ${studentName}`}
+                        />
+                      ) : (
+                        <View style={s.heroIconWell}>
+                          <Icon
+                            name="person"
+                            size={28}
+                            color={
+                              isDark
+                                ? "rgba(167, 139, 250, 0.95)"
+                                : "rgba(109, 40, 217, 0.85)"
+                            }
+                          />
+                        </View>
+                      )}
+                    </View>
+                    <View style={s.heroTextBlock}>
+                      <Text style={s.heroTitle} numberOfLines={2}>
+                        {studentName}
+                      </Text>
+                      <View style={s.heroSubRow}>
+                        <Icon
+                          name="badge"
+                          size={16}
+                          color={
+                            isDark
+                              ? "rgba(148, 163, 184, 0.95)"
+                              : "rgba(71, 85, 105, 0.9)"
+                          }
+                          style={s.heroSubIcon}
+                        />
+                        <Text style={s.heroSubtitle} numberOfLines={1}>
+                          {rollNumber ? `Roll ${rollNumber}` : "Student details"}
+                        </Text>
+                      </View>
+                      {classLabel.length > 0 ? (
+                        <Text style={s.heroCourseLine} numberOfLines={2}>
+                          {classLabel}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
                 </View>
+              </LinearGradient>
+            </View>
+
+            {loading && !attendanceData ? (
+              <View style={[s.glassSection, s.sectionSpacing, s.loaderRow]}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={s.bodyMuted}>Loading attendance…</Text>
               </View>
+            ) : null}
 
-              <Divider style={dynamicStyles.divider} />
+            {attendanceData ? (
+              <View style={[s.glassSection, s.sectionSpacing]}>
+                <Text style={[s.sectionHeading, s.sectionHeadingStandalone]}>
+                  Attendance
+                </Text>
+                <Text style={s.bodyMuted}>Student attendance snapshot</Text>
 
-              <View style={dynamicStyles.attendanceStats}>
-                <View style={dynamicStyles.statRow}>
-                  <List.Icon icon="calendar" color={colors.textSecondary} />
-                  <View style={dynamicStyles.statContent}>
-                    <Text style={dynamicStyles.statLabel}>Joining Date</Text>
-                    <Text style={dynamicStyles.statValue}>
-                      {attendanceData.results?.[0]?.joiningDate
-                        ? formatDate(attendanceData.results[0].joiningDate)
-                        : selectedStudent.date_of_joining || "Not available"}
+                <View style={s.statDivider} />
+
+                <View style={s.dateRow}>
+                  <Icon name="event" size={20} color={colors.primary} />
+                  <Text style={s.statLabel}>Joining date</Text>
+                  <View style={s.dateBadge}>
+                    <Text style={s.dateBadgeText}>
+                      {firstResult?.joiningDate
+                        ? formatDate(firstResult.joiningDate)
+                        : selectedStudent.date_of_joining
+                          ? formatDate(selectedStudent.date_of_joining)
+                          : "—"}
                     </Text>
                   </View>
                 </View>
 
-                <View style={dynamicStyles.statRow}>
-                  <List.Icon
-                    icon="calendar-month"
-                    color={colors.textSecondary}
+                <View style={s.dateRow}>
+                  <Icon
+                    name="calendar-month"
+                    size={20}
+                    color={colors.primary}
                   />
-                  <View style={dynamicStyles.statContent}>
-                    <Text style={dynamicStyles.statLabel}>
-                      Available Months
+                  <Text style={s.statLabel}>Available months</Text>
+                  <View style={s.dateBadge}>
+                    <Text style={s.dateBadgeText}>
+                      {filteredMonths.length}
                     </Text>
-                    <View style={dynamicStyles.monthDisplayContainer}>
-                      <Text style={dynamicStyles.monthCountText}>
-                        {filteredMonths.length}
-                      </Text>
-                      <Text style={dynamicStyles.monthLabelText}>
-                        {filteredMonths.length === 1 ? "month" : "months"}
-                      </Text>
-                    </View>
                   </View>
                 </View>
 
-                {attendanceData.results?.[0]?.presentDates && (
-                  <View style={dynamicStyles.statRow}>
-                    <List.Icon icon="check-circle" color={colors.success} />
-                    <View style={dynamicStyles.statContent}>
-                      <Text style={dynamicStyles.statLabel}>Present Days</Text>
-                      <Badge size={24} style={dynamicStyles.presentBadge}>
-                        {attendanceData.results[0].presentDates.length}
-                      </Badge>
-                    </View>
-                  </View>
-                )}
-
-                {attendanceData.results?.[0]?.absentDates && (
-                  <View style={dynamicStyles.statRow}>
-                    <List.Icon icon="cancel" color={colors.error} />
-                    <View style={dynamicStyles.statContent}>
-                      <Text style={dynamicStyles.statLabel}>Absent Days</Text>
-                      <Badge size={24} style={dynamicStyles.absentBadge}>
-                        {attendanceData.results[0].absentDates.length}
-                      </Badge>
-                    </View>
-                  </View>
-                )}
-
-                {attendanceData.results?.[0]?.lastDate && (
-                  <View style={dynamicStyles.statRow}>
-                    <List.Icon icon="update" color={colors.primary} />
-                    <View style={dynamicStyles.statContent}>
-                      <Text style={dynamicStyles.statLabel}>
-                        Last Attendance
-                      </Text>
-                      <Text style={dynamicStyles.statValue}>
-                        {formatDate(attendanceData.results[0].lastDate)}
+                {firstResult?.presentDates ? (
+                  <View style={s.dateRow}>
+                    <Icon name="check-circle" size={20} color={colors.success} />
+                    <Text style={s.statLabel}>Present days</Text>
+                    <View style={[s.countPill, s.countPillSuccess]}>
+                      <Text style={s.countPillText}>
+                        {firstResult.presentDates.length}
                       </Text>
                     </View>
                   </View>
-                )}
-              </View>
-            </Card.Content>
-          </Card>
-        )}
+                ) : null}
 
-        <View style={dynamicStyles.mrtSection}>
-          <Card style={dynamicStyles.mrtCard}>
-            <Card.Content>
-              <View style={dynamicStyles.mrtHeader}>
-                <Avatar.Icon
-                  size={40}
-                  icon="clipboard-check"
-                  style={dynamicStyles.mrtIcon}
-                />
-                <View style={dynamicStyles.mrtTitleContainer}>
-                  <Text style={dynamicStyles.mrtHeading}>
-                    Monthly Review Test (30 Marks)
-                  </Text>
-                  <Text style={dynamicStyles.mrtSubtitle}>
-                    Evaluate student performance for selected month
-                  </Text>
-                </View>
+                {firstResult?.absentDates ? (
+                  <View style={s.dateRow}>
+                    <Icon name="cancel" size={20} color={colors.error} />
+                    <Text style={s.statLabel}>Absent days</Text>
+                    <View style={[s.countPill, s.countPillError]}>
+                      <Text style={s.countPillText}>
+                        {firstResult.absentDates.length}
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                {firstResult?.lastDate ? (
+                  <View style={s.dateRow}>
+                    <Icon name="update" size={20} color={colors.primary} />
+                    <Text style={s.statLabel}>Last attendance</Text>
+                    <View style={s.dateBadge}>
+                      <Text style={s.dateBadgeText}>
+                        {formatDate(firstResult.lastDate)}
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
               </View>
+            ) : null}
+
+            <View style={[s.glassSection, s.sectionSpacing]}>
+              <Text style={[s.sectionHeading, s.sectionHeadingStandalone]}>
+                Monthly review (MRT)
+              </Text>
+              <Text style={s.bodyMuted}>
+                Select a month, then submit scores (3–5) and remarks.
+              </Text>
 
               {loading ? (
-                <View style={dynamicStyles.loadingContainer}>
-                  <Text style={dynamicStyles.loadingText}>
-                    Loading months...
+                <View style={s.loaderRow}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={s.bodyMuted}>Loading months…</Text>
+                </View>
+              ) : filteredMonths.length > 0 ? (
+                <>
+                  <Text style={s.fieldLabel}>Month</Text>
+                  <TouchableOpacity
+                    style={s.monthPickerTrigger}
+                    activeOpacity={0.85}
+                    onPress={() => setMonthPickerOpen(true)}
+                  >
+                    <Text
+                      style={s.monthPickerTriggerText}
+                      numberOfLines={1}
+                    >
+                      {selectedMonthLabel ?? "Choose a month"}
+                    </Text>
+                    <Icon
+                      name="keyboard-arrow-down"
+                      size={24}
+                      color={
+                        isDark
+                          ? "rgba(148, 163, 184, 0.9)"
+                          : "rgba(71, 85, 105, 0.95)"
+                      }
+                    />
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <View style={s.emptyMonths}>
+                  <Icon
+                    name="event-busy"
+                    size={32}
+                    color={
+                      isDark
+                        ? "rgba(248, 113, 113, 0.85)"
+                        : "rgba(220, 38, 38, 0.85)"
+                    }
+                  />
+                  <Text style={s.emptyMonthsText}>
+                    No months available for this student.
                   </Text>
                 </View>
-              ) : (
-                <>
-                  {filteredMonths.length > 0 ? (
-                    <View style={dynamicStyles.dropdownContainer}>
-                      <Text style={dynamicStyles.dropdownLabel}>
-                        Select Month
-                      </Text>
-                      <Menu
-                        visible={menuVisible}
-                        onDismiss={() => setMenuVisible(false)}
-                        anchor={
-                          <Button
-                            mode="outlined"
-                            onPress={() => setMenuVisible(true)}
-                            style={dynamicStyles.dropdown}
-                            contentStyle={{ justifyContent: "flex-start" }}
-                            textColor={colors.text}
-                            buttonColor="transparent"
-                          >
-                            {selectedMonth
-                              ? filteredMonths.find(
-                                  (m) => m.value === selectedMonth
-                                )?.label || "Choose a month"
-                              : "Choose a month"}
-                          </Button>
-                        }
-                      >
-                        {filteredMonths.map((month) => (
-                          <Menu.Item
-                            key={month.value}
-                            onPress={() => {
-                              setSelectedMonth(month.value);
-                              setMenuVisible(false);
-                            }}
-                            title={month.label}
-                          />
-                        ))}
-                      </Menu>
-                    </View>
-                  ) : (
-                    <View style={dynamicStyles.noMonthsContainer}>
-                      <Text style={dynamicStyles.noMonthsText}>
-                        No months available for this student
-                      </Text>
-                    </View>
-                  )}
-                </>
               )}
-            </Card.Content>
-          </Card>
-        </View>
+            </View>
 
-        {selectedMonth && (
-          <Card style={dynamicStyles.formCard}>
-            <Card.Content>
-              <View style={dynamicStyles.formHeader}>
-                <Avatar.Icon
-                  size={32}
-                  icon="form-select"
-                  style={dynamicStyles.formIcon}
-                />
-                <Text style={dynamicStyles.formTitle}>MRT Evaluation Form</Text>
-              </View>
+            {selectedMonth ? (
+              <View style={[s.glassSection, s.sectionSpacingBottom]}>
+                <Text style={[s.sectionHeading, s.sectionHeadingStandalone]}>
+                  Evaluation form
+                </Text>
 
-              <Divider style={dynamicStyles.formDivider} />
-
-              <View style={dynamicStyles.formContainer}>
-                {[
-                  "SPT & File Submission",
-                  "Regularity",
-                  "Learning Speed",
-                  "Theory and Technicals",
-                  "Song Learning",
-                  "Assignment",
-                  "remarks",
-                ].map((field, idx) => (
-                  <View key={field} style={dynamicStyles.inputGroup}>
-                    <Text style={dynamicStyles.inputLabel}>
+                {(
+                  [
+                    "SPT & File Submission",
+                    "Regularity",
+                    "Learning Speed",
+                    "Theory and Technicals",
+                    "Song Learning",
+                    "Assignment",
+                    "remarks",
+                  ] as const
+                ).map((field) => (
+                  <View key={field} style={s.inputGroup}>
+                    <Text style={s.fieldLabel}>
                       {field === "remarks" ? "Remarks *" : `${field} *`}
                     </Text>
                     <TextInput
-                      style={dynamicStyles.input}
+                      style={
+                        field === "remarks"
+                          ? [s.input, s.inputMultiline]
+                          : s.input
+                      }
                       value={formData[field]}
                       onChangeText={(text) => handleChange(field, text)}
                       placeholder={
-                        field === "remarks" ? "Enter remarks" : `Range: 3-5`
+                        field === "remarks" ? "Enter remarks" : "Range: 3–5"
                       }
-                      placeholderTextColor={colors.placeholderText}
-                      keyboardType={field === "remarks" ? "default" : "numeric"}
+                      placeholderTextColor={
+                        isDark ? "rgba(148, 163, 184, 0.5)" : colors.placeholderText
+                      }
+                      keyboardType={
+                        field === "remarks" ? "default" : "number-pad"
+                      }
                       multiline={field === "remarks"}
-                      numberOfLines={field === "remarks" ? 3 : 1}
+                      numberOfLines={field === "remarks" ? 4 : 1}
                     />
                   </View>
                 ))}
 
                 <TouchableOpacity
-                  style={dynamicStyles.submitButton}
+                  activeOpacity={0.88}
                   onPress={handleSubmit}
+                  style={s.submitShell}
                 >
-                  <Text style={dynamicStyles.submitButtonText}>Submit MRT</Text>
+                  <LinearGradient
+                    colors={[...loginButtonGradientColors]}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={s.submitGradient}
+                  >
+                    <Icon name="send" size={20} color="#FFFFFF" />
+                    <Text style={s.submitGradientText}>Submit MRT</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
-            </Card.Content>
-          </Card>
-        )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+            ) : null}
+          </ScrollView>
+        </KeyboardAvoidingView>
+
+        <Modal
+          visible={monthPickerOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setMonthPickerOpen(false)}
+        >
+          <Pressable
+            style={s.modalBackdrop}
+            onPress={() => setMonthPickerOpen(false)}
+          >
+            <Pressable style={s.monthModalCard} onPress={(e) => e.stopPropagation()}>
+              <Text style={s.monthModalTitle}>Select month</Text>
+              <ScrollView
+                style={s.monthModalList}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                {filteredMonths.map((month) => {
+                  const selected = month.value === selectedMonth;
+                  return (
+                    <TouchableOpacity
+                      key={month.value}
+                      style={[s.monthRow, selected && s.monthRowSelected]}
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        setSelectedMonth(month.value);
+                        setMonthPickerOpen(false);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          s.monthRowText,
+                          selected && s.monthRowTextSelected,
+                        ]}
+                      >
+                        {month.label}
+                      </Text>
+                      {selected ? (
+                        <Icon name="check" size={22} color={colors.primary} />
+                      ) : null}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 };
 
 export default StudentDetailsScreen;
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: ThemeColors, isDark: boolean) =>
   StyleSheet.create({
-    keyboardAvoidingView: {
+    safeArea: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: isDark ? "#040814" : colors.background,
+      paddingTop: 8,
     },
-    container: {
+    scrollContent: {
       flexGrow: 1,
-      padding: 20,
-      backgroundColor: colors.background,
+      paddingHorizontal: 16,
+      paddingTop: 4,
+      paddingBottom: 32,
     },
-    errorText: {
+    centeredFallback: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 24,
+      gap: 12,
+    },
+    errorFallbackText: {
       fontSize: 16,
+      fontWeight: "700",
       color: colors.error,
       textAlign: "center",
     },
-    backButton: {
+    heroOuter: {
+      borderRadius: 20,
+      overflow: "hidden",
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(167, 139, 250, 0.18)"
+        : "rgba(167, 139, 250, 0.22)",
+      backgroundColor: isDark
+        ? "rgba(13, 17, 34, 0.85)"
+        : "rgba(255, 255, 255, 0.88)",
+    },
+    heroGradientFill: {
+      borderRadius: 19,
+    },
+    heroInner: {
+      paddingHorizontal: 16,
+      paddingVertical: 18,
+    },
+    heroTopRow: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 20,
     },
-    backText: {
-      fontSize: 16,
-      marginLeft: 6,
-      color: colors.text,
+    heroAvatarWell: {
+      marginRight: 14,
     },
-    detailsBox: {
-      backgroundColor: colors.card,
+    heroAvatar: {
+      width: 56,
+      height: 56,
       borderRadius: 16,
-      padding: 20,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.1,
-      shadowRadius: 6,
-      elevation: 6,
     },
-    sheetTitle: {
-      fontSize: 22,
-      fontWeight: "600",
-      marginBottom: 12,
-      textAlign: "center",
-      color: colors.text,
-    },
-    detailText: {
-      fontSize: 16,
-      marginBottom: 10,
-      color: colors.textSecondary,
-    },
-    boldLabel: {
-      fontWeight: "bold",
-    },
-    mrtButton: {
-      marginTop: 20,
-      backgroundColor: colors.primary,
-      paddingVertical: 12,
-      borderRadius: 10,
+    heroIconWell: {
+      width: 56,
+      height: 56,
+      borderRadius: 16,
       alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1.5,
+      borderColor: isDark
+        ? "rgba(167, 139, 250, 0.4)"
+        : "rgba(45, 212, 191, 0.4)",
+      backgroundColor: isDark
+        ? "rgba(167, 139, 250, 0.08)"
+        : "rgba(45, 212, 191, 0.08)",
     },
-    mrtButtonText: {
-      color: colors.primaryText,
-      fontSize: 16,
-      fontWeight: "bold",
+    heroTextBlock: {
+      flex: 1,
+      minWidth: 0,
     },
-    mrtSection: {
-      marginTop: 30,
-      marginBottom: 10,
+    heroTitle: {
+      fontSize: 22,
+      fontWeight: "800",
+      letterSpacing: -0.35,
+      color: isDark ? "#F8FAFC" : "#0f172a",
     },
-    mrtHeading: {
-      fontSize: 18,
+    heroSubRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 10,
+    },
+    heroSubIcon: {
+      marginRight: 6,
+    },
+    heroSubtitle: {
+      fontSize: 13,
       fontWeight: "600",
-      color: colors.text,
+      flex: 1,
+      color: isDark ? "#CBD5E1" : "#64748B",
+    },
+    heroCourseLine: {
+      marginTop: 8,
+      fontSize: 13,
+      fontWeight: "700",
+      letterSpacing: -0.15,
+      color: isDark
+        ? "rgba(167, 139, 250, 0.95)"
+        : "rgba(109, 40, 217, 0.82)",
+    },
+    glassSection: {
+      overflow: "hidden",
+      backgroundColor: isDark
+        ? "rgba(13, 17, 34, 0.92)"
+        : "rgba(255, 255, 255, 0.94)",
+      borderRadius: 20,
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(255, 255, 255, 0.28)"
+        : "rgba(255, 255, 255, 1)",
+    },
+    sectionSpacing: {
+      marginBottom: 14,
+    },
+    sectionSpacingBottom: {
+      marginBottom: 18,
+    },
+    sectionHeading: {
+      fontSize: 16,
+      fontWeight: "800",
+      letterSpacing: -0.3,
+      marginBottom: 6,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+    },
+    sectionHeadingStandalone: {
+      marginBottom: 6,
+    },
+    bodyMuted: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: isDark ? "#94A3B8" : "#64748B",
+      lineHeight: 19,
       marginBottom: 4,
     },
-    dropdown: {
-      fontSize: 16,
-      paddingHorizontal: 12,
-      borderWidth: 1,
-      borderColor: colors.inputBorder,
-      borderRadius: 8,
-      color: colors.text,
-      backgroundColor: colors.inputBackground,
+    statDivider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: isDark
+        ? "rgba(148, 163, 184, 0.35)"
+        : "rgba(148, 163, 184, 0.4)",
+      marginVertical: 14,
     },
-    formContainer: {
-      paddingHorizontal: 0,
-      paddingTop: 10,
-    },
-    inputGroup: {
-      marginBottom: 16,
-    },
-    inputLabel: {
-      fontSize: 14,
-      fontWeight: "600",
-      marginBottom: 6,
-      color: colors.text,
-    },
-    input: {
-      borderWidth: 1,
-      borderColor: colors.inputBorder,
-      borderRadius: 8,
-      padding: 12,
-      fontSize: 16,
-      backgroundColor: colors.inputBackground,
-      color: colors.text,
-    },
-    submitButton: {
-      backgroundColor: colors.primary,
-      padding: 14,
-      borderRadius: 8,
-      marginTop: 16,
-      alignItems: "center",
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    submitButtonText: {
-      color: colors.primaryText,
-      fontSize: 16,
-      fontWeight: "bold",
-    },
-    loadingText: {
-      fontSize: 16,
-      color: colors.textSecondary,
-      textAlign: "center",
-      marginTop: 10,
-    },
-    attendanceCard: {
-      marginTop: 10,
-      marginBottom: 10,
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.1,
-      shadowRadius: 6,
-      elevation: 6,
-    },
-    attendanceHeader: {
+    dateRow: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 10,
-    },
-    attendanceIcon: {
-      marginRight: 10,
-    },
-    attendanceTitleContainer: {
-      flex: 1,
-    },
-    attendanceTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.text,
-    },
-    attendanceSubtitle: {
-      fontSize: 14,
-      color: colors.textSecondary,
-    },
-    divider: {
-      marginVertical: 10,
-    },
-    attendanceStats: {
-      paddingHorizontal: 10,
-    },
-    statRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 10,
       gap: 10,
+      paddingVertical: 10,
     },
-    statContent: {
+    statLabel: {
       flex: 1,
-      display: "flex",
+      fontSize: 14,
+      fontWeight: "700",
+      color: isDark ? "#CBD5E1" : "#475569",
+    },
+    dateBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+      backgroundColor: isDark
+        ? "rgba(148, 163, 184, 0.12)"
+        : "rgba(148, 163, 184, 0.14)",
+    },
+    dateBadgeText: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: colors.primary,
+    },
+    countPill: {
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderRadius: 999,
+      minWidth: 40,
+      alignItems: "center",
+    },
+    countPillSuccess: {
+      backgroundColor: isDark ? "rgba(34, 197, 94, 0.2)" : "rgba(34, 197, 94, 0.18)",
+    },
+    countPillError: {
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.22)" : "rgba(239, 68, 68, 0.14)",
+    },
+    countPillText: {
+      fontSize: 14,
+      fontWeight: "900",
+      color: isDark ? "#F8FAFC" : "#0f172a",
+    },
+    loaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      marginTop: 8,
+    },
+    fieldLabel: {
+      fontSize: 13,
+      fontWeight: "800",
+      marginBottom: 8,
+      marginTop: 4,
+      letterSpacing: 0.15,
+      color: isDark ? "#E2E8F0" : "#334155",
+    },
+    monthPickerTrigger: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-    },
-    statLabel: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      marginBottom: 2,
-    },
-    statValue: {
-      fontSize: 16,
-      fontWeight: "bold",
-      color: colors.text,
-    },
-    monthDisplayContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginTop: 4,
-    },
-    monthCountText: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: colors.text,
-    },
-    monthLabelText: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      marginLeft: 4,
-    },
-    presentBadge: {
-      backgroundColor: colors.success,
-      borderRadius: 12,
-      paddingHorizontal: 10,
-    },
-    absentBadge: {
-      backgroundColor: colors.error,
-      borderRadius: 12,
-      paddingHorizontal: 10,
-    },
-    noMonthsText: {
-      fontSize: 16,
-      color: colors.error,
-      textAlign: "center",
       marginTop: 10,
-      fontStyle: "italic",
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+      borderRadius: 14,
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(148, 163, 184, 0.35)" : "rgba(148, 163, 184, 0.45)",
+      backgroundColor: isDark
+        ? "rgba(15, 23, 42, 0.5)"
+        : "rgba(248, 250, 252, 0.95)",
     },
-    mrtCard: {
-      marginTop: 10,
-      marginBottom: 10,
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.1,
-      shadowRadius: 6,
-      elevation: 6,
-    },
-    mrtHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 10,
-    },
-    mrtIcon: {
-      marginRight: 10,
-    },
-    mrtTitleContainer: {
+    monthPickerTriggerText: {
       flex: 1,
+      fontSize: 15,
+      fontWeight: "700",
+      color: isDark ? "#F8FAFC" : "#0f172a",
     },
-    mrtSubtitle: {
-      fontSize: 14,
-      color: colors.textSecondary,
-    },
-    loadingContainer: {
-      paddingVertical: 10,
+    emptyMonths: {
       alignItems: "center",
+      paddingVertical: 20,
+      gap: 12,
     },
-    dropdownContainer: {
-      marginTop: 10,
-    },
-    dropdownLabel: {
-      fontSize: 14,
+    emptyMonthsText: {
+      fontSize: 15,
       fontWeight: "600",
-      marginBottom: 10,
-      color: colors.text,
+      textAlign: "center",
+      color: colors.error,
+      paddingHorizontal: 12,
     },
-    noMonthsContainer: {
-      marginTop: 10,
-      alignItems: "center",
+    inputGroup: {
+      marginBottom: 14,
     },
-    formCard: {
-      marginTop: 10,
-      marginBottom: 10,
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.1,
-      shadowRadius: 6,
-      elevation: 6,
+    input: {
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(148, 163, 184, 0.35)" : "rgba(148, 163, 184, 0.45)",
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontSize: 16,
+      fontWeight: "600",
+      backgroundColor: isDark
+        ? "rgba(15, 23, 42, 0.55)"
+        : "rgba(248, 250, 252, 0.98)",
+      color: isDark ? "#F8FAFC" : "#0f172a",
     },
-    formHeader: {
+    inputMultiline: {
+      minHeight: 100,
+      textAlignVertical: "top",
+      paddingTop: 12,
+    },
+    submitShell: {
+      marginTop: 8,
+      borderRadius: 14,
+      overflow: "hidden",
+    },
+    submitGradient: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 10,
+      justifyContent: "center",
+      gap: 10,
+      paddingVertical: 16,
+      paddingHorizontal: 16,
     },
-    formIcon: {
-      marginRight: 10,
+    submitGradientText: {
+      color: "#FFFFFF",
+      fontSize: 16,
+      fontWeight: "900",
     },
-    formTitle: {
+    modalBackdrop: {
+      flex: 1,
+      justifyContent: "flex-end",
+      backgroundColor: "rgba(15, 23, 42, 0.55)",
+    },
+    monthModalCard: {
+      borderTopLeftRadius: 22,
+      borderTopRightRadius: 22,
+      paddingTop: 18,
+      paddingBottom: Platform.OS === "ios" ? 28 : 20,
+      paddingHorizontal: 20,
+      maxHeight: "55%",
+      backgroundColor: isDark
+        ? "rgba(13, 17, 34, 0.98)"
+        : "rgba(255, 255, 255, 0.99)",
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(167, 139, 250, 0.28)"
+        : "rgba(167, 139, 250, 0.22)",
+    },
+    monthModalTitle: {
       fontSize: 18,
-      fontWeight: "600",
-      color: colors.text,
+      fontWeight: "900",
+      letterSpacing: -0.35,
+      marginBottom: 12,
+      textAlign: "center",
+      color: isDark ? "#F8FAFC" : "#0f172a",
     },
-    formDivider: {
-      marginVertical: 10,
+    monthModalList: {
+      flexGrow: 0,
+    },
+    monthRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 14,
+      paddingHorizontal: 4,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: isDark
+        ? "rgba(148, 163, 184, 0.25)"
+        : "rgba(148, 163, 184, 0.35)",
+    },
+    monthRowSelected: {
+      backgroundColor: isDark
+        ? "rgba(255, 107, 53, 0.12)"
+        : "rgba(255, 122, 46, 0.1)",
+    },
+    monthRowText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: isDark ? "#E2E8F0" : "#334155",
+    },
+    monthRowTextSelected: {
+      fontWeight: "800",
+      color: colors.primary,
     },
   });
