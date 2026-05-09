@@ -1,37 +1,67 @@
 import Constants from "expo-constants";
 
-// for andriod
-// http://10.0.2.2:8000/v1
+const DEFAULT_ENV = "development";
+
+const parseNumber = (value, fallback) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const parseBoolean = (value, fallback) => {
+  if (value === undefined) return fallback;
+  return String(value).toLowerCase() === "true";
+};
 
 const ENV = {
   development: {
-    API_BASE_URL: "http://10.0.2.2:8000/v1",
+    API_BASE_URL:
+      process.env.EXPO_PUBLIC_DEV_API_BASE_URL ||
+      "https://apiv2.johnsonsacademy.online/v1",
     API_TIMEOUT: 10000,
     DEBUG: true,
   },
   preview: {
-    API_BASE_URL: "https://dev-api.johnsonsacademy.online/v1",
+    API_BASE_URL:
+      process.env.EXPO_PUBLIC_PREVIEW_API_BASE_URL ||
+      "https://apiv2.johnsonsacademy.online/v1",
     API_TIMEOUT: 15000,
     DEBUG: false,
   },
   production: {
-    API_BASE_URL: "https://dev-api.johnsonsacademy.online/v1",
+    API_BASE_URL:
+      process.env.EXPO_PUBLIC_PROD_API_BASE_URL ||
+      "https://apiv2.johnsonsacademy.online/v1",
     API_TIMEOUT: 20000,
     DEBUG: false,
   },
 };
 
 const getEnvironmentConfig = () => {
-  const releaseChannel =
-    Constants.expoConfig?.extra?.releaseChannel || "development";
+  const appEnv =
+    process.env.EXPO_PUBLIC_APP_ENV ||
+    process.env.APP_ENV ||
+    Constants.expoConfig?.extra?.releaseChannel ||
+    DEFAULT_ENV;
 
-  if (releaseChannel.includes("production")) {
-    return ENV.production;
-  } else if (releaseChannel.includes("preview")) {
-    return ENV.preview;
-  } else {
-    return ENV.development;
+  const normalizedEnv = String(appEnv).toLowerCase();
+
+  let selectedEnv = ENV.development;
+  if (normalizedEnv.includes("production")) {
+    selectedEnv = ENV.production;
+  } else if (normalizedEnv.includes("preview")) {
+    selectedEnv = ENV.preview;
   }
+
+  return {
+    ...selectedEnv,
+    API_BASE_URL:
+      process.env.EXPO_PUBLIC_API_BASE_URL || selectedEnv.API_BASE_URL,
+    API_TIMEOUT: parseNumber(
+      process.env.EXPO_PUBLIC_API_TIMEOUT,
+      selectedEnv.API_TIMEOUT,
+    ),
+    DEBUG: parseBoolean(process.env.EXPO_PUBLIC_DEBUG, selectedEnv.DEBUG),
+  };
 };
 
 export const config = getEnvironmentConfig();
