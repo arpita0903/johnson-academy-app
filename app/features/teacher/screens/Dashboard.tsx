@@ -57,7 +57,11 @@ const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
       : null;
 
   const renderItem: ListRenderItem<ClassByTeacher> = ({ item }) => {
-    const enrolled = item.studentsInClass?.length ?? 0;
+    const enrolled = new Set(
+      item.studentsInClass
+        ?.map((entry) => entry.user?.id)
+        .filter((id): id is string => Boolean(id)) ?? [],
+    ).size;
     return (
       <TouchableOpacity
         activeOpacity={0.82}
@@ -94,9 +98,7 @@ const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
                 <Text style={s.classTitle} numberOfLines={1}>
                   {item.name}
                 </Text>
-                <Text style={s.classCourseLine} numberOfLines={2}>
-                  {item.courseId?.name ?? "Course"}
-                </Text>
+
                 <View style={s.classMetaRow}>
                   <Icon
                     name="person-outline"

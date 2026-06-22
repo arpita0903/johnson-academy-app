@@ -7,10 +7,21 @@ export const queryKeys = {
     ["teacherClasses", teacherId] as const,
   studentClasses: (studentId: string | null) =>
     ["studentClasses", studentId] as const,
-  studentProgress: (studentId: string | null, classId: string | null) =>
-    ["studentProgress", studentId, classId] as const,
+  studentProfile: (studentId: string | null) =>
+    ["studentProfile", studentId] as const,
+  studentProgress: (
+    studentId: string | null,
+    classId: string | null,
+    courseId?: string | null,
+  ) =>
+    courseId != null
+      ? (["studentProgress", studentId, classId, courseId] as const)
+      : (["studentProgress", studentId, classId] as const),
   moduleProgress: (progressId: string | null) =>
     ["moduleProgress", progressId] as const,
   assignmentsByClass: (classId: string | null) =>
     ["assignmentsByClass", classId] as const,
+  promoteStudent: () => ["promoteStudent"] as const,
+  courses: (params?: { page?: number; limit?: number }) =>
+    ["courses", params] as const,
 };

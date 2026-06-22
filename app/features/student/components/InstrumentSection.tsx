@@ -15,9 +15,15 @@ import { ThemeColors } from "../../../theme/colors";
 import { useStudentClasses } from "../../../shared/hooks/useStudentClasses";
 import { useRefreshOnFocus } from "../../../shared/hooks/useRefreshOnFocus";
 import { NoteAccentDivider } from "../../../shared/components/NoteAccentDivider";
+import type { StudentClass, StudentClassCourse } from "../../../types/classes";
+
+export interface StudentCoursePressPayload {
+  studentClass: StudentClass;
+  course: StudentClassCourse;
+}
 
 interface InstrumentSectionProps {
-  onInstrumentPress: (item: any) => void;
+  onInstrumentPress: (item: StudentCoursePressPayload) => void;
 }
 
 const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
@@ -33,13 +39,32 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
   } = useStudentClasses(studentId);
   useRefreshOnFocus();
 
+  const studentCourses = useMemo(
+    () =>
+      studentClasses.flatMap((studentClass) => {
+        const courses =
+          studentClass.courses.length > 0
+            ? studentClass.courses
+            : studentClass.courseId
+              ? [studentClass.courseId]
+              : [];
+
+        return courses.map((course) => ({
+          key: `${studentClass.id}-${course._id}`,
+          course,
+          studentClass,
+        }));
+      }),
+    [studentClasses],
+  );
+
   const s = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const spinnerColor = isDark ? "#A78BFA" : "#7C3AED";
 
   const sectionTitleRow = (
     <>
       <View style={s.sectionHeader}>
-        <Text style={s.sectionTitle}>My Classes</Text>
+        <Text style={s.sectionTitle}>My Courses</Text>
       </View>
       <NoteAccentDivider />
     </>
@@ -51,7 +76,7 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
         {sectionTitleRow}
         <View style={s.statePanel}>
           <ActivityIndicator size="large" color={spinnerColor} />
-          <Text style={s.loadingText}>Loading your classes...</Text>
+          <Text style={s.loadingText}>Loading your courses...</Text>
         </View>
       </View>
     );
@@ -61,7 +86,7 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
     const errorMessage =
       typeof error === "object" && error !== null && "message" in error
         ? (error as { message: string }).message
-        : "Failed to fetch classes";
+        : "Failed to fetch courses";
     return (
       <View style={s.sectionWrap}>
         {sectionTitleRow}
@@ -73,7 +98,7 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
     );
   }
 
-  if (studentClasses.length === 0) {
+  if (studentCourses.length === 0) {
     return (
       <View style={s.sectionWrap}>
         {sectionTitleRow}
@@ -85,9 +110,9 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
               isDark ? "rgba(167, 139, 250, 0.55)" : "rgba(109, 40, 217, 0.45)"
             }
           />
-          <Text style={s.emptyTitle}>No classes yet</Text>
+          <Text style={s.emptyTitle}>No courses yet</Text>
           <Text style={s.emptySubtext}>
-            Check back later — new lessons may appear here soon.
+            Check back later — new courses may appear here soon.
           </Text>
         </View>
       </View>
@@ -99,10 +124,10 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
       {sectionTitleRow}
 
       <View style={s.listContent}>
-        {studentClasses.map((item: any) => (
+        {studentCourses.map(({ key, course, studentClass }) => (
           <TouchableOpacity
-            key={item.id}
-            onPress={() => onInstrumentPress(item)}
+            key={key}
+            onPress={() => onInstrumentPress({ studentClass, course })}
             activeOpacity={0.82}
             style={s.cardTouchable}
           >
@@ -110,34 +135,31 @@ const InstrumentSection = ({ onInstrumentPress }: InstrumentSectionProps) => {
               {/* <View style={s.cardAccentBar} /> */}
               <Image
                 source={
-                  typeof item?.courseId?.image === "string" &&
-                  item.courseId.image.length > 0
-                    ? { uri: item.courseId.image }
+                  typeof course.image === "string" && course.image.length > 0
+                    ? { uri: course.image }
                     : require("../../../../assets/images/round-logo.png")
                 }
                 style={s.instrumentIcon}
               />
               <View style={s.cardTextContent}>
-                <Text style={s.instrumentName} numberOfLines={2}>
-                  {item.name}
-                </Text>
-                <View style={s.courseMetaRow}>
-                  <View style={s.courseMetaPill}>
-                    <Icon
-                      name="school"
-                      size={17}
-                      color={
-                        isDark
-                          ? "rgba(94, 234, 212, 0.95)"
-                          : "rgba(13, 148, 136, 0.95)"
-                      }
-                      style={s.courseMetaIcon}
-                    />
-                    <Text style={s.courseName} numberOfLines={1}>
-                      {item.courseId?.name ?? "Course"}
-                    </Text>
-                  </View>
+                <View style={s.classNameRow}>
+                  <Icon
+                    name="school"
+                    size={16}
+                    color={
+                      isDark
+                        ? "rgba(94, 234, 212, 0.95)"
+                        : "rgba(13, 148, 136, 0.95)"
+                    }
+                    style={s.classNameIcon}
+                  />
+                  <Text style={s.className} numberOfLines={1}>
+                    {studentClass.name}
+                  </Text>
                 </View>
+                <Text style={s.courseName} numberOfLines={2}>
+                  {course.name}
+                </Text>
               </View>
               <View style={s.chevronWrap}>
                 <Icon
@@ -234,40 +256,27 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
       minWidth: 0,
       paddingVertical: 2,
     },
-    instrumentName: {
-      fontWeight: "800",
-      fontSize: 20,
-      color: isDark ? "#F8FAFC" : "#0f172a",
-      letterSpacing: -0.35,
-      lineHeight: 26,
-      backgroundColor: "transparent",
-    },
-    courseMetaRow: {
+    classNameRow: {
       flexDirection: "row",
       alignItems: "center",
-      marginTop: 10,
+      marginBottom: 8,
     },
-    courseMetaPill: {
-      flexDirection: "row",
-      alignItems: "center",
+    classNameIcon: {
+      marginRight: 6,
+    },
+    className: {
       flex: 1,
+      fontSize: 13,
+      fontWeight: "600",
+      color: isDark ? "#94A3B8" : "#64748B",
       minWidth: 0,
-      paddingVertical: 6,
-      paddingHorizontal: 10,
-      borderRadius: 12,
-      backgroundColor: isDark
-        ? "rgba(94, 234, 212, 0.1)"
-        : "rgba(13, 148, 136, 0.1)",
-    },
-    courseMetaIcon: {
-      marginRight: 8,
     },
     courseName: {
-      flex: 1,
-      fontSize: 10,
-      fontWeight: "700",
-      color: isDark ? "#CBD5E1" : "#334155",
-      minWidth: 0,
+      fontWeight: "800",
+      fontSize: 18,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+      letterSpacing: -0.35,
+      lineHeight: 24,
     },
     chevronWrap: {
       justifyContent: "center",
