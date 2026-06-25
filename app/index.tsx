@@ -33,6 +33,7 @@ import { Provider as PaperProvider } from "react-native-paper";
 import { Image, TouchableOpacity, View } from "react-native";
 
 import { ScreenGradientBackground } from "./shared/components/ScreenGradientBackground";
+import { AppVersionGate } from "./shared/components/AppVersionGate";
 
 import Icon from "react-native-vector-icons/Foundation";
 import StudentDetailsScreen from "./features/teacher/screens/StudentDetailsScreen";
@@ -338,7 +339,9 @@ const App = () => {
               <AppProvider>
                 <TeacherProvider>
                   {/* NavigationContainer provided by Expo Router - do not nest */}
-                  <NavigationLayer />
+                  <AppVersionGate>
+                    <NavigationLayer />
+                  </AppVersionGate>
                 </TeacherProvider>
               </AppProvider>
             </ToastProvider>
