@@ -2,7 +2,7 @@
   "expo": {
     "name": "Johnson Academy",
     "slug": "johnson-academy-app",
-    "version": "1.2.0",
+    "version": "1.4.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "johnsoynacademy",
@@ -16,7 +16,7 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "36"
+      "buildNumber": "38"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +26,8 @@
       "package": "com.johnsonacademy.app",
       "permissions": [
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "versionCode": 32
     },
     "web": {
       "bundler": "metro",

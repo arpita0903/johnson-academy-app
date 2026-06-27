@@ -145,15 +145,26 @@ function filterModulesByType(modules: Module[]): {
 const CourseDetails = ({
   route,
 }: {
-  route: { params: { studentClass: string; student?: any; batch?: any } };
+  route: {
+    params: { studentClass: string; student?: any; batch?: any; course?: any };
+  };
 }) => {
-  const { studentClass = {}, student = {}, batch = {} } = route.params;
+  const {
+    studentClass = {},
+    student = {},
+    batch = {},
+    course = {},
+  } = route.params;
   const { colors, isDark } = useTheme();
   const { role } = useAppContext();
 
-  const { studentId, classId } = useMemo(() => {
+  const { studentId, classId, courseId } = useMemo(() => {
     let extractedStudentId: string | null = null;
     let extractedClassId: string | null = null;
+    let extractedCourseId: string | null = null;
+    if (course?.id) {
+      extractedCourseId = course.id;
+    }
 
     if (student?.id && batch?.id) {
       extractedStudentId = student.id;
@@ -164,15 +175,19 @@ const CourseDetails = ({
       extractedClassId = id;
     }
 
-    return { studentId: extractedStudentId, classId: extractedClassId };
-  }, [student?.id, batch?.id, studentClass]);
+    return {
+      studentId: extractedStudentId,
+      classId: extractedClassId,
+      courseId: extractedCourseId,
+    };
+  }, [student?.id, batch?.id, studentClass, course?.id]);
 
   const {
     data: progressData,
     isLoading,
     isRefetching,
     refetch,
-  } = useStudentProgress(studentId, classId);
+  } = useStudentProgress(studentId, classId, courseId);
   useRefreshOnFocus();
 
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();

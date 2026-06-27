@@ -17,14 +17,35 @@ import { ThemeColors } from "../../../theme/colors";
 import { useTeacherContext } from "../../../context/TeacherContext";
 import { ScreenGradientBackground } from "../../../shared/components/ScreenGradientBackground";
 import AttendanceCalendar from "../../../shared/components/AttendanceCalendar";
+import type {
+  CourseRef,
+  StudentInClassEntry,
+  StudentRef,
+} from "../../../types/classes";
 
 type AttendanceStudent = {
   id: string;
   name: string;
 };
 
+type GroupedStudent = {
+  userId: string;
+  user: StudentRef;
+  enrollments: StudentInClassEntry[];
+};
+
+type SheetMode = "attendance" | "course" | null;
+
 const getStudentId = (item: { user?: { id?: string; _id?: string } }) =>
   item.user?.id ?? item.user?._id ?? "";
+
+const getCourseSubtitle = (group: GroupedStudent) => {
+  if (group.enrollments.length === 1) {
+    return group.enrollments[0].course?.name ?? "";
+  }
+  const count = group.enrollments.length;
+  return `${count} ${count === 1 ? "course" : "courses"}`;
+};
 
 const StudentList = ({
   route,
@@ -36,34 +57,85 @@ const StudentList = ({
   const { batch } = route.params;
   const { colors, isDark } = useTheme();
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ["60%"], []);
+  const snapPoints = useMemo(() => ["30%"], []);
+  const [sheetMode, setSheetMode] = useState<SheetMode>(null);
   const [attendanceStudent, setAttendanceStudent] =
     useState<AttendanceStudent | null>(null);
+  const [coursePickerGroup, setCoursePickerGroup] =
+    useState<GroupedStudent | null>(null);
 
-  const students = useMemo(() => batch?.students ?? [], [batch?.students]);
+  const students = batch?.students ?? [];
+
+  const groupedStudents = useMemo(() => {
+    const map = new Map<string, GroupedStudent>();
+
+    for (const entry of students) {
+      const userId = getStudentId(entry);
+      if (!userId) continue;
+
+      const existing = map.get(userId);
+      if (existing) {
+        const courseId = entry.course?.id;
+        const alreadyHasCourse =
+          courseId &&
+          existing.enrollments.some((e) => e.course?.id === courseId);
+        if (!alreadyHasCourse) {
+          existing.enrollments.push(entry);
+        }
+      } else {
+        map.set(userId, {
+          userId,
+          user: entry.user,
+          enrollments: [entry],
+        });
+      }
+    }
+
+    return Array.from(map.values());
+  }, [students]);
 
   const { selectStudent } = useTeacherContext();
 
-  const handleStudentPress = (student: any) => {
+  const navigateToCourse = (student: StudentRef, course: CourseRef) => {
     selectStudent(student);
-    navigation.navigate("Course", { student, batch });
+    navigation.navigate("Course", { student, batch, course });
   };
 
-  const openAttendanceSheet = (item: {
-    user?: { id?: string; _id?: string; name?: string };
-  }) => {
-    const studentId = getStudentId(item);
-    if (!studentId) return;
+  const handleGroupedStudentPress = (group: GroupedStudent) => {
+    if (group.enrollments.length === 1) {
+      navigateToCourse(group.user, group.enrollments[0].course);
+      return;
+    }
 
-    setAttendanceStudent({
-      id: studentId,
-      name: item.user?.name ?? "Student",
-    });
+    setCoursePickerGroup(group);
+    setSheetMode("course");
     bottomSheetRef.current?.expand();
   };
 
-  const closeAttendanceSheet = () => {
+  const handleCourseSelect = (course: CourseRef) => {
+    if (!coursePickerGroup) return;
+
+    bottomSheetRef.current?.close();
+    navigateToCourse(coursePickerGroup.user, course);
+  };
+
+  const openAttendanceSheet = (group: GroupedStudent) => {
+    const studentId = group.userId;
+    if (!studentId) return;
+
+    setCoursePickerGroup(null);
+    setAttendanceStudent({
+      id: studentId,
+      name: group.user?.name ?? "Student",
+    });
+    setSheetMode("attendance");
+    bottomSheetRef.current?.expand();
+  };
+
+  const closeSheet = () => {
+    setSheetMode(null);
     setAttendanceStudent(null);
+    setCoursePickerGroup(null);
   };
 
   const classId = batch?.id ?? batch?._id ?? "";
@@ -110,8 +182,9 @@ const StudentList = ({
                   style={s.heroSubIcon}
                 />
                 <Text style={s.heroSubtitle}>
-                  {students.length}{" "}
-                  {students.length === 1 ? "student" : "students"} enrolled
+                  {groupedStudents.length}{" "}
+                  {groupedStudents.length === 1 ? "student" : "students"}{" "}
+                  enrolled
                 </Text>
               </View>
             </View>
@@ -140,23 +213,21 @@ const StudentList = ({
       <SafeAreaView style={s.safeArea} edges={["top"]}>
         <ScreenGradientBackground isDark={isDark} />
         <FlatList
-          data={students}
-          keyExtractor={(item, index) =>
-            item?._id != null ? String(item._id) : `student-${index}`
-          }
+          data={groupedStudents}
+          keyExtractor={(item) => item.userId}
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={renderEmpty}
           contentContainerStyle={
-            students.length === 0 ? s.listContentEmpty : s.listContent
+            groupedStudents.length === 0 ? s.listContentEmpty : s.listContent
           }
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
+          renderItem={({ item: group }) => (
             <View style={s.studentCardTouchable}>
               <View style={s.studentGlassCard}>
                 <View style={s.studentRow}>
                   <TouchableOpacity
                     activeOpacity={0.82}
-                    onPress={() => handleStudentPress(item.user)}
+                    onPress={() => handleGroupedStudentPress(group)}
                     accessibilityRole="button"
                     style={s.studentMainTouchable}
                   >
@@ -164,20 +235,20 @@ const StudentList = ({
                       <View style={s.avatarWell}>
                         <Image
                           source={
-                            item.user?.profilePicture
-                              ? { uri: item.user.profilePicture }
+                            group.user?.profilePicture
+                              ? { uri: group.user.profilePicture }
                               : require("../../../../assets/images/profileDefault.png")
                           }
                           style={s.studentAvatar}
-                          accessibilityLabel={`Photo of ${item.user?.name ?? "student"}`}
+                          accessibilityLabel={`Photo of ${group.user?.name ?? "student"}`}
                         />
                       </View>
                       <View style={s.studentTextBlock}>
                         <Text style={s.studentName} numberOfLines={1}>
-                          {item.user?.name ?? "Student"}
+                          {group.user?.name ?? "Student"}
                         </Text>
                         <Text style={s.studentEmail} numberOfLines={2}>
-                          {item.user?.rollNumber ?? ""}
+                          {getCourseSubtitle(group)}
                         </Text>
                       </View>
                     </View>
@@ -185,9 +256,9 @@ const StudentList = ({
 
                   <View style={s.trail}>
                     <TouchableOpacity
-                      onPress={() => openAttendanceSheet(item)}
+                      onPress={() => openAttendanceSheet(group)}
                       accessibilityRole="button"
-                      accessibilityLabel={`Attendance for ${item.user?.name ?? "student"}`}
+                      accessibilityLabel={`Attendance for ${group.user?.name ?? "student"}`}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       style={s.attendanceButton}
                     >
@@ -199,7 +270,7 @@ const StudentList = ({
                     </TouchableOpacity>
                     <TouchableOpacity
                       activeOpacity={0.82}
-                      onPress={() => handleStudentPress(item.user)}
+                      onPress={() => handleGroupedStudentPress(group)}
                       accessibilityRole="button"
                       hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
                     >
@@ -225,7 +296,7 @@ const StudentList = ({
           index={-1}
           snapPoints={snapPoints}
           enablePanDownToClose
-          onClose={closeAttendanceSheet}
+          onClose={closeSheet}
           backgroundStyle={s.sheetBackground}
           handleIndicatorStyle={s.sheetHandle}
         >
@@ -233,7 +304,7 @@ const StudentList = ({
             contentContainerStyle={s.sheetContent}
             keyboardShouldPersistTaps="handled"
           >
-            {attendanceStudent && classId ? (
+            {sheetMode === "attendance" && attendanceStudent && classId ? (
               <>
                 <Text style={s.sheetTitle}>
                   Attendance — {attendanceStudent.name}
@@ -242,6 +313,57 @@ const StudentList = ({
                   studentId={attendanceStudent.id}
                   classId={classId}
                 />
+              </>
+            ) : null}
+
+            {sheetMode === "course" && coursePickerGroup ? (
+              <>
+                {coursePickerGroup.enrollments.map((enrollment) => {
+                  const course = enrollment.course;
+                  const courseKey =
+                    course?.id ?? enrollment._id ?? course?.name ?? "course";
+
+                  return (
+                    <TouchableOpacity
+                      key={courseKey}
+                      activeOpacity={0.82}
+                      onPress={() => handleCourseSelect(course)}
+                      accessibilityRole="button"
+                      style={s.coursePickerRow}
+                    >
+                      <View style={s.coursePickerIconWell}>
+                        <Icon
+                          name="menu-book"
+                          size={22}
+                          color={
+                            isDark
+                              ? "rgba(167, 139, 250, 0.95)"
+                              : "rgba(109, 40, 217, 0.85)"
+                          }
+                        />
+                      </View>
+                      <View style={s.coursePickerTextBlock}>
+                        <Text style={s.coursePickerName} numberOfLines={2}>
+                          {course?.name ?? "Course"}
+                        </Text>
+                        {course?.instrument ? (
+                          <Text style={s.coursePickerMeta} numberOfLines={1}>
+                            {course.instrument}
+                          </Text>
+                        ) : null}
+                      </View>
+                      <Icon
+                        name="chevron-right"
+                        size={24}
+                        color={
+                          isDark
+                            ? "rgba(148, 163, 184, 0.75)"
+                            : "rgba(100, 116, 139, 0.85)"
+                        }
+                      />
+                    </TouchableOpacity>
+                  );
+                })}
               </>
             ) : null}
           </BottomSheetScrollView>
@@ -438,6 +560,54 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
       marginBottom: 8,
       paddingHorizontal: 12,
       color: isDark ? "#F8FAFC" : "#0f172a",
+    },
+    coursePickerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginHorizontal: 8,
+      marginBottom: 10,
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(255, 255, 255, 0.2)"
+        : "rgba(148, 163, 184, 0.35)",
+      backgroundColor: isDark
+        ? "rgba(255, 255, 255, 0.04)"
+        : "rgba(248, 250, 252, 0.95)",
+    },
+    coursePickerIconWell: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 12,
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(167, 139, 250, 0.35)"
+        : "rgba(45, 212, 191, 0.4)",
+      backgroundColor: isDark
+        ? "rgba(167, 139, 250, 0.08)"
+        : "rgba(45, 212, 191, 0.08)",
+    },
+    coursePickerTextBlock: {
+      flex: 1,
+      minWidth: 0,
+      marginRight: 8,
+    },
+    coursePickerName: {
+      fontSize: 16,
+      fontWeight: "700",
+      letterSpacing: -0.2,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+    },
+    coursePickerMeta: {
+      marginTop: 4,
+      fontSize: 12,
+      fontWeight: "600",
+      color: isDark ? "#CBD5E1" : "#64748B",
     },
     emptyState: {
       flex: 1,

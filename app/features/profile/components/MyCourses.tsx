@@ -10,29 +10,12 @@ import {
 } from "react-native";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { useTheme } from "../../../context/ThemeContext";
-import { getStudentProfile } from "../../../services/student";
+import { useStudentProfile } from "../../../shared/hooks/useStudentProfile";
+import type { StudentProfileCourse } from "../../../types/student";
 import type { ThemeColors } from "../../../theme/colors";
 import { NoteAccentDivider } from "../../../shared/components/NoteAccentDivider";
 
-interface ProfileCourse {
-  id: string;
-  name: string;
-  instrument: string;
-  description?: string;
-  image?: string;
-  syllabus?: unknown[];
-}
-
-interface CourseProgressEntry {
-  courseId: string;
-  progress: number;
-  totalModules: number;
-  completedModules: number;
-  inProgressModules: number;
-  upcomingModules: number;
-}
-
-type ActiveCourse = ProfileCourse & {
+type ActiveCourse = StudentProfileCourse & {
   progress: number;
   totalModules: number;
   completedModules: number;
@@ -45,40 +28,24 @@ interface MyCoursesProps {
 }
 
 const MyCourses = ({ userId }: MyCoursesProps) => {
-  const [loading, setLoading] = useState(false);
-  const [activeInstrument, setActiveInstrument] = useState<string | null>(null);
+  const [activeCourseId, setActiveCourseId] = useState<string | null>(null);
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
-  const [courses, setCourses] = useState<ProfileCourse[]>([]);
-  const [progress, setProgress] = useState<CourseProgressEntry[]>([]);
+  const { data, isLoading } = useStudentProfile(userId ?? null);
+
+  const courses = data?.courses ?? [];
+  const progress = data?.progress ?? [];
 
   useEffect(() => {
-    fetchCourses();
-  }, [userId]);
-
-  const fetchCourses = async () => {
-    if (!userId) return;
-    try {
-      setLoading(true);
-      const data = await getStudentProfile(userId);
-      setCourses(data.courses || []);
-      setProgress(data.progress || []);
-      if (
-        data.courses &&
-        Array.isArray(data.courses) &&
-        data.courses.length > 0
-      ) {
-        setActiveInstrument(data.courses[0].instrument);
-      }
-    } catch (error) {
-      console.error("Error fetching progress data:", error);
-    } finally {
-      setLoading(false);
+    if (data?.courses?.length) {
+      setActiveCourseId(data.courses[0].id);
+    } else {
+      setActiveCourseId(null);
     }
-  };
+  }, [userId, data]);
 
   const activeCourse = useMemo((): ActiveCourse | null => {
-    const course = courses.find((c) => c.instrument === activeInstrument);
+    const course = courses.find((c) => c.id === activeCourseId);
     if (!course) return null;
 
     const courseProgress = progress.find((p) => p.courseId === course.id);
@@ -90,7 +57,7 @@ const MyCourses = ({ userId }: MyCoursesProps) => {
       inProgressModules: courseProgress ? courseProgress.inProgressModules : 0,
       upcomingModules: courseProgress ? courseProgress.upcomingModules : 0,
     };
-  }, [courses, progress, activeInstrument]);
+  }, [courses, progress, activeCourseId]);
 
   const headerBlock = (
     <>
@@ -102,7 +69,7 @@ const MyCourses = ({ userId }: MyCoursesProps) => {
     </>
   );
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View style={s.glassOuter}>
         {headerBlock}
@@ -141,16 +108,16 @@ const MyCourses = ({ userId }: MyCoursesProps) => {
             contentContainerStyle={s.tabScrollContent}
           >
             {courses.map((course) => {
-              const selected = activeInstrument === course.instrument;
+              const selected = activeCourseId === course.id;
               return (
                 <TouchableOpacity
                   key={course.id}
                   activeOpacity={0.82}
-                  onPress={() => setActiveInstrument(course.instrument)}
+                  onPress={() => setActiveCourseId(course.id)}
                   style={[s.instrumentChip, selected && s.instrumentChipActive]}
                 >
                   <MaterialIcons
-                    name="music-note"
+                    name="menu-book"
                     size={18}
                     color={
                       selected ? colors.primary : isDark ? "#94A3B8" : "#64748B"
@@ -159,9 +126,9 @@ const MyCourses = ({ userId }: MyCoursesProps) => {
                   />
                   <Text
                     style={[s.instrumentChipText, selected && s.chipTextActive]}
-                    numberOfLines={1}
+                    numberOfLines={2}
                   >
-                    {course.instrument}
+                    {course.name}
                   </Text>
                 </TouchableOpacity>
               );
@@ -381,7 +348,7 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
       backgroundColor: isDark
         ? "rgba(15, 23, 42, 0.5)"
         : "rgba(248, 250, 252, 0.95)",
-      maxWidth: 200,
+      maxWidth: 260,
     },
     instrumentChipActive: {
       borderColor: colors.primary,

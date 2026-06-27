@@ -3,7 +3,9 @@ import { View, Text, ScrollView, StyleSheet, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { LinearGradient } from "expo-linear-gradient";
-import InstrumentSection from "../components/InstrumentSection";
+import InstrumentSection, {
+  StudentCoursePressPayload,
+} from "../components/InstrumentSection";
 import { useAppContext } from "../../../context/AppContext";
 import { useTheme } from "../../../context/ThemeContext";
 import { ThemeColors } from "../../../theme/colors";
@@ -22,8 +24,11 @@ const Homepage = ({ navigation }: HomepageProps) => {
   const { colors, isDark } = useTheme();
   const s = createStyles(colors, isDark);
 
-  const handleSubmit = (classData: any) => {
-    navigation.navigate("Course", { studentClass: classData });
+  const handleSubmit = ({ studentClass, course }: StudentCoursePressPayload) => {
+    navigation.navigate("Course", {
+      studentClass,
+      course: { ...course, id: course._id },
+    });
   };
 
   const displayName = user?.name?.trim() || "Student";

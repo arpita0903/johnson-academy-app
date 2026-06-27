@@ -33,6 +33,7 @@ import { Provider as PaperProvider } from "react-native-paper";
 import { Image, TouchableOpacity, View } from "react-native";
 
 import { ScreenGradientBackground } from "./shared/components/ScreenGradientBackground";
+import { AppVersionGate } from "./shared/components/AppVersionGate";
 
 import Icon from "react-native-vector-icons/Foundation";
 import StudentDetailsScreen from "./features/teacher/screens/StudentDetailsScreen";
@@ -101,6 +102,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
                     onPress={() =>
                       navigation.navigate("StudentDetailsScreen", {
                         selectedStudent: (route.params as any)?.student,
+                        course: (route.params as any)?.course,
                       })
                     }
                   >
@@ -122,7 +124,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
         name="Homepage"
         options={{
           headerShown: true,
-          headerTitle: "Dashboard",
+          headerTitle: "Johnson's Academy",
           headerLeftContainerStyle: { paddingLeft: 12 },
           headerLeft: () => (
             <Image
@@ -185,7 +187,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
       <Stack.Screen
         name="TeacherDashboard"
         options={{
-          headerTitle: "Dashboard",
+          headerTitle: "Johnson's Academy",
           headerLeftContainerStyle: { paddingLeft: 12 },
           headerLeft: () => (
             <Image
@@ -337,7 +339,9 @@ const App = () => {
               <AppProvider>
                 <TeacherProvider>
                   {/* NavigationContainer provided by Expo Router - do not nest */}
-                  <NavigationLayer />
+                  <AppVersionGate>
+                    <NavigationLayer />
+                  </AppVersionGate>
                 </TeacherProvider>
               </AppProvider>
             </ToastProvider>

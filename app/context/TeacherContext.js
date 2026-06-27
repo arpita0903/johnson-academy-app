@@ -53,7 +53,7 @@ export const TeacherProvider = ({ children }) => {
       clearSelection,
       clearStudentSelection,
       clearClassSelection,
-    ]
+    ],
   );
 
   return (
