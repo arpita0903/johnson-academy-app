@@ -81,7 +81,7 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
   const displayModule = useMemo(() => {
     if (!progressData?.syllabusProgress?.[0]?.modules) return selectedModule;
     const freshModule = progressData.syllabusProgress[0].modules.find(
-      (m: Module) => m.moduleId.id === selectedModule.moduleId.id,
+      (m: Module) => m.moduleId?.id === selectedModule.moduleId?.id,
     );
     return freshModule ?? selectedModule;
   }, [progressData, selectedModule]);

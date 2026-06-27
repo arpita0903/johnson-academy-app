@@ -6,6 +6,7 @@ export interface MRTSubmissionData {
   month: string; // Format: "MM-YYYY" (e.g., "08-2025")
   classId: string;
   studentId: string;
+  courseId: string;
   sptAndFileSubmission: number; // Max score: 5
   regularity: number; // Max score: 5
   learningSpeed: number; // Max score: 5

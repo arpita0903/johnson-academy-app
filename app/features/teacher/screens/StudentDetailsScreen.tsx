@@ -48,6 +48,8 @@ const StudentDetailsScreen = () => {
   const routeCourse = (
     route.params as { course?: { id?: string; name?: string } } | undefined
   )?.course;
+  const courseId = routeCourse?.id ?? null;
+  const courseName = routeCourse?.name ?? "";
   const { colors, isDark } = useTheme();
   const s = createStyles(colors, isDark);
 
@@ -132,8 +134,13 @@ const StudentDetailsScreen = () => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedMonth || !selectedStudent || !selectedClass) {
+    if (!selectedMonth || !selectedStudent || !selectedClass || !courseId) {
       console.warn("Missing required data for MRT submission");
+      if (!courseId) {
+        alert(
+          "Course information is missing. Please open this screen from a course.",
+        );
+      }
       return;
     }
 
@@ -172,6 +179,7 @@ const StudentDetailsScreen = () => {
         month: formattedMonth,
         classId: selectedClass.id,
         studentId: selectedStudent.id,
+        courseId,
         sptAndFileSubmission:
           parseInt(formData["SPT & File Submission"], 10) || 0,
         regularity: parseInt(formData.Regularity, 10) || 0,
@@ -186,10 +194,9 @@ const StudentDetailsScreen = () => {
       await submitMRT(mrtData);
       setFormData(EMPTY_MRT_FORM);
       alert("MRT submitted successfully!");
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("Error submitting MRT:", error);
-      const message =
-        error instanceof Error ? error.message : "Failed to submit MRT.";
+      const message = (error as Error).message;
       alert(message);
     }
   };
@@ -215,8 +222,6 @@ const StudentDetailsScreen = () => {
     (selectedClass as { _id?: string })?._id ??
     null;
   const studentId = selectedStudent?.id ?? null;
-  const courseId = routeCourse?.id ?? null;
-  const courseName = routeCourse?.name ?? "";
 
   const promoteFlow = usePromoteStudentFlow({
     studentId,

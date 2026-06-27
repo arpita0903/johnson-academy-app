@@ -6,6 +6,7 @@ import api from "./axiosInstance";
  * @param {string} mrtData.month - Month in MM-YYYY format (e.g., "08-2025")
  * @param {string} mrtData.classId - The ID of the class
  * @param {string} mrtData.studentId - The ID of the student
+ * @param {string} mrtData.courseId - The ID of the course
  * @param {number} mrtData.sptAndFileSubmission - Score for SPT & File Submission (max 5)
  * @param {number} mrtData.regularity - Score for Regularity (max 5)
  * @param {number} mrtData.learningSpeed - Score for Learning Speed (max 5)
