@@ -19,7 +19,7 @@ export const startModule = async (studentProgressId, moduleId, syllabusId) => {
     return response.data;
   } catch (error) {
     console.error("Error starting module:", error);
-    throw error;
+    throw error.response?.data || error;
   }
 };
 
@@ -49,6 +49,29 @@ export const endModule = async (
     return response.data;
   } catch (error) {
     console.error("Error ending module:", error);
-    throw error;
+    throw error.response?.data || error;
+  }
+};
+
+/**
+ * Cancel (undo start) a module for a student
+ * @param {string} studentProgressId - The student progress ID
+ * @param {string} moduleId - The module ID to cancel
+ * @param {string} syllabusId - The syllabus ID
+ * @returns {Promise} - API response
+ */
+export const cancelModule = async (studentProgressId, moduleId, syllabusId) => {
+  try {
+    const response = await api.post(
+      `/student-progress/${studentProgressId}/cancel-module`,
+      {
+        moduleId,
+        syllabusId,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error canceling module:", error);
+    throw error.response?.data || error;
   }
 };

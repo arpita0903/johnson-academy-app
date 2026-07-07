@@ -24,8 +24,10 @@ import StarRating from "../../../shared/components/StarRating";
 import { useToast } from "../../../context/ToastContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { useModuleProgress } from "../../../shared/hooks/useModuleProgress";
+import { useCancelModule } from "../../../shared/hooks/useCancelModule";
 import { useRefreshOnFocus } from "../../../shared/hooks/useRefreshOnFocus";
 import { queryKeys } from "../../../config/queryKeys";
+import { getModuleMutationErrorMessage } from "../../../shared/utils/moduleProgressErrors";
 
 interface ModuleDetailScreenProps {
   route: {
@@ -58,16 +60,31 @@ const convertScoreToStars = (score: number | string): number => {
   return 0;
 };
 
+const isYouTubeResource = (file?: string): boolean => {
+  if (typeof file !== "string") return false;
+  const lower = file.toLowerCase();
+  return lower.includes("youtube") || lower.includes("youtu.be");
+};
+
+const canCancelModule = (module: Module): boolean =>
+  module.status === "inprogress" && module.score == null;
+
 const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
   const { progressId, selectedModule } = route.params;
   const [starRating, setStarRating] = useState(0);
   const [showEndModal, setShowEndModal] = useState(false);
+  const [showStartModal, setShowStartModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const [isEnding, setIsEnding] = useState(false);
   const [selectedModuleForEnd, setSelectedModuleForEnd] =
     useState<Module | null>(null);
   const { user } = useAppContext();
-  const { showError, showSuccess, showInfo } = useToast();
+  const { showError } = useToast();
   const { colors, isDark } = useTheme();
   const queryClient = useQueryClient();
+  const { mutate: cancelModuleMutation, isPending: isCanceling } =
+    useCancelModule();
 
   const {
     data: progressData,
@@ -88,36 +105,95 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
 
   const onRefresh = () => refetch();
 
-  const handleStartCourse = async (module: Module) => {
-    try {
-      if (!user?.id) {
-        showError("User ID not found. Please try again.");
-        return;
-      }
-
-      // Get syllabus ID from the progress data
-      const syllabusId = progressData?.syllabusProgress?.[0]?.syllabusId?.id;
-      if (!syllabusId) {
-        showError("Syllabus ID not found. Please try again.");
-        return;
-      }
-
-      await startModule(progressId, module.moduleId.id, syllabusId);
-
-      showSuccess(`Module has been started successfully.`);
-
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.moduleProgress(progressId),
-      });
+  const invalidateProgressQueries = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.moduleProgress(progressId),
+    });
+    if (progressData) {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.studentProgress(
           progressData.studentId?.id ?? null,
           progressData.classId?.id ?? null,
         ),
       });
-    } catch {
-      showError("Failed to start the module. Please try again.");
     }
+  };
+
+  const handleStartCourse = () => {
+    if (displayModule.status !== "upcoming" || isStarting || isCanceling) {
+      return;
+    }
+    setShowStartModal(true);
+  };
+
+  const confirmStartModule = async () => {
+    if (isStarting) return;
+
+    try {
+      if (!user?.id) {
+        showError("User ID not found. Please try again.");
+        return;
+      }
+
+      const syllabusId = progressData?.syllabusProgress?.[0]?.syllabusId?.id;
+      if (!syllabusId) {
+        showError("Syllabus ID not found. Please try again.");
+        return;
+      }
+
+      setIsStarting(true);
+      await startModule(progressId, displayModule.moduleId.id, syllabusId);
+
+      setShowStartModal(false);
+      await invalidateProgressQueries();
+    } catch (error) {
+      showError(
+        getModuleMutationErrorMessage(
+          error,
+          "Failed to start the module. Please try again.",
+        ),
+      );
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
+  const handleCancelModule = () => {
+    if (!canCancelModule(displayModule) || isCanceling || isStarting) {
+      return;
+    }
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelModule = () => {
+    if (isCanceling) return;
+
+    const syllabusId = progressData?.syllabusProgress?.[0]?.syllabusId?.id;
+    if (!syllabusId) {
+      showError("Syllabus ID not found. Please try again.");
+      return;
+    }
+
+    cancelModuleMutation(
+      {
+        studentProgressId: progressId,
+        moduleId: displayModule.moduleId.id,
+        syllabusId,
+      },
+      {
+        onSuccess: () => {
+          setShowCancelModal(false);
+        },
+        onError: (error) => {
+          showError(
+            getModuleMutationErrorMessage(
+              error,
+              "Failed to undo module start. Please try again.",
+            ),
+          );
+        },
+      },
+    );
   };
 
   const handleEndCourse = async (module: Module) => {
@@ -126,25 +202,26 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
   };
 
   const confirmEndModule = async () => {
+    if (isEnding) return;
+
     try {
       if (!user?.id || !selectedModuleForEnd) {
         showError("User ID or module not found. Please try again.");
         return;
       }
 
-      // Validate minimum star rating
       if (starRating < 3) {
         showError("Please provide a rating of at least 3 stars.");
         return;
       }
 
-      // Get syllabus ID from the progress data
       const syllabusId = progressData?.syllabusProgress?.[0]?.syllabusId?.id;
       if (!syllabusId) {
         showError("Syllabus ID not found. Please try again.");
         return;
       }
 
+      setIsEnding(true);
       await endModule(
         progressId,
         selectedModuleForEnd.moduleId.id,
@@ -152,24 +229,20 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
         starRating.toString(),
       );
 
-      showSuccess(`Module has been ended successfully.`);
-
-      // Clear the form and close modal
       setStarRating(0);
       setShowEndModal(false);
       setSelectedModuleForEnd(null);
 
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.moduleProgress(progressId),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.studentProgress(
-          progressData.studentId?.id ?? null,
-          progressData.classId?.id ?? null,
+      await invalidateProgressQueries();
+    } catch (error) {
+      showError(
+        getModuleMutationErrorMessage(
+          error,
+          "Failed to end the module. Please try again.",
         ),
-      });
-    } catch {
-      showError("Failed to end the module. Please try again.");
+      );
+    } finally {
+      setIsEnding(false);
     }
   };
 
@@ -178,23 +251,27 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const handleViewPDF = async (resource: any) => {
+  const handleOpenResource = async (resource: Resource) => {
+    const isVideo = isYouTubeResource(resource.file);
+
     try {
-      if (resource.file) {
-        // Try to open the PDF file
-        const supported = await Linking.canOpenURL(resource.file);
-        if (supported) {
-          await Linking.openURL(resource.file);
-        } else {
-          showInfo(
-            "No PDF viewer app found on your device. Please install a PDF reader app.",
-          );
-        }
-      } else {
-        showError("PDF file path is not available for this resource.");
+      if (!resource.file) {
+        showError(
+          isVideo
+            ? "Video link is not available for this resource."
+            : "PDF file path is not available for this resource.",
+        );
+        return;
       }
+
+      // canOpenURL is unreliable on Android for https/video links; open directly.
+      await Linking.openURL(resource.file);
     } catch {
-      showError("Failed to open PDF. Please try again.");
+      showError(
+        isVideo
+          ? "Failed to open video. Please check your YouTube app or browser."
+          : "Failed to open PDF. Please install a PDF reader app and try again.",
+      );
     }
   };
 
@@ -261,6 +338,9 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
   const aboutCopy = displayModule.moduleId.description?.trim() ?? "";
   const pdfList = displayModule.moduleId.resources ?? [];
   const showAboutCard = aboutCopy.length > 0 || pdfList.length > 0;
+  const showUndoStart = canCancelModule(displayModule);
+  const teacherActionsBusy = isStarting || isEnding || isCanceling;
+  const studentName = progressData.studentId?.name ?? "this student";
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -347,26 +427,35 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
                     aboutCopy.length > 0 ? s.aboutPdfRowAfterBody : null,
                   ]}
                 >
-                  {pdfList.map((resource: Resource, index: number) => (
-                    <TouchableOpacity
-                      key={resource.key ?? `pdf-${index}`}
-                      activeOpacity={0.82}
-                      onPress={() => handleViewPDF(resource)}
-                      style={s.aboutPdfIcon}
-                      accessibilityRole="button"
-                      accessibilityLabel={
-                        resource.key
-                          ? `Open PDF: ${resource.key}`
-                          : `Open PDF ${index + 1}`
-                      }
-                    >
-                      <Icon
-                        name="picture-as-pdf"
-                        size={26}
-                        color={colors.error}
-                      />
-                    </TouchableOpacity>
-                  ))}
+                  {pdfList.map((resource: Resource, index: number) => {
+                    const isVideo = isYouTubeResource(resource.file);
+                    return (
+                      <TouchableOpacity
+                        key={
+                          resource.key?.trim()
+                            ? resource.key
+                            : `resource-${index}`
+                        }
+                        activeOpacity={0.82}
+                        onPress={() => handleOpenResource(resource)}
+                        style={s.aboutPdfIcon}
+                        accessibilityRole="button"
+                        accessibilityLabel={
+                          resource.key
+                            ? `Open ${isVideo ? "video" : "PDF"}: ${resource.key}`
+                            : `Open ${isVideo ? "video" : "PDF"} ${index + 1}`
+                        }
+                      >
+                        <Icon
+                          name={
+                            isVideo ? "play-circle-filled" : "picture-as-pdf"
+                          }
+                          size={26}
+                          color={isVideo ? colors.primary : colors.error}
+                        />
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               ) : null}
             </View>
@@ -378,11 +467,15 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
               <View style={s.buttonRow}>
                 <TouchableOpacity
                   activeOpacity={0.88}
-                  onPress={() => handleStartCourse(displayModule)}
-                  disabled={displayModule.status !== "upcoming"}
+                  onPress={handleStartCourse}
+                  disabled={
+                    displayModule.status !== "upcoming" || teacherActionsBusy
+                  }
                   style={[
                     s.teacherButtonShell,
-                    displayModule.status !== "upcoming" && s.disabledButton,
+                    (displayModule.status !== "upcoming" ||
+                      teacherActionsBusy) &&
+                      s.disabledButton,
                   ]}
                 >
                   <LinearGradient
@@ -391,22 +484,59 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
                     end={{ x: 1, y: 0.5 }}
                     style={s.teacherGradientFill}
                   >
-                    <Icon name="play-arrow" size={18} color="#FFFFFF" />
-                    <Text style={s.gradientButtonLabel}>Start</Text>
+                    {isStarting ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Icon name="play-arrow" size={18} color="#FFFFFF" />
+                        <Text style={s.gradientButtonLabel}>Start</Text>
+                      </>
+                    )}
                   </LinearGradient>
                 </TouchableOpacity>
+
+                {showUndoStart ? (
+                  <TouchableOpacity
+                    activeOpacity={0.88}
+                    onPress={handleCancelModule}
+                    disabled={teacherActionsBusy}
+                    style={[
+                      s.teacherUndoButton,
+                      teacherActionsBusy && s.disabledButton,
+                    ]}
+                  >
+                    {isCanceling ? (
+                      <ActivityIndicator size="small" color={colors.warning} />
+                    ) : (
+                      <>
+                        <Icon name="undo" size={18} color={colors.warning} />
+                        <Text style={s.undoButtonLabel}>Undo start</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                ) : null}
 
                 <TouchableOpacity
                   activeOpacity={0.88}
                   onPress={() => handleEndCourse(displayModule)}
-                  disabled={displayModule.status !== "inprogress"}
+                  disabled={
+                    displayModule.status !== "inprogress" || teacherActionsBusy
+                  }
                   style={[
                     s.teacherEndButton,
-                    displayModule.status !== "inprogress" && s.disabledButton,
+                    (displayModule.status !== "inprogress" ||
+                      teacherActionsBusy) &&
+                      s.disabledButton,
                   ]}
                 >
-                  <Icon name="stop" size={18} color="#FFFFFF" />
-                  <Text style={s.gradientButtonLabel}>End</Text>
+                  {isEnding ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Icon name="stop" size={18} color="#FFFFFF" />
+                      <Text style={s.gradientButtonLabel}>End</Text>
+                    </>
+                  )}
                 </TouchableOpacity>
               </View>
 
@@ -535,13 +665,127 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
         </ScrollView>
 
         <Modal
+          visible={showStartModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            if (!isStarting) setShowStartModal(false);
+          }}
+        >
+          <View style={s.modalOverlay}>
+            <View style={s.modalCard}>
+              <Text style={s.modalTitle}>Start this module?</Text>
+              <Text style={s.modalBodyText}>
+                Start this module for {studentName}? They will be able to access
+                it once started.
+              </Text>
+              <Text style={s.modalSubtitle} numberOfLines={3}>
+                {displayModule.moduleId.title}
+              </Text>
+
+              <View style={s.modalButtonRow}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={[s.modalButton, s.cancelButton]}
+                  disabled={isStarting}
+                  onPress={() => setShowStartModal(false)}
+                >
+                  <Text style={s.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.88}
+                  onPress={confirmStartModule}
+                  disabled={isStarting}
+                  style={[
+                    s.modalGradientButtonShell,
+                    isStarting && s.disabledButton,
+                  ]}
+                >
+                  <LinearGradient
+                    colors={[...loginButtonGradientColors]}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={s.modalGradientButtonFill}
+                  >
+                    {isStarting ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={s.confirmGradientText}>Start</Text>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={showCancelModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            if (!isCanceling) setShowCancelModal(false);
+          }}
+        >
+          <View style={s.modalOverlay}>
+            <View style={s.modalCard}>
+              <Text style={s.modalTitle}>Undo module start?</Text>
+              <Text style={s.modalBodyText}>
+                This will move the module back to upcoming and clear its start
+                date. You can start it again later.
+              </Text>
+              <Text style={s.modalSubtitle} numberOfLines={3}>
+                {displayModule.moduleId.title}
+              </Text>
+
+              <View style={s.modalButtonRow}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={[s.modalButton, s.cancelButton]}
+                  disabled={isCanceling}
+                  onPress={() => setShowCancelModal(false)}
+                >
+                  <Text style={s.cancelButtonText}>Keep in progress</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.88}
+                  onPress={confirmCancelModule}
+                  disabled={isCanceling}
+                  style={[
+                    s.modalGradientButtonShell,
+                    isCanceling && s.disabledButton,
+                  ]}
+                >
+                  <LinearGradient
+                    colors={[...loginButtonGradientColors]}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={s.modalGradientButtonFill}
+                  >
+                    {isCanceling ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={s.confirmGradientText}>Undo start</Text>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
           visible={showEndModal}
           transparent
           animationType="fade"
           onRequestClose={() => {
-            setShowEndModal(false);
-            setSelectedModuleForEnd(null);
-            setStarRating(0);
+            if (!isEnding) {
+              setShowEndModal(false);
+              setSelectedModuleForEnd(null);
+              setStarRating(0);
+            }
           }}
         >
           <View style={s.modalOverlay}>
@@ -572,6 +816,7 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
                 <TouchableOpacity
                   activeOpacity={0.85}
                   style={[s.modalButton, s.cancelButton]}
+                  disabled={isEnding}
                   onPress={() => {
                     setShowEndModal(false);
                     setSelectedModuleForEnd(null);
@@ -584,7 +829,11 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
                 <TouchableOpacity
                   activeOpacity={0.88}
                   onPress={confirmEndModule}
-                  style={s.modalGradientButtonShell}
+                  disabled={isEnding}
+                  style={[
+                    s.modalGradientButtonShell,
+                    isEnding && s.disabledButton,
+                  ]}
                 >
                   <LinearGradient
                     colors={[...loginButtonGradientColors]}
@@ -592,7 +841,11 @@ const ModuleDetailScreen = ({ route, navigation }: ModuleDetailScreenProps) => {
                     end={{ x: 1, y: 0.5 }}
                     style={s.modalGradientButtonFill}
                   >
-                    <Text style={s.confirmGradientText}>End module</Text>
+                    {isEnding ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={s.confirmGradientText}>End module</Text>
+                    )}
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -773,6 +1026,7 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
     },
     buttonRow: {
       flexDirection: "row",
+      flexWrap: "wrap",
       justifyContent: "space-between",
       marginTop: 4,
       gap: 12,
@@ -803,6 +1057,29 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
       paddingHorizontal: 12,
       gap: 8,
       backgroundColor: colors.error,
+    },
+    teacherUndoButton: {
+      flex: 1,
+      borderRadius: 14,
+      overflow: "hidden",
+      minHeight: 50,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 12,
+      gap: 8,
+      borderWidth: 1.5,
+      borderColor: isDark
+        ? "rgba(245, 158, 11, 0.55)"
+        : "rgba(217, 119, 6, 0.45)",
+      backgroundColor: isDark
+        ? "rgba(245, 158, 11, 0.1)"
+        : "rgba(255, 251, 235, 1)",
+    },
+    undoButtonLabel: {
+      color: colors.warning,
+      fontSize: 14,
+      fontWeight: "800",
     },
     gradientButtonLabel: {
       color: "#FFFFFF",
@@ -954,6 +1231,14 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
       textAlign: "center",
       marginBottom: 10,
       color: isDark ? "#F8FAFC" : "#0f172a",
+    },
+    modalBodyText: {
+      fontSize: 14,
+      lineHeight: 21,
+      fontWeight: "500",
+      textAlign: "center",
+      marginBottom: 12,
+      color: isDark ? "#CBD5E1" : "#475569",
     },
     modalSubtitle: {
       fontSize: 15,
