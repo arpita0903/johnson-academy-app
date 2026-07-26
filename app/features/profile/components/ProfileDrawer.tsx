@@ -381,6 +381,38 @@ function ProfileDrawer({ navigation }: DrawerContentComponentProps) {
                 }
               />
             </TouchableOpacity>
+            {/* Temporarily hidden: Assignments
+            {user?.role === "student" ? (
+              <TouchableOpacity
+                style={dynamicStyles.navLinkRow}
+                activeOpacity={0.82}
+                onPress={() => {
+                  navigation.closeDrawer();
+                  (navigation as any).navigate("Main", {
+                    screen: "StudentAssignments",
+                  });
+                }}
+              >
+                <View style={dynamicStyles.navLinkIconWrap}>
+                  <MaterialIcons
+                    name="assignment"
+                    size={22}
+                    color={colors.primary}
+                  />
+                </View>
+                <Text style={dynamicStyles.navLinkLabel}>Assignments</Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={22}
+                  color={
+                    isDark
+                      ? "rgba(148, 163, 184, 0.75)"
+                      : "rgba(100, 116, 139, 0.85)"
+                  }
+                />
+              </TouchableOpacity>
+            ) : null}
+            */}
           </View>
         </ScrollView>
 

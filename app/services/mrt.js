@@ -7,12 +7,12 @@ import api from "./axiosInstance";
  * @param {string} mrtData.classId - The ID of the class
  * @param {string} mrtData.studentId - The ID of the student
  * @param {string} mrtData.courseId - The ID of the course
- * @param {number} mrtData.sptAndFileSubmission - Score for SPT & File Submission (max 5)
- * @param {number} mrtData.regularity - Score for Regularity (max 5)
- * @param {number} mrtData.learningSpeed - Score for Learning Speed (max 5)
- * @param {number} mrtData.songLearning - Score for Song Learning (max 5)
- * @param {number} mrtData.assignment - Score for Assignment (max 5)
- * @param {number} mrtData.theoryAndTechnicals - Score for Theory and Technicals (max 5)
+ * @param {number} mrtData.regularity - Score for Regularity (min 2, max 5)
+ * @param {number} mrtData.learningSpeed - Score for Learning Speed (min 2, max 5)
+ * @param {number} mrtData.theory - Score for Theory (min 2, max 5)
+ * @param {number} mrtData.technicalExercises - Score for Technical Exercises (min 2, max 5)
+ * @param {number} mrtData.repertoireRhythmSense - Score for Repertoire (Rhythm Sense) (min 2, max 5)
+ * @param {number} mrtData.repertoireDynamics - Score for Repertoire (Dynamics) (min 2, max 5)
  * @param {string} mrtData.remarks - Additional remarks/comments
  * @returns {Promise<Object>} Response from MRT submission
  */

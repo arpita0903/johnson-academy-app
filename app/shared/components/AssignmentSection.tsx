@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
+import Icon from "react-native-vector-icons/MaterialIcons";
 import { useTheme } from "../../context/ThemeContext";
 import { ThemeColors } from "../../theme/colors";
 import { Assignment } from "../../types/assignment";
@@ -21,20 +23,20 @@ const AssignmentSection = ({
   navigation,
   studentId,
 }: AssignmentSectionProps) => {
-  const { colors } = useTheme();
-  const dynamicStyles = createStyles(colors);
+  const { colors, isDark } = useTheme();
+  const dynamicStyles = createStyles(colors, isDark);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAssignments = async () => {
+  const fetchAssignments = useCallback(async () => {
     if (!studentId) {
       setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
       setError(null);
       const data = await getAssignmentsByStudent(studentId);
       setAssignments(data);
@@ -43,164 +45,207 @@ const AssignmentSection = ({
       setError("Failed to load assignments");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    fetchAssignments();
   }, [studentId]);
 
-  // Function to refresh assignments data
+  useEffect(() => {
+    setLoading(true);
+    fetchAssignments();
+  }, [fetchAssignments]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchAssignments();
+  };
+
   const handleSubmissionSuccess = () => {
     fetchAssignments();
   };
 
   const handleAssignmentPress = (assignment: Assignment) => {
-    // Navigate to student assignment detail screen with refresh callback
     navigation.navigate("StudentAssignmentDetail", {
       assignment,
       onSubmissionSuccess: handleSubmissionSuccess,
     });
   };
 
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <View style={dynamicStyles.loadingContainer}>
-          <ActivityIndicator size="small" color={colors.primary} />
-          <Text style={dynamicStyles.loadingText}>Loading assignments...</Text>
-        </View>
-      );
-    }
+  if (loading) {
+    return (
+      <View style={dynamicStyles.centeredState}>
+        <ActivityIndicator size="small" color={colors.primary} />
+        <Text style={dynamicStyles.loadingText}>Loading assignments...</Text>
+      </View>
+    );
+  }
 
-    if (error) {
-      return (
-        <View style={dynamicStyles.errorContainer}>
+  return (
+    <ScrollView
+      style={dynamicStyles.scrollView}
+      contentContainerStyle={dynamicStyles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+          progressBackgroundColor={colors.card}
+        />
+      }
+    >
+      <View style={dynamicStyles.sectionHeader}>
+        <Text style={dynamicStyles.sectionTitle}>Your Assignments</Text>
+        {assignments.length > 0 && (
+          <View style={dynamicStyles.countBadge}>
+            <Text style={dynamicStyles.countBadgeLabel}>
+              {assignments.length}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {error ? (
+        <View style={dynamicStyles.stateCard}>
+          <Icon name="error-outline" size={32} color={colors.error} />
           <Text style={dynamicStyles.errorText}>{error}</Text>
         </View>
-      );
-    }
-
-    if (assignments.length === 0) {
-      return (
-        <View style={dynamicStyles.emptyContainer}>
-          <Text style={dynamicStyles.emptyText}>
-            🎉 No assignments right now!
-          </Text>
+      ) : assignments.length === 0 ? (
+        <View style={dynamicStyles.stateCard}>
+          <View style={dynamicStyles.emptyIconWell}>
+            <Icon
+              name="assignment-turned-in"
+              size={28}
+              color={
+                isDark
+                  ? "rgba(167, 139, 250, 0.95)"
+                  : "rgba(109, 40, 217, 0.85)"
+              }
+            />
+          </View>
+          <Text style={dynamicStyles.emptyText}>No assignments right now</Text>
           <Text style={dynamicStyles.emptySubtext}>
             No tasks for now. Time to jam with your favorite tunes!
           </Text>
         </View>
-      );
-    }
-
-    return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={dynamicStyles.scrollContent}
-        style={dynamicStyles.scrollView}
-      >
-        {assignments.map((assignment) => (
+      ) : (
+        assignments.map((assignment) => (
           <AssignmentCard
             key={assignment.id}
             assignment={assignment}
             onPress={handleAssignmentPress}
           />
-        ))}
-      </ScrollView>
-    );
-  };
-
-  return (
-    <>
-      <View style={dynamicStyles.sectionHeader}>
-        <Text style={dynamicStyles.sectionTitle}>Assignments</Text>
-        {assignments.length > 0 && (
-          <Text style={dynamicStyles.assignmentCount}>
-            {assignments.length} assignment{assignments.length !== 1 ? "s" : ""}
-          </Text>
-        )}
-      </View>
-
-      <View style={dynamicStyles.assignmentContainer}>{renderContent()}</View>
-    </>
+        ))
+      )}
+    </ScrollView>
   );
 };
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: ThemeColors, isDark: boolean) =>
   StyleSheet.create({
-    sectionHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 16,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.text,
-    },
-    assignmentCount: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      fontWeight: "500",
-    },
-    assignmentContainer: {
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-      minHeight: 200,
-    },
     scrollView: {
-      flexGrow: 0,
+      flex: 1,
+      backgroundColor: "transparent",
     },
     scrollContent: {
-      padding: 16,
-      paddingRight: 4,
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: 32,
     },
-    loadingContainer: {
+    sectionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 14,
+      paddingHorizontal: 4,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      letterSpacing: -0.3,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+      marginRight: 10,
+    },
+    countBadge: {
+      minWidth: 24,
+      height: 24,
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark
+        ? "rgba(167, 139, 250, 0.14)"
+        : "rgba(109, 40, 217, 0.1)",
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(167, 139, 250, 0.32)"
+        : "rgba(109, 40, 217, 0.26)",
+    },
+    countBadgeLabel: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: isDark ? "#DDD6FE" : "#5B21B6",
+    },
+    centeredState: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      paddingVertical: 40,
+      backgroundColor: "transparent",
     },
     loadingText: {
-      marginTop: 8,
+      marginTop: 10,
       fontSize: 14,
-      color: colors.textSecondary,
+      fontWeight: "600",
+      color: isDark ? "#94A3B8" : "#64748B",
     },
-    errorContainer: {
-      flex: 1,
-      justifyContent: "center",
+    stateCard: {
       alignItems: "center",
-      paddingVertical: 40,
+      paddingVertical: 36,
+      paddingHorizontal: 24,
+      borderRadius: 20,
+      backgroundColor: isDark
+        ? "rgba(13, 17, 34, 0.92)"
+        : "rgba(255, 255, 255, 0.94)",
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(255, 255, 255, 0.28)"
+        : "rgba(255, 255, 255, 1)",
     },
     errorText: {
+      marginTop: 12,
       fontSize: 14,
+      fontWeight: "600",
       color: colors.error,
       textAlign: "center",
     },
-    emptyContainer: {
-      flex: 1,
-      justifyContent: "center",
+    emptyIconWell: {
+      width: 56,
+      height: 56,
+      borderRadius: 16,
       alignItems: "center",
-      paddingVertical: 40,
-      paddingHorizontal: 20,
+      justifyContent: "center",
+      marginBottom: 14,
+      borderWidth: 1.5,
+      borderColor: isDark
+        ? "rgba(167, 139, 250, 0.4)"
+        : "rgba(45, 212, 191, 0.4)",
+      backgroundColor: isDark
+        ? "rgba(167, 139, 250, 0.08)"
+        : "rgba(45, 212, 191, 0.08)",
     },
     emptyText: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.primary,
-      marginBottom: 8,
+      fontSize: 16,
+      fontWeight: "800",
+      letterSpacing: -0.3,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+      marginBottom: 6,
       textAlign: "center",
     },
     emptySubtext: {
-      fontSize: 14,
-      color: colors.textSecondary,
+      fontSize: 13,
+      fontWeight: "600",
+      color: isDark ? "#94A3B8" : "#64748B",
       textAlign: "center",
-      lineHeight: 20,
+      lineHeight: 19,
     },
   });
 

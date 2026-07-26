@@ -38,6 +38,8 @@ const ACCENT_ORANGE = "#FF8C42";
 const TEXT_MUTED = "#94A3B8";
 const INPUT_BG = "rgba(15, 23, 42, 0.9)";
 const INPUT_BORDER = "rgba(148, 163, 184, 0.25)";
+const ADMIN_LOGIN_MESSAGE =
+  "Admin accounts cannot log in here. Please use the admin portal.";
 
 function LoginBackground() {
   return (
@@ -129,6 +131,10 @@ const Login = ({ navigation }: LoginProps) => {
 
       if (!accessToken || !refreshToken || !user) {
         throw new Error("Missing login data");
+      }
+
+      if (user.role?.trim().toLowerCase() === "admin") {
+        throw new Error(ADMIN_LOGIN_MESSAGE);
       }
 
       await AsyncStorage.setItem("token", JSON.stringify(accessToken));

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,9 +10,13 @@ import {
   ActivityIndicator,
   Linking,
 } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Icon from "react-native-vector-icons/MaterialIcons";
 import { gradeSubmission } from "../../../services/assignment";
 import { useToast } from "../../../context/ToastContext";
+import { useTheme } from "../../../context/ThemeContext";
+import { ThemeColors } from "../../../theme/colors";
+import { ScreenGradientBackground } from "../ScreenGradientBackground";
 
 interface Student {
   id: string;
@@ -54,10 +58,17 @@ const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
   onClose,
   onGradeSubmitted,
 }) => {
+  const { colors, isDark } = useTheme();
+  const s = createStyles(colors, isDark);
   const [selectedGrade, setSelectedGrade] = useState(submission?.grade || 0);
   const [feedback, setFeedback] = useState(submission?.feedback || "");
   const [submitting, setSubmitting] = useState(false);
   const { showError, showSuccess } = useToast();
+
+  useEffect(() => {
+    setSelectedGrade(submission?.grade || 0);
+    setFeedback(submission?.feedback || "");
+  }, [submission]);
 
   const handleGradeSubmit = async () => {
     if (!submission || selectedGrade === 0) {
@@ -85,31 +96,33 @@ const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
     }
   };
 
-  const renderStars = () => {
-    return (
-      <View style={styles.starsContainer}>
-        <Text style={styles.starsLabel}>Grade (1-5 stars):</Text>
-        <View style={styles.starsRow}>
-          {[1, 2, 3, 4, 5].map((star) => (
-            <TouchableOpacity
-              key={star}
-              onPress={() => setSelectedGrade(star)}
-              style={styles.starButton}
-            >
-              <Icon
-                name={star <= selectedGrade ? "star" : "star-outline"}
-                size={32}
-                color={star <= selectedGrade ? "#ffd700" : "#666"}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-        <Text style={styles.gradeText}>
-          {selectedGrade > 0 ? `${selectedGrade}/5 stars` : "No grade selected"}
-        </Text>
+  const mutedIconColor = isDark ? "#94A3B8" : "#64748B";
+
+  const renderStars = () => (
+    <View style={s.starsContainer}>
+      <Text style={s.starsLabel}>Grade (1-5 stars)</Text>
+      <View style={s.starsRow}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <TouchableOpacity
+            key={star}
+            onPress={() => setSelectedGrade(star)}
+            style={s.starButton}
+            accessibilityRole="button"
+            accessibilityLabel={`${star} star${star !== 1 ? "s" : ""}`}
+          >
+            <Icon
+              name={star <= selectedGrade ? "star" : "star-border"}
+              size={32}
+              color={star <= selectedGrade ? "#FBBF24" : mutedIconColor}
+            />
+          </TouchableOpacity>
+        ))}
       </View>
-    );
-  };
+      <Text style={s.gradeText}>
+        {selectedGrade > 0 ? `${selectedGrade}/5 stars` : "No grade selected"}
+      </Text>
+    </View>
+  );
 
   if (!submission) return null;
 
@@ -120,97 +133,118 @@ const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Icon name="close" size={24} color="#ff6b35" />
+      <SafeAreaView style={s.safeArea} edges={["top", "bottom"]}>
+        <ScreenGradientBackground isDark={isDark} />
+
+        <View style={s.header}>
+          <TouchableOpacity
+            onPress={onClose}
+            style={s.closeButton}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
+            <Icon
+              name="close"
+              size={22}
+              color={isDark ? "#F8FAFC" : "#0f172a"}
+            />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Submission Details</Text>
-          <View style={styles.headerSpacer} />
+          <Text style={s.headerTitle}>Submission Details</Text>
+          <View style={s.headerSpacer} />
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Student Info */}
-          <View style={styles.studentInfoSection}>
-            <Text style={styles.sectionTitle}>Student Information</Text>
-            <View style={styles.studentCard}>
-              <View style={styles.studentHeader}>
-                <Icon name="person-circle" size={40} color="#ff6b35" />
-                <View style={styles.studentDetails}>
-                  <Text style={styles.studentName}>
-                    {submission.student.name}
-                  </Text>
-                  <Text style={styles.studentEmail}>
-                    {submission.student.email}
-                  </Text>
-                </View>
+        <ScrollView
+          style={s.scroll}
+          contentContainerStyle={s.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={s.glassCard}>
+            <Text style={s.sectionTitle}>Student Information</Text>
+            <View style={s.studentRow}>
+              <View style={s.studentIconWell}>
+                <Icon
+                  name="person"
+                  size={22}
+                  color={
+                    isDark
+                      ? "rgba(196, 181, 253, 0.98)"
+                      : "rgba(109, 40, 217, 0.9)"
+                  }
+                />
               </View>
-            </View>
-          </View>
-
-          {/* Submission Info */}
-          <View style={styles.submissionInfoSection}>
-            <Text style={styles.sectionTitle}>Submission Information</Text>
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Submitted At:</Text>
-                <Text style={styles.infoValue}>
-                  {new Date(submission.submittedAt).toLocaleString()}
-                </Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Current Grade:</Text>
-                <Text style={styles.infoValue}>
-                  {submission.grade
-                    ? `${submission.grade}/5 stars`
-                    : "Not graded"}
+              <View style={s.studentDetails}>
+                <Text style={s.studentName}>{submission.student.name}</Text>
+                <Text numberOfLines={1} style={s.studentEmail}>
+                  {submission.student.email}
                 </Text>
               </View>
             </View>
           </View>
 
-          {/* File Viewing */}
-          <View style={styles.fileSection}>
-            <Text style={styles.sectionTitle}>Submitted File</Text>
+          <View style={s.glassCard}>
+            <Text style={s.sectionTitle}>Submission Information</Text>
+            <View style={s.infoRow}>
+              <Text style={s.infoLabel}>Submitted At</Text>
+              <Text style={s.infoValue}>
+                {new Date(submission.submittedAt).toLocaleString()}
+              </Text>
+            </View>
+            <View style={[s.infoRow, s.infoRowLast]}>
+              <Text style={s.infoLabel}>Current Grade</Text>
+              <Text style={s.infoValue}>
+                {submission.grade
+                  ? `${submission.grade}/5 stars`
+                  : "Not graded"}
+              </Text>
+            </View>
+          </View>
+
+          <View style={s.glassCard}>
+            <Text style={s.sectionTitle}>Submitted File</Text>
             <TouchableOpacity
-              style={styles.fileButton}
+              style={s.fileButton}
               onPress={() => Linking.openURL(submission.fileUrl)}
+              activeOpacity={0.82}
+              accessibilityRole="button"
             >
-              <Icon name="document-text" size={24} color="#4CAF50" />
-              <Text style={styles.fileButtonText}>View Submission File</Text>
-              <Icon name="chevron-forward" size={20} color="#4CAF50" />
+              <View style={s.fileIconWell}>
+                <Icon
+                  name="insert-drive-file"
+                  size={18}
+                  color={
+                    isDark
+                      ? "rgba(94, 234, 212, 0.98)"
+                      : "rgba(13, 148, 136, 0.96)"
+                  }
+                />
+              </View>
+              <Text style={s.fileButtonText}>View Submission File</Text>
+              <Icon name="open-in-new" size={18} color={mutedIconColor} />
             </TouchableOpacity>
           </View>
 
-          {/* Current Feedback */}
-          {submission.feedback && (
-            <View style={styles.currentFeedbackSection}>
-              <Text style={styles.sectionTitle}>Current Feedback</Text>
-              <View style={styles.feedbackCard}>
-                <Text style={styles.currentFeedbackText}>
-                  {submission.feedback}
-                </Text>
-              </View>
+          {submission.feedback ? (
+            <View style={s.glassCard}>
+              <Text style={s.sectionTitle}>Current Feedback</Text>
+              <Text style={s.currentFeedbackText}>{submission.feedback}</Text>
             </View>
-          )}
+          ) : null}
 
-          {/* Grading Section */}
-          <View style={styles.gradingSection}>
-            <Text style={styles.sectionTitle}>
+          <View style={s.glassCard}>
+            <Text style={s.sectionTitle}>
               {submission.grade ? "Update Grade" : "Grade Submission"}
             </Text>
 
             {renderStars()}
 
-            <View style={styles.feedbackContainer}>
-              <Text style={styles.feedbackLabel}>Feedback:</Text>
+            <View style={s.feedbackContainer}>
+              <Text style={s.feedbackLabel}>Feedback</Text>
               <TextInput
-                style={styles.feedbackInput}
+                style={s.feedbackInput}
                 value={feedback}
                 onChangeText={setFeedback}
                 placeholder="Enter feedback for the student..."
-                placeholderTextColor="#666"
+                placeholderTextColor={colors.placeholderText}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -219,19 +253,23 @@ const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
 
             <TouchableOpacity
               style={[
-                styles.submitButton,
-                (selectedGrade === 0 || submitting) &&
-                  styles.submitButtonDisabled,
+                s.submitButton,
+                (selectedGrade === 0 || submitting) && s.submitButtonDisabled,
               ]}
               onPress={handleGradeSubmit}
               disabled={selectedGrade === 0 || submitting}
+              accessibilityRole="button"
             >
               {submitting ? (
-                <ActivityIndicator color="#ffffff" size="small" />
+                <ActivityIndicator color={colors.primaryText} size="small" />
               ) : (
                 <>
-                  <Icon name="checkmark-circle" size={20} color="#ffffff" />
-                  <Text style={styles.submitButtonText}>
+                  <Icon
+                    name="check-circle"
+                    size={20}
+                    color={colors.primaryText}
+                  />
+                  <Text style={s.submitButtonText}>
                     {submission.grade ? "Update Grade" : "Submit Grade"}
                   </Text>
                 </>
@@ -239,204 +277,261 @@ const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#1a1a1a",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#3d3d3d",
-  },
-  closeButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#ffffff",
-  },
-  headerSpacer: {
-    width: 40,
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  studentInfoSection: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#ff6b35",
-    marginBottom: 12,
-  },
-  studentCard: {
-    backgroundColor: "#2d2d2d",
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#3d3d3d",
-  },
-  studentHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  studentDetails: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  studentName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#ffffff",
-    marginBottom: 4,
-  },
-  studentEmail: {
-    fontSize: 14,
-    color: "#cccccc",
-  },
-  submissionInfoSection: {
-    marginBottom: 20,
-  },
-  infoCard: {
-    backgroundColor: "#2d2d2d",
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#3d3d3d",
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#3d3d3d",
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: "#cccccc",
-    flex: 1,
-  },
-  infoValue: {
-    fontSize: 14,
-    color: "#ffffff",
-    fontWeight: "500",
-    flex: 1,
-    textAlign: "right",
-  },
-  fileSection: {
-    marginBottom: 20,
-  },
-  fileButton: {
-    backgroundColor: "#2d2d2d",
-    padding: 16,
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#4CAF50",
-  },
-  fileButtonText: {
-    color: "#4CAF50",
-    fontSize: 16,
-    fontWeight: "600",
-    flex: 1,
-    marginLeft: 12,
-  },
-  currentFeedbackSection: {
-    marginBottom: 20,
-  },
-  feedbackCard: {
-    backgroundColor: "#2d2d2d",
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#3d3d3d",
-  },
-  currentFeedbackText: {
-    fontSize: 14,
-    color: "#cccccc",
-    lineHeight: 20,
-  },
-  gradingSection: {
-    marginBottom: 20,
-  },
-  starsContainer: {
-    backgroundColor: "#2d2d2d",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#3d3d3d",
-  },
-  starsLabel: {
-    fontSize: 14,
-    color: "#cccccc",
-    marginBottom: 12,
-  },
-  starsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  starButton: {
-    padding: 4,
-    marginHorizontal: 4,
-  },
-  gradeText: {
-    fontSize: 14,
-    color: "#ffd700",
-    textAlign: "center",
-    fontWeight: "600",
-  },
-  feedbackContainer: {
-    marginBottom: 20,
-  },
-  feedbackLabel: {
-    fontSize: 14,
-    color: "#cccccc",
-    marginBottom: 8,
-  },
-  feedbackInput: {
-    backgroundColor: "#2d2d2d",
-    borderWidth: 1,
-    borderColor: "#3d3d3d",
-    borderRadius: 12,
-    padding: 16,
-    color: "#ffffff",
-    fontSize: 14,
-    minHeight: 100,
-  },
-  submitButton: {
-    backgroundColor: "#ff6b35",
-    padding: 16,
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  submitButtonDisabled: {
-    backgroundColor: "#666",
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-});
+const createStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: isDark ? "#040814" : colors.background,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginBottom: 4,
+    },
+    closeButton: {
+      width: 42,
+      height: 42,
+      borderRadius: 14,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark
+        ? "rgba(13, 17, 34, 0.92)"
+        : "rgba(255, 255, 255, 0.94)",
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(255, 255, 255, 0.28)"
+        : "rgba(255, 255, 255, 1)",
+    },
+    headerTitle: {
+      fontSize: 17,
+      fontWeight: "800",
+      letterSpacing: -0.2,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+    },
+    headerSpacer: {
+      width: 42,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: 16,
+      paddingBottom: 28,
+    },
+    glassCard: {
+      overflow: "hidden",
+      backgroundColor: isDark
+        ? "rgba(13, 17, 34, 0.92)"
+        : "rgba(255, 255, 255, 0.94)",
+      borderRadius: 20,
+      paddingVertical: 16,
+      paddingHorizontal: 14,
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(255, 255, 255, 0.28)"
+        : "rgba(255, 255, 255, 1)",
+      marginBottom: 14,
+    },
+    sectionTitle: {
+      fontSize: 15,
+      fontWeight: "800",
+      letterSpacing: -0.2,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+      marginBottom: 12,
+    },
+    studentRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 14,
+      backgroundColor: isDark
+        ? "rgba(148, 163, 184, 0.08)"
+        : "rgba(148, 163, 184, 0.1)",
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(148, 163, 184, 0.16)"
+        : "rgba(148, 163, 184, 0.2)",
+    },
+    studentIconWell: {
+      width: 42,
+      height: 42,
+      borderRadius: 14,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 12,
+      backgroundColor: isDark
+        ? "rgba(167, 139, 250, 0.14)"
+        : "rgba(109, 40, 217, 0.1)",
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(167, 139, 250, 0.38)"
+        : "rgba(109, 40, 217, 0.24)",
+    },
+    studentDetails: {
+      flex: 1,
+      minWidth: 0,
+    },
+    studentName: {
+      fontSize: 14,
+      fontWeight: "800",
+      letterSpacing: -0.2,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+      marginBottom: 2,
+    },
+    studentEmail: {
+      fontSize: 12,
+      fontWeight: "500",
+      color: isDark ? "#94A3B8" : "#64748B",
+    },
+    infoRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark
+        ? "rgba(148, 163, 184, 0.14)"
+        : "rgba(148, 163, 184, 0.2)",
+    },
+    infoRowLast: {
+      borderBottomWidth: 0,
+    },
+    infoLabel: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: isDark ? "#94A3B8" : "#64748B",
+      flex: 1,
+    },
+    infoValue: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: isDark ? "#F8FAFC" : "#0f172a",
+      flex: 1,
+      textAlign: "right",
+    },
+    fileButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: 14,
+      backgroundColor: isDark
+        ? "rgba(148, 163, 184, 0.08)"
+        : "rgba(148, 163, 184, 0.1)",
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(94, 234, 212, 0.35)"
+        : "rgba(45, 212, 191, 0.3)",
+    },
+    fileIconWell: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 10,
+      backgroundColor: isDark
+        ? "rgba(94, 234, 212, 0.1)"
+        : "rgba(13, 148, 136, 0.1)",
+    },
+    fileButtonText: {
+      flex: 1,
+      fontSize: 13,
+      fontWeight: "700",
+      color: isDark ? "rgba(94, 234, 212, 0.98)" : "rgba(13, 148, 136, 0.96)",
+      marginRight: 8,
+    },
+    currentFeedbackText: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: isDark ? "#CBD5E1" : "#475569",
+      lineHeight: 21,
+    },
+    starsContainer: {
+      padding: 14,
+      borderRadius: 14,
+      marginBottom: 16,
+      backgroundColor: isDark
+        ? "rgba(148, 163, 184, 0.08)"
+        : "rgba(148, 163, 184, 0.1)",
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(148, 163, 184, 0.16)"
+        : "rgba(148, 163, 184, 0.2)",
+    },
+    starsLabel: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: isDark ? "#94A3B8" : "#64748B",
+      marginBottom: 12,
+      textAlign: "center",
+    },
+    starsRow: {
+      flexDirection: "row",
+      justifyContent: "center",
+      marginBottom: 8,
+    },
+    starButton: {
+      padding: 4,
+      marginHorizontal: 4,
+    },
+    gradeText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: isDark ? "#FBBF24" : "#D97706",
+      textAlign: "center",
+    },
+    feedbackContainer: {
+      marginBottom: 16,
+    },
+    feedbackLabel: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: isDark ? "#94A3B8" : "#64748B",
+      marginBottom: 8,
+    },
+    feedbackInput: {
+      backgroundColor: isDark
+        ? "rgba(148, 163, 184, 0.08)"
+        : "rgba(148, 163, 184, 0.1)",
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(148, 163, 184, 0.16)"
+        : "rgba(148, 163, 184, 0.2)",
+      borderRadius: 14,
+      padding: 14,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+      fontSize: 14,
+      fontWeight: "500",
+      minHeight: 110,
+    },
+    submitButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 14,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    },
+    submitButtonDisabled: {
+      backgroundColor: isDark ? "rgba(148, 163, 184, 0.2)" : colors.textMuted,
+      opacity: 0.7,
+    },
+    submitButtonText: {
+      color: colors.primaryText,
+      fontSize: 15,
+      fontWeight: "700",
+    },
+  });
 
 export default SubmissionDetailModal;

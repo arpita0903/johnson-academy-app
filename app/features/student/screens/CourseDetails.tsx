@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useLayoutEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -17,11 +17,18 @@ import { Module } from "../../../types/studentProgress";
 import { useStudentProgress } from "../../../shared/hooks/useStudentProgress";
 import { useRefreshOnFocus } from "../../../shared/hooks/useRefreshOnFocus";
 import { ScreenGradientBackground } from "../../../shared/components/ScreenGradientBackground";
+import { ConfirmActionModal } from "../../../shared/components/ConfirmActionModal";
+// Temporarily hidden: Assignments
+// import AssignmentSheet from "../../teacher/screens/AssignmentModal";
 
 type RootStackParamList = {
   Detail: { item: any };
   TeacherCourseDetail: { item: any };
   ModuleDetail: { progressId: string; selectedModule: any };
+  PublishAssignment: { batch: any };
+  AssignmentList: { batch: any };
+  StudentAssignmentDetail: { assignment: any; onSubmissionSuccess?: () => void };
+  StudentDetailsScreen: { selectedStudent?: any; course?: any };
 };
 
 const getStatusIcon = (
@@ -125,6 +132,9 @@ const getEnabledModuleTrail = (
   }
 };
 
+const UPCOMING_LESSON_MESSAGE =
+  "Upcoming lessons are part of your next learning steps. They will unlock as your current lessons are completed.";
+
 function filterModulesByType(modules: Module[]): {
   theory: Module[];
   technical: Module[];
@@ -194,6 +204,9 @@ const CourseDetails = ({
   const [activeTab, setActiveTab] = useState<
     "theory" | "technical" | "repertoire" | "others"
   >("theory");
+  const [isUpcomingModalVisible, setIsUpcomingModalVisible] = useState(false);
+  // Temporarily hidden: Assignments
+  // const [isAssignmentSheetVisible, setIsAssignmentSheetVisible] = useState(false);
 
   const filteredModules = useMemo(() => {
     const modules = (progressData as any)?.syllabusProgress?.[0]?.modules ?? [];
@@ -209,7 +222,70 @@ const CourseDetails = ({
     });
   };
 
+  const handleUpcomingPress = () => {
+    setIsUpcomingModalVisible(true);
+  };
+
+  // Temporarily hidden: Assignments
+  // const handlePublishAssignment = () => {
+  //   setIsAssignmentSheetVisible(false);
+  //   navigation.navigate("PublishAssignment", { batch });
+  // };
+
+  // const handleViewAssignments = () => {
+  //   setIsAssignmentSheetVisible(false);
+  //   navigation.navigate("AssignmentList", { batch });
+  // };
+
   const dynamicStyles = createStyles(colors, isDark);
+
+  useLayoutEffect(() => {
+    if (role === "teacher" && batch?.id) {
+      navigation.setOptions({
+        headerRight: () => (
+          <View style={dynamicStyles.headerActionsRow}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("StudentDetailsScreen", {
+                  selectedStudent: student,
+                  course,
+                })
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Open student details"
+              style={dynamicStyles.headerActionButton}
+            >
+              <Icon name="assessment" size={24} color={colors.primary} />
+            </TouchableOpacity>
+            {/* Temporarily hidden: Assignments
+            <TouchableOpacity
+              onPress={() => setIsAssignmentSheetVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Open assignment options"
+              style={dynamicStyles.headerActionButton}
+            >
+              <Icon name="more-vert" size={26} color={colors.primary} />
+            </TouchableOpacity>
+            */}
+          </View>
+        ),
+      });
+      return;
+    }
+
+    navigation.setOptions({
+      headerRight: undefined,
+    });
+  }, [
+    batch?.id,
+    colors.primary,
+    course,
+    dynamicStyles.headerActionButton,
+    dynamicStyles.headerActionsRow,
+    navigation,
+    role,
+    student,
+  ]);
 
   const renderModules = (modules: Module[], emptyText: string) => {
     if (modules.length === 0) {
@@ -242,10 +318,11 @@ const CourseDetails = ({
         <TouchableOpacity
           key={module.moduleId.id}
           activeOpacity={shouldDisable ? 1 : 0.82}
-          onPress={() => !shouldDisable && handleDetailsNavigation(module)}
-          disabled={shouldDisable}
+          onPress={() =>
+            shouldDisable ? handleUpcomingPress() : handleDetailsNavigation(module)
+          }
           accessibilityRole="button"
-          accessibilityState={{ disabled: shouldDisable }}
+          accessibilityState={{ disabled: false }}
           style={dynamicStyles.moduleCardTouchable}
         >
           <View
@@ -471,6 +548,25 @@ const CourseDetails = ({
           </ScrollView>
         </>
       )}
+      <ConfirmActionModal
+        visible={isUpcomingModalVisible}
+        title="Upcoming lesson"
+        message={UPCOMING_LESSON_MESSAGE}
+        confirmLabel="Got it"
+        cancelLabel="Close"
+        onConfirm={() => setIsUpcomingModalVisible(false)}
+        onCancel={() => setIsUpcomingModalVisible(false)}
+      />
+      {/* Temporarily hidden: Assignments
+      {role === "teacher" && batch?.id ? (
+        <AssignmentSheet
+          fabVisible={isAssignmentSheetVisible}
+          handleCloseFab={() => setIsAssignmentSheetVisible(false)}
+          handlePublishAssignment={handlePublishAssignment}
+          handleViewAssignments={handleViewAssignments}
+        />
+      ) : null}
+      */}
     </View>
   );
 };
@@ -488,6 +584,17 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
       backgroundColor: "transparent",
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.cardBorder,
+    },
+    headerActionButton: {
+      width: 40,
+      height: 40,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    headerActionsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginRight: 10,
     },
     tabTrack: {
       flexDirection: "row",

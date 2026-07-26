@@ -102,7 +102,7 @@ export const updateAssignment = async (assignmentId, assignmentData) => {
   try {
     const response = await api.put(
       `/assignments/${assignmentId}`,
-      assignmentData
+      assignmentData,
     );
     return response.data;
   } catch (error) {
@@ -119,6 +119,7 @@ export const updateAssignment = async (assignmentId, assignmentData) => {
 export const getAssignmentsByStudent = async (studentId) => {
   try {
     const response = await api.get(`/assignments/student/${studentId}`);
+    console.log("getAssignmentsByStudent", response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching assignments by student:", error);
@@ -176,7 +177,7 @@ export const gradeSubmission = async (assignmentId, gradeData) => {
   try {
     const response = await api.post(
       `/assignments/${assignmentId}/grade`,
-      gradeData
+      gradeData,
     );
     return response.data;
   } catch (error) {

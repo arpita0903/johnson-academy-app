@@ -69,7 +69,7 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
       const response = (await getStudentAttendance(
         studentId,
-        classId
+        classId,
       )) as AttendanceResponse;
 
       if (response.results && response.results.length > 0) {
@@ -81,12 +81,12 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         // Convert ISO dates to YYYY-MM-DD format for the calendar
         const presentDates =
           attendanceData.presentDates?.map((date: string) =>
-            moment(date).format("YYYY-MM-DD")
+            moment(date).format("YYYY-MM-DD"),
           ) || [];
 
         const absentDates =
           attendanceData.absentDates?.map((date: string) =>
-            moment(date).format("YYYY-MM-DD")
+            moment(date).format("YYYY-MM-DD"),
           ) || [];
 
         setPresent(presentDates);
@@ -96,10 +96,7 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         setAbsent([]);
       }
     } catch (err: unknown) {
-      console.error("Error fetching attendance data:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to fetch attendance data";
-      setError(errorMessage);
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -187,10 +184,7 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
       showSuccess(`Marked as ${status} for ${selectedDate}`);
     } catch (err: unknown) {
-      console.error(`Error marking as ${status}:`, err);
-      const errorMessage =
-        err instanceof Error ? err.message : `Failed to mark as ${status}`;
-      showError(errorMessage);
+      showError((err as Error).message);
     } finally {
       setUpdating(false);
     }

@@ -19,9 +19,14 @@ import Homepage from "./features/student/screens/Homepage";
 import CourseDetails from "./features/student/screens/CourseDetails";
 import DetailScreen from "./features/student/screens/DetailScreen";
 import ModuleDetailScreen from "./features/student/screens/ModuleDetailScreen";
+import StudentAssignmentDetailScreen from "./features/student/screens/StudentAssignmentDetailScreen";
+import AssignmentSection from "./shared/components/AssignmentSection";
 import TeacherDashboard from "./features/teacher/screens/Dashboard";
 import StudentList from "./features/teacher/screens/StudentList";
 import TeacherCourseDetail from "./features/teacher/screens/TeacherCourseDetail";
+import PublishAssignment from "./features/teacher/screens/PublishAssignment";
+import AssignmentList from "./features/teacher/screens/AssignmentList";
+import AssignmentDetail from "./features/teacher/screens/AssignmentDetail";
 import ProfileDrawer from "./features/profile/components/ProfileDrawer";
 import ProfileScreen from "./features/profile/screens/ProfileScreen";
 
@@ -49,6 +54,11 @@ type MainStackParamList = {
   StudentList: Record<string, unknown> | undefined;
   TeacherCourseDetail: Record<string, unknown> | undefined;
   StudentDetailsScreen: Record<string, unknown> | undefined;
+  PublishAssignment: Record<string, unknown> | undefined;
+  AssignmentList: Record<string, unknown> | undefined;
+  AssignmentDetail: Record<string, unknown> | undefined;
+  StudentAssignmentDetail: Record<string, unknown> | undefined;
+  StudentAssignments: Record<string, unknown> | undefined;
   Profile: undefined;
 };
 
@@ -62,8 +72,8 @@ interface StackScreensProps {
 
 const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
-  const { user } = useAppContext();
+  const { colors, isDark } = useTheme();
+  const { user, userId } = useAppContext();
 
   return (
     <Stack.Navigator
@@ -293,6 +303,49 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
             requiredRole="teacher"
           >
             <StudentDetailsScreen />
+          </ProtectedWrapper>
+        )}
+      </Stack.Screen>
+      <Stack.Screen
+        name="PublishAssignment"
+        options={{ headerTitle: "Publish Assignment" }}
+      >
+        {(props) => <PublishAssignment {...(props as any)} />}
+      </Stack.Screen>
+      <Stack.Screen
+        name="AssignmentList"
+        options={{ headerTitle: "Assignments" }}
+      >
+        {(props) => <AssignmentList {...(props as any)} />}
+      </Stack.Screen>
+      <Stack.Screen
+        name="AssignmentDetail"
+        options={{ headerShown: false }}
+      >
+        {(props) => <AssignmentDetail {...(props as any)} />}
+      </Stack.Screen>
+      <Stack.Screen
+        name="StudentAssignmentDetail"
+        options={{ headerShown: false }}
+      >
+        {(props) => <StudentAssignmentDetailScreen {...(props as any)} />}
+      </Stack.Screen>
+      <Stack.Screen
+        name="StudentAssignments"
+        options={{ headerTitle: "Assignments" }}
+      >
+        {(props) => (
+          <ProtectedWrapper
+            navigation={props.navigation}
+            requiredRole="student"
+          >
+            <View style={{ flex: 1 }}>
+              <ScreenGradientBackground isDark={isDark} />
+              <AssignmentSection
+                navigation={props.navigation}
+                studentId={userId ?? undefined}
+              />
+            </View>
           </ProtectedWrapper>
         )}
       </Stack.Screen>

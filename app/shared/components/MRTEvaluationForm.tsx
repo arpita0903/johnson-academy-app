@@ -13,12 +13,12 @@ import { ThemeColors, loginButtonGradientColors } from "../../theme/colors";
 import { GlassCard } from "./GlassCard";
 
 export const MRT_FORM_FIELDS = [
-  "SPT & File Submission",
-  "Regularity",
-  "Learning Speed",
-  "Theory and Technicals",
-  "Song Learning",
-  "Assignment",
+  "Regularity (5M)",
+  "Learning Speed (5M)",
+  "Theory (5M)",
+  "Technical Exercises (5M)",
+  "Repertoire (Rhythm Sense) (5M)",
+  "Repertoire (Dynamics) (5M)",
   "remarks",
 ] as const;
 
@@ -26,12 +26,12 @@ export type MRTFormField = (typeof MRT_FORM_FIELDS)[number];
 export type MRTFormData = Record<MRTFormField, string>;
 
 export const EMPTY_MRT_FORM: MRTFormData = {
-  "SPT & File Submission": "",
-  Regularity: "",
-  "Learning Speed": "",
-  "Song Learning": "",
-  Assignment: "",
-  "Theory and Technicals": "",
+  "Regularity (5M)": "",
+  "Learning Speed (5M)": "",
+  "Theory (5M)": "",
+  "Technical Exercises (5M)": "",
+  "Repertoire (Rhythm Sense) (5M)": "",
+  "Repertoire (Dynamics) (5M)": "",
   remarks: "",
 };
 
@@ -55,7 +55,7 @@ export function handleMRTFieldChange(
       return;
     }
     const num = parseInt(numericValue, 10);
-    if (num > 5) {
+    if (num < 2 || num > 5) {
       return;
     }
     setFormData((prev) => ({ ...prev, [key]: numericValue }));
@@ -89,7 +89,7 @@ export function MRTEvaluationForm({
             style={field === "remarks" ? [s.input, s.inputMultiline] : s.input}
             value={formData[field]}
             onChangeText={(text) => onChange(field, text)}
-            placeholder={field === "remarks" ? "Enter remarks" : "Range: 3–5"}
+            placeholder={field === "remarks" ? "Enter remarks" : "Range: 2–5"}
             placeholderTextColor={
               isDark ? "rgba(148, 163, 184, 0.5)" : colors.placeholderText
             }

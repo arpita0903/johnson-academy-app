@@ -7,12 +7,12 @@ export interface MRTSubmissionData {
   classId: string;
   studentId: string;
   courseId: string;
-  sptAndFileSubmission: number; // Max score: 5
-  regularity: number; // Max score: 5
-  learningSpeed: number; // Max score: 5
-  songLearning: number; // Max score: 5
-  assignment: number; // Max score: 5
-  theoryAndTechnicals: number; // Max score: 5
+  regularity: number; // Score range: 2-5
+  learningSpeed: number; // Score range: 2-5
+  theory: number; // Score range: 2-5
+  technicalExercises: number; // Score range: 2-5
+  repertoireRhythmSense: number; // Score range: 2-5
+  repertoireDynamics: number; // Score range: 2-5
   remarks?: string; // Optional remarks
 }
 
@@ -20,7 +20,7 @@ export interface MRTData extends MRTSubmissionData {
   id: string;
   createdAt: string;
   updatedAt: string;
-  totalScore?: number; // Calculated total score
+  totalScore?: number; // Calculated total score (max 30)
 }
 
 export interface MRTResponse {
@@ -42,12 +42,12 @@ export interface MRTListResponse {
 }
 
 export interface MRTScoreBreakdown {
-  sptAndFileSubmission: number;
   regularity: number;
   learningSpeed: number;
-  songLearning: number;
-  assignment: number;
-  theoryAndTechnicals: number;
+  theory: number;
+  technicalExercises: number;
+  repertoireRhythmSense: number;
+  repertoireDynamics: number;
   total: number;
   maxPossible: number;
   percentage: number;

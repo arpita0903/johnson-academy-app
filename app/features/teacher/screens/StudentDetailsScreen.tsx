@@ -146,7 +146,7 @@ const StudentDetailsScreen = () => {
 
     const missingFields = MRT_SCORE_FIELDS.filter((field) => {
       const value = formData[field];
-      return !value || value.trim() === "" || parseInt(value, 10) === 0;
+      return !value || value.trim() === "";
     });
 
     if (missingFields.length > 0) {
@@ -161,11 +161,11 @@ const StudentDetailsScreen = () => {
 
     const invalidScores = MRT_SCORE_FIELDS.filter((field) => {
       const score = parseInt(formData[field], 10);
-      return score <= 2 || score > 5;
+      return Number.isNaN(score) || score < 2 || score > 5;
     });
 
     if (invalidScores.length > 0) {
-      alert("All scores must be more than 2 and maximum 5 (valid range: 3-5)");
+      alert("All scores must be between 2 and 5 (valid range: 2-5)");
       return;
     }
 
@@ -180,14 +180,18 @@ const StudentDetailsScreen = () => {
         classId: selectedClass.id,
         studentId: selectedStudent.id,
         courseId,
-        sptAndFileSubmission:
-          parseInt(formData["SPT & File Submission"], 10) || 0,
-        regularity: parseInt(formData.Regularity, 10) || 0,
-        learningSpeed: parseInt(formData["Learning Speed"], 10) || 0,
-        songLearning: parseInt(formData["Song Learning"], 10) || 0,
-        assignment: parseInt(formData.Assignment, 10) || 0,
-        theoryAndTechnicals:
-          parseInt(formData["Theory and Technicals"], 10) || 0,
+        regularity: parseInt(formData["Regularity (5M)"], 10),
+        learningSpeed: parseInt(formData["Learning Speed (5M)"], 10),
+        theory: parseInt(formData["Theory (5M)"], 10),
+        technicalExercises: parseInt(formData["Technical Exercises (5M)"], 10),
+        repertoireRhythmSense: parseInt(
+          formData["Repertoire (Rhythm Sense) (5M)"],
+          10,
+        ),
+        repertoireDynamics: parseInt(
+          formData["Repertoire (Dynamics) (5M)"],
+          10,
+        ),
         remarks: formData.remarks || "",
       };
 
