@@ -76,3 +76,29 @@ export const markStudentAbsent = async (attendanceId, payload) => {
     );
   }
 };
+
+/**
+ * Clear student attendance for a specific date
+ * @param {string} attendanceId - The attendance record ID
+ * @param {Object} payload - Request body payload
+ * @param {string} payload.studentId - The ID of the student
+ * @param {string} payload.classId - The ID of the class
+ * @param {string} payload.date - The date in YYYY-MM-DD format
+ * @returns {Promise<Object>} Response from clearing student attendance
+ */
+export const clearStudentAttendance = async (attendanceId, payload) => {
+  try {
+    const response = await api.post(
+      `/student-attendance/${attendanceId}/clear`,
+      payload
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error clearing student attendance:", error);
+    throw (
+      error.response?.data || {
+        message: "Failed to clear student attendance",
+      }
+    );
+  }
+};

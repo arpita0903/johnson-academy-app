@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import moment from "moment";
@@ -12,6 +13,7 @@ import {
   getStudentAttendance,
   markStudentPresent,
   markStudentAbsent,
+  clearStudentAttendance,
 } from "../../services/attendance";
 import {
   AttendanceCalendarProps,
@@ -141,6 +143,12 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     setSelectedDate(newDate);
   };
 
+  const isSelectedMarked =
+    present.includes(selectedDate) || absent.includes(selectedDate);
+
+  const getErrorMessage = (err: unknown) =>
+    (err as { message?: string })?.message || "Something went wrong";
+
   const markAttendance = async (status: "present" | "absent") => {
     if (!attendanceId) {
       showError("Attendance record not found. Please refresh the page.");
@@ -160,11 +168,10 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         date: selectedDate,
       };
 
-      let response;
       if (status === "present") {
-        response = await markStudentPresent(attendanceId, payload);
+        await markStudentPresent(attendanceId, payload);
       } else {
-        response = await markStudentAbsent(attendanceId, payload);
+        await markStudentAbsent(attendanceId, payload);
       }
 
       // Update local state
@@ -184,10 +191,52 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
       showSuccess(`Marked as ${status} for ${selectedDate}`);
     } catch (err: unknown) {
-      showError((err as Error).message);
+      showError(getErrorMessage(err));
     } finally {
       setUpdating(false);
     }
+  };
+
+  const clearAttendance = () => {
+    if (!attendanceId) {
+      showError("Attendance record not found. Please refresh the page.");
+      return;
+    }
+
+    if (!isSelectedMarked || updating) {
+      return;
+    }
+
+    Alert.alert(
+      "Clear attendance",
+      `Remove attendance mark for ${selectedDate}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setUpdating(true);
+
+              await clearStudentAttendance(attendanceId, {
+                studentId,
+                classId,
+                date: selectedDate,
+              });
+
+              setPresent((prev) => prev.filter((d) => d !== selectedDate));
+              setAbsent((prev) => prev.filter((d) => d !== selectedDate));
+              showSuccess(`Cleared attendance for ${selectedDate}`);
+            } catch (err: unknown) {
+              showError(getErrorMessage(err));
+            } finally {
+              setUpdating(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   if (loading) {
@@ -251,6 +300,18 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
           </Text>
         </TouchableOpacity>
       </View>
+
+      {isSelectedMarked && (
+        <TouchableOpacity
+          style={[styles.clearButton, updating && styles.buttonDisabled]}
+          onPress={clearAttendance}
+          disabled={updating}
+        >
+          <Text style={styles.clearButtonText}>
+            {updating ? "Updating..." : "Undo Marking"}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -273,11 +334,13 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 20,
     flexDirection: "row",
-    justifyContent: "space-around",
-    gap: 24,
+    justifyContent: "space-between",
+    gap: 10,
   },
   button: {
-    paddingVertical: 10,
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 8,
   },
@@ -286,6 +349,20 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "white",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  clearButton: {
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#FFD700",
+    alignItems: "center",
+  },
+  clearButtonText: {
+    color: "#FFD700",
     fontWeight: "600",
     fontSize: 16,
   },

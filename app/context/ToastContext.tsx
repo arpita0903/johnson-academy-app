@@ -27,11 +27,11 @@ const ToastProviderInner: React.FC<{ children: ReactNode }> = ({
   const { colors } = useTheme();
 
   const showSuccess = useCallback(
-    (message: string, duration: number = 3000) => {
+    (message: string, duration: number = 1000) => {
       Toast.show({
         type: "success",
         text1: message,
-        position: "bottom",
+        position: "top",
         visibilityTime: duration,
         backgroundColor: colors.success,
         textColor: colors.white,
@@ -42,11 +42,11 @@ const ToastProviderInner: React.FC<{ children: ReactNode }> = ({
   );
 
   const showError = useCallback(
-    (message: string, duration: number = 3000) => {
+    (message: string, duration: number = 1000) => {
       Toast.show({
         type: "error",
         text1: message,
-        position: "bottom",
+        position: "top",
         visibilityTime: duration,
         backgroundColor: colors.error,
         textColor: colors.white,
@@ -57,11 +57,11 @@ const ToastProviderInner: React.FC<{ children: ReactNode }> = ({
   );
 
   const showInfo = useCallback(
-    (message: string, duration: number = 3000) => {
+    (message: string, duration: number = 1000) => {
       Toast.show({
         type: "info",
         text1: message,
-        position: "bottom",
+        position: "top",
         visibilityTime: duration,
         backgroundColor: colors.primary,
         textColor: colors.white,
@@ -72,11 +72,11 @@ const ToastProviderInner: React.FC<{ children: ReactNode }> = ({
   );
 
   const showWarning = useCallback(
-    (message: string, duration: number = 3000) => {
+    (message: string, duration: number = 1000) => {
       Toast.show({
         type: "warn",
         text1: message,
-        position: "bottom",
+        position: "top",
         visibilityTime: duration,
         backgroundColor: colors.warning,
         textColor: colors.white,

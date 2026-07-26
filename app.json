@@ -2,7 +2,7 @@
   "expo": {
     "name": "Johnson Academy",
     "slug": "johnson-academy-app",
-    "version": "1.7.0",
+    "version": "1.8.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "johnsoynacademy",
@@ -16,7 +16,7 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "39"
+      "buildNumber": "40"
     },
     "android": {
       "adaptiveIcon": {
@@ -24,10 +24,8 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.johnsonacademy.app",
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ],
-      "versionCode": 35
+      "permissions": ["android.permission.RECORD_AUDIO"],
+      "versionCode": 39
     },
     "web": {
       "bundler": "metro",
@@ -39,9 +37,9 @@
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
-            "buildToolsVersion": "35.0.0",
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "buildToolsVersion": "36.0.0",
             "ndkVersion": "27.1.12297006",
             "useLegacyPackaging": false
           }
@@ -63,8 +61,7 @@
           "photosPermission": "The app accesses your photos to let you share them with your friends."
         }
       ],
-      "./plugins/withFmtXcode26Fix",
-      "expo-build-properties"
+      "./plugins/withFmtXcode26Fix"
     ],
     "experiments": {
       "typedRoutes": true
