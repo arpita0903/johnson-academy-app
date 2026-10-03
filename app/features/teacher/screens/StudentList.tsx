@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,8 +6,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  useWindowDimensions,
 } from "react-native";
-import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import BottomSheet, {
+  BottomSheetBackdrop,
+  BottomSheetBackdropProps,
+  BottomSheetScrollView,
+} from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -56,8 +61,8 @@ const StudentList = ({
 }) => {
   const { batch } = route.params;
   const { colors, isDark } = useTheme();
+  const { height: windowHeight } = useWindowDimensions();
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ["30%"], []);
   const [sheetMode, setSheetMode] = useState<SheetMode>(null);
   const [attendanceStudent, setAttendanceStudent] =
     useState<AttendanceStudent | null>(null);
@@ -109,7 +114,6 @@ const StudentList = ({
 
     setCoursePickerGroup(group);
     setSheetMode("course");
-    bottomSheetRef.current?.expand();
   };
 
   const handleCourseSelect = (course: CourseRef) => {
@@ -129,7 +133,6 @@ const StudentList = ({
       name: group.user?.name ?? "Student",
     });
     setSheetMode("attendance");
-    bottomSheetRef.current?.expand();
   };
 
   const closeSheet = () => {
@@ -137,6 +140,28 @@ const StudentList = ({
     setAttendanceStudent(null);
     setCoursePickerGroup(null);
   };
+
+  useEffect(() => {
+    if (!sheetMode) return;
+    bottomSheetRef.current?.expand();
+  }, [sheetMode]);
+
+  const handleAttendanceMarked = () => {
+    bottomSheetRef.current?.close();
+  };
+
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.45}
+        pressBehavior="close"
+      />
+    ),
+    [],
+  );
 
   const classId = batch?.id ?? batch?._id ?? "";
   const s = createStyles(colors, isDark);
@@ -294,24 +319,51 @@ const StudentList = ({
         <BottomSheet
           ref={bottomSheetRef}
           index={-1}
-          snapPoints={snapPoints}
+          enableDynamicSizing
+          maxDynamicContentSize={windowHeight * 0.92}
           enablePanDownToClose
+          enableContentPanningGesture={sheetMode !== "attendance"}
           onClose={closeSheet}
+          backdropComponent={renderBackdrop}
           backgroundStyle={s.sheetBackground}
           handleIndicatorStyle={s.sheetHandle}
         >
           <BottomSheetScrollView
             contentContainerStyle={s.sheetContent}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
             {sheetMode === "attendance" && attendanceStudent && classId ? (
               <>
-                <Text style={s.sheetTitle}>
-                  Attendance — {attendanceStudent.name}
-                </Text>
+                <View style={s.sheetHeader}>
+                  <View style={s.sheetHeaderText}>
+                    <Text style={s.sheetKicker}>Attendance</Text>
+                    <Text style={s.sheetTitle} numberOfLines={1}>
+                      {attendanceStudent.name}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => bottomSheetRef.current?.close()}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close attendance"
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={s.sheetCloseButton}
+                  >
+                    <Icon
+                      name="close"
+                      size={20}
+                      color={
+                        isDark
+                          ? "rgba(148, 163, 184, 0.95)"
+                          : "rgba(71, 85, 105, 0.9)"
+                      }
+                    />
+                  </TouchableOpacity>
+                </View>
                 <AttendanceCalendar
                   studentId={attendanceStudent.id}
                   classId={classId}
+                  onMarked={handleAttendanceMarked}
                 />
               </>
             ) : null}
@@ -552,14 +604,41 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
       paddingHorizontal: 8,
       paddingBottom: 32,
     },
+    sheetHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 12,
+      marginBottom: 12,
+    },
+    sheetHeaderText: {
+      flex: 1,
+      minWidth: 0,
+      marginRight: 12,
+    },
+    sheetKicker: {
+      fontSize: 12,
+      fontWeight: "700",
+      letterSpacing: 0.4,
+      textTransform: "uppercase",
+      color: isDark ? "#94A3B8" : "#64748B",
+      marginBottom: 4,
+    },
     sheetTitle: {
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: "800",
       letterSpacing: -0.3,
-      textAlign: "center",
-      marginBottom: 8,
-      paddingHorizontal: 12,
       color: isDark ? "#F8FAFC" : "#0f172a",
+    },
+    sheetCloseButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark
+        ? "rgba(148, 163, 184, 0.12)"
+        : "rgba(148, 163, 184, 0.14)",
     },
     coursePickerRow: {
       flexDirection: "row",

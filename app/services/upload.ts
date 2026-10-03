@@ -1,4 +1,5 @@
-import { getToken } from "./auth";
+import { getToken, type User } from "./auth";
+import config from "../config/environment";
 
 // response type
 export type UploadResponse = {
@@ -71,4 +72,52 @@ const uploadProfilePicture = async (
   }
 };
 
-export { uploadProfilePicture };
+export type ProfileImageUpload = {
+  uri: string;
+  mimeType: string;
+  fileName: string;
+};
+
+const readErrorMessage = async (response: Response): Promise<string> => {
+  const errorData = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | null;
+  return errorData?.message || `HTTP error! status: ${response.status}`;
+};
+
+const updateUserProfilePicture = async (
+  userId: string,
+  image: ProfileImageUpload,
+): Promise<User> => {
+  const formData = new FormData();
+  formData.append("file", {
+    uri: image.uri,
+    name: image.fileName,
+    type: image.mimeType,
+  } as unknown as Blob);
+
+  const token = await getToken();
+  if (!token) {
+    throw new Error("Please sign in again to update your profile photo.");
+  }
+
+  const response = await fetch(
+    `${config.API_BASE_URL}/users/${userId}/profile-picture`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+      body: formData,
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response));
+  }
+
+  return (await response.json()) as User;
+};
+
+export { uploadProfilePicture, updateUserProfilePicture };

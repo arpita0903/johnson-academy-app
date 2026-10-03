@@ -1,4 +1,4 @@
-import React from "react";
+import { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ListRenderItem,
   TouchableOpacity,
   Platform,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,7 +21,13 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { useTeacherClasses } from "../../../shared/hooks/useTeacherClasses";
 import { useRefreshOnFocus } from "../../../shared/hooks/useRefreshOnFocus";
 import { ScreenGradientBackground } from "../../../shared/components/ScreenGradientBackground";
+import {
+  getClassesByPrefix,
+  getTopLevelPrefixes,
+} from "../../../utils/folderUtils";
 import type { ClassByTeacher } from "../../../types/classes";
+
+const ALL_FILTER = "All";
 
 const MUSIC_BLUE = "#7DD3FC";
 const MUSIC_CORAL = "#FB7185";
@@ -38,6 +45,25 @@ const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
 
   const { data: classes = [], isLoading, isError } = useTeacherClasses(userId);
   useRefreshOnFocus();
+
+  const [activePrefix, setActivePrefix] = useState(ALL_FILTER);
+
+  const classPrefixes = useMemo(
+    () => getTopLevelPrefixes(classes.map((classItem) => classItem.name)),
+    [classes],
+  );
+
+  const resolvedPrefix =
+    activePrefix === ALL_FILTER || classPrefixes.includes(activePrefix)
+      ? activePrefix
+      : ALL_FILTER;
+
+  const filteredClasses = useMemo(() => {
+    if (resolvedPrefix === ALL_FILTER) {
+      return classes;
+    }
+    return getClassesByPrefix(classes, resolvedPrefix);
+  }, [classes, resolvedPrefix]);
 
   const handleClassPress = (classItem: ClassByTeacher) => {
     navigation.navigate("StudentList", {
@@ -187,7 +213,41 @@ const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
         </LinearGradient>
       </View>
       {classes.length > 0 ? (
-        <Text style={s.sectionLabel}>Your classes</Text>
+        <>
+          <ScrollView
+            horizontal
+            nestedScrollEnabled
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.filterScrollContent}
+            accessibilityRole="tablist"
+            accessibilityLabel="Filter classes by programme"
+          >
+            {[ALL_FILTER, ...classPrefixes].map((prefix) => {
+              const selected = resolvedPrefix === prefix;
+              return (
+                <TouchableOpacity
+                  key={prefix}
+                  activeOpacity={0.82}
+                  onPress={() => setActivePrefix(prefix)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`Filter classes by ${prefix}`}
+                  style={[s.filterPill, selected && s.filterPillActive]}
+                >
+                  <Text
+                    style={[
+                      s.filterPillText,
+                      selected && s.filterPillTextActive,
+                    ]}
+                  >
+                    {prefix}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          <Text style={s.sectionLabel}>Your classes</Text>
+        </>
       ) : null}
     </View>
   );
@@ -197,10 +257,13 @@ const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
       <View style={s.emptyIconCircle}>
         <Icon name="folder-open" size={32} color={colors.primary} />
       </View>
-      <Text style={s.emptyTitle}>No classes yet</Text>
+      <Text style={s.emptyTitle}>
+        {classes.length === 0 ? "No classes yet" : "No matching classes"}
+      </Text>
       <Text style={s.emptySubtext}>
-        When you’re assigned to classes, they’ll appear here so you can open the
-        student list for each one.
+        {classes.length === 0
+          ? "When you’re assigned to classes, they’ll appear here so you can open the student list for each one."
+          : `None of your classes match ${resolvedPrefix}. Try another filter.`}
       </Text>
     </View>
   );
@@ -241,9 +304,10 @@ const TeacherDashboard = ({ navigation }: TeacherDashboardProps) => {
     <SafeAreaView style={s.safeArea}>
       <ScreenGradientBackground isDark={isDark} />
       <FlatList
-        data={classes}
+        data={filteredClasses}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        extraData={resolvedPrefix}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
         contentContainerStyle={s.listContent}
@@ -374,6 +438,39 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
       color: isDark ? MUSIC_CORAL : "#7C3AED",
       fontWeight: "600",
     },
+    filterScrollContent: {
+      flexDirection: "row",
+      gap: 8,
+      paddingBottom: 2,
+      paddingRight: 4,
+    },
+    filterPill: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 999,
+      borderWidth: 1.5,
+      borderColor: isDark
+        ? "rgba(148, 163, 184, 0.35)"
+        : "rgba(148, 163, 184, 0.45)",
+      backgroundColor: isDark
+        ? "rgba(15, 23, 42, 0.55)"
+        : "rgba(248, 250, 252, 0.95)",
+    },
+    filterPillActive: {
+      borderColor: colors.primary,
+      backgroundColor: isDark
+        ? `${String(colors.primary)}22`
+        : `${String(colors.primary)}18`,
+    },
+    filterPillText: {
+      fontSize: 13,
+      fontWeight: "700",
+      letterSpacing: 0.2,
+      color: isDark ? "#CBD5E1" : "#475569",
+    },
+    filterPillTextActive: {
+      color: colors.primary,
+    },
     sectionLabel: {
       fontSize: 20,
       ...Platform.select({
@@ -383,7 +480,7 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
       fontWeight: "800",
       letterSpacing: 0.15,
       color: isDark ? "#E2E8F0" : "#334155",
-      marginTop: 10,
+      marginTop: 14,
       marginBottom: 12,
       marginLeft: 2,
     },

@@ -1,5 +1,6 @@
 import api from "./axiosInstance";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { unregisterCurrentPushToken } from "./push";
 
 export interface UserProfile {
   id: string;
@@ -137,6 +138,12 @@ export const isAuthenticated = async (): Promise<boolean> => {
  * Logs out the user by clearing all authentication data
  */
 export const logout = async (): Promise<void> => {
+  try {
+    await unregisterCurrentPushToken();
+  } catch (error) {
+    console.error("Error unregistering push token:", error);
+  }
+
   try {
     await Promise.all([
       AsyncStorage.removeItem("token"),

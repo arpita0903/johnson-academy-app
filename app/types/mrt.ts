@@ -52,3 +52,56 @@ export interface MRTScoreBreakdown {
   maxPossible: number;
   percentage: number;
 }
+
+export type MrtPopulatedUser = {
+  id: string;
+  name: string;
+  email: string;
+  studentId?: string;
+};
+
+export type MrtPopulatedClass = {
+  id: string;
+  name: string;
+};
+
+export type MrtPopulatedCourse = {
+  id: string;
+  name: string;
+  description: string;
+  instrument: string;
+  level?: number;
+};
+
+export type MrtAuditUser = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+export type GetMrtByStudentClassMonthSuccess = {
+  id: string;
+  month: string;
+  studentId: MrtPopulatedUser;
+  classId: MrtPopulatedClass;
+  courseId: MrtPopulatedCourse;
+  regularity: number;
+  learningSpeed: number;
+  theory: number;
+  technicalExercises: number;
+  repertoireRhythmSense: number;
+  repertoireDynamics: number;
+  totalScore: number;
+  averageScore: number;
+  remarks?: string;
+  createdBy?: MrtAuditUser;
+  updatedBy?: MrtAuditUser;
+};
+
+export type ApiErrorResponse = {
+  code: number;
+  message: string;
+  stack?: string;
+};
+
+export type GetMrtByStudentClassMonthError = ApiErrorResponse;

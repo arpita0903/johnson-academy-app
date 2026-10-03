@@ -300,7 +300,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
 }
 
 function ProfileDrawer({ navigation }: DrawerContentComponentProps) {
-  const { user } = useAppContext();
+  const { user, logout: clearSession } = useAppContext();
   const { colors, isDark } = useTheme();
   const [showProfileModal, setShowProfileModal] = useState(false);
 
@@ -318,6 +318,7 @@ function ProfileDrawer({ navigation }: DrawerContentComponentProps) {
           <TouchableOpacity
             onPress={async () => {
               await logout();
+              clearSession();
               navigation.reset({
                 index: 0,
                 routes: [{ name: "Main", params: { screen: "Login" } }],

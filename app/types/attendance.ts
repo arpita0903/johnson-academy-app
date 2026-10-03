@@ -1,11 +1,19 @@
+export type AttendanceRefId =
+  | string
+  | {
+      id?: string;
+      _id?: string;
+      name?: string;
+    };
+
 export interface AttendanceData {
-  studentId: string;
-  classId: string;
+  studentId: AttendanceRefId;
+  classId: AttendanceRefId;
   presentDates: string[];
   absentDates: string[];
   joiningDate: string;
   classesInOneWeek: string[];
-  lastDate: string;
+  lastDate?: string;
   id: string;
 }
 
@@ -20,6 +28,7 @@ export interface AttendanceResponse {
 export interface AttendanceCalendarProps {
   studentId: string;
   classId: string;
+  onMarked?: (status: "present" | "absent") => void;
 }
 
 export interface MarkAttendancePayload {

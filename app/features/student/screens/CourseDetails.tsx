@@ -28,7 +28,11 @@ type RootStackParamList = {
   PublishAssignment: { batch: any };
   AssignmentList: { batch: any };
   StudentAssignmentDetail: { assignment: any; onSubmissionSuccess?: () => void };
-  StudentDetailsScreen: { selectedStudent?: any; course?: any };
+  StudentDetailsScreen: {
+    selectedStudent?: any;
+    course?: any;
+    studentClass?: any;
+  };
 };
 
 const getStatusIcon = (
@@ -156,7 +160,7 @@ const CourseDetails = ({
   route,
 }: {
   route: {
-    params: { studentClass: string; student?: any; batch?: any; course?: any };
+    params: { studentClass?: any; student?: any; batch?: any; course?: any };
   };
 }) => {
   const {
@@ -166,7 +170,7 @@ const CourseDetails = ({
     course = {},
   } = route.params;
   const { colors, isDark } = useTheme();
-  const { role } = useAppContext();
+  const { role, user } = useAppContext();
 
   const { studentId, classId, courseId } = useMemo(() => {
     let extractedStudentId: string | null = null;
@@ -209,11 +213,11 @@ const CourseDetails = ({
   // const [isAssignmentSheetVisible, setIsAssignmentSheetVisible] = useState(false);
 
   const filteredModules = useMemo(() => {
-    const modules = (progressData as any)?.syllabusProgress?.[0]?.modules ?? [];
+    const modules = progressData?.syllabusProgress?.[0]?.modules ?? [];
     return filterModulesByType(modules);
   }, [progressData]);
 
-  const progressId = (progressData as any)?.id ?? "";
+  const progressId = progressData?.id ?? "";
 
   const handleDetailsNavigation = (item: Module) => {
     navigation.navigate("ModuleDetail", {
@@ -240,15 +244,19 @@ const CourseDetails = ({
   const dynamicStyles = createStyles(colors, isDark);
 
   useLayoutEffect(() => {
-    if (role === "teacher" && batch?.id) {
+    const canOpenDetails =
+      (role === "teacher" && batch?.id) || role === "student";
+
+    if (canOpenDetails) {
       navigation.setOptions({
         headerRight: () => (
           <View style={dynamicStyles.headerActionsRow}>
             <TouchableOpacity
               onPress={() =>
                 navigation.navigate("StudentDetailsScreen", {
-                  selectedStudent: student,
+                  selectedStudent: student?.id ? student : user,
                   course,
+                  studentClass: studentClass?.id ? studentClass : batch,
                 })
               }
               accessibilityRole="button"
@@ -277,7 +285,7 @@ const CourseDetails = ({
       headerRight: undefined,
     });
   }, [
-    batch?.id,
+    batch,
     colors.primary,
     course,
     dynamicStyles.headerActionButton,
@@ -285,6 +293,8 @@ const CourseDetails = ({
     navigation,
     role,
     student,
+    studentClass,
+    user,
   ]);
 
   const renderModules = (modules: Module[], emptyText: string) => {

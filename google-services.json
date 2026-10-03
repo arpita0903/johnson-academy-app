@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "909228377214",
+    "project_id": "johnsonsacademy-646a6",
+    "storage_bucket": "johnsonsacademy-646a6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:909228377214:android:5865b1d3da9a64a22e042f",
+        "android_client_info": {
+          "package_name": "com.johnsonacademy.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0yPN08u_H6hsvkhtmGwo8JXpMeylnmJ0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

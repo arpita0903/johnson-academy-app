@@ -39,6 +39,8 @@ import { Image, TouchableOpacity, View } from "react-native";
 
 import { ScreenGradientBackground } from "./shared/components/ScreenGradientBackground";
 import { AppVersionGate } from "./shared/components/AppVersionGate";
+import { usePushNotifications } from "./features/notifications/usePushNotifications";
+import { setDrawerNavigation } from "./features/notifications/notificationNavigation";
 
 import Icon from "react-native-vector-icons/Foundation";
 import StudentDetailsScreen from "./features/teacher/screens/StudentDetailsScreen";
@@ -75,6 +77,11 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
   const { colors, isDark } = useTheme();
   const { user, userId } = useAppContext();
 
+  useEffect(() => {
+    setDrawerNavigation(navigation);
+    return () => setDrawerNavigation(null);
+  }, [navigation]);
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -104,28 +111,46 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
       />
       <Stack.Screen
         name="Course"
-        options={({ route, navigation }) => ({
-          headerRight:
-            user?.role === "teacher"
-              ? () => (
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("StudentDetailsScreen", {
-                        selectedStudent: (route.params as any)?.student,
-                        course: (route.params as any)?.course,
-                      })
-                    }
-                  >
-                    <Icon
-                      name="results-demographics"
-                      size={32}
-                      color={colors.primary}
-                      style={{ width: 40, marginRight: 10, borderRadius: 20 }}
-                    />
-                  </TouchableOpacity>
-                )
-              : undefined,
-        })}
+        options={({ route, navigation }) => {
+          const courseParams = route.params as
+            | {
+                student?: Record<string, unknown>;
+                course?: Record<string, unknown>;
+                studentClass?: Record<string, unknown>;
+                batch?: Record<string, unknown>;
+              }
+            | undefined;
+          const detailsParams = {
+            selectedStudent: courseParams?.student ?? user,
+            course: courseParams?.course,
+            studentClass: courseParams?.studentClass ?? courseParams?.batch,
+          };
+
+          return {
+            headerRight:
+              user?.role === "teacher" || user?.role === "student"
+                ? () => (
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate(
+                          "StudentDetailsScreen",
+                          detailsParams,
+                        )
+                      }
+                      accessibilityRole="button"
+                      accessibilityLabel="Open student details"
+                    >
+                      <Icon
+                        name="results-demographics"
+                        size={32}
+                        color={colors.primary}
+                        style={{ width: 40, marginRight: 10, borderRadius: 20 }}
+                      />
+                    </TouchableOpacity>
+                  )
+                : undefined,
+          };
+        }}
       >
         {(props) => <CourseDetails {...(props as any)} />}
       </Stack.Screen>
@@ -298,10 +323,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
         }}
       >
         {(props) => (
-          <ProtectedWrapper
-            navigation={props.navigation}
-            requiredRole="teacher"
-          >
+          <ProtectedWrapper navigation={props.navigation}>
             <StudentDetailsScreen />
           </ProtectedWrapper>
         )}
@@ -355,6 +377,7 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
 
 const NavigationLayer: React.FC = () => {
   const { isDark } = useTheme();
+  usePushNotifications();
   return (
     <View style={{ flex: 1 }}>
       <ScreenGradientBackground isDark={isDark} />

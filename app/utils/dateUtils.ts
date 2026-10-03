@@ -7,6 +7,94 @@ export interface MonthOption {
   value: string;
 }
 
+export const ALL_ATTENDANCE_PERIOD = "ALL";
+
+/**
+ * Parses an ISO date in local calendar terms (year + month + day),
+ * avoiding UTC-shifted months from midnight Z timestamps.
+ */
+export const parseLocalDate = (iso: string): Date | null => {
+  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const date = new Date(year, month - 1, day);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const fallback = new Date(iso);
+  return Number.isNaN(fallback.getTime()) ? null : fallback;
+};
+
+export const toYearMonth = (date: Date): string =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+
+export const toLocalYmd = (iso: string): string => {
+  const date = parseLocalDate(iso);
+  if (!date) return iso.slice(0, 10);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
+
+export const formatYearMonthLabel = (yearMonth: string): string => {
+  const [year, month] = yearMonth.split("-").map(Number);
+  if (!year || !month) return yearMonth;
+  const date = new Date(year, month - 1, 1);
+  const monthName = date.toLocaleString("default", { month: "short" });
+  return `${monthName} ${year}`;
+};
+
+/**
+ * Months from joiningDate through today (inclusive), newest first.
+ * Values are YYYY-MM. Does not include ALL.
+ */
+export const generateAttendanceMonthOptions = (
+  joiningDate?: string | null,
+  now: Date = new Date(),
+): MonthOption[] => {
+  if (!joiningDate) return [];
+
+  const joining = parseLocalDate(joiningDate);
+  if (!joining) return [];
+
+  const start = new Date(joining.getFullYear(), joining.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  if (start > end) {
+    return [];
+  }
+
+  const months: MonthOption[] = [];
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    const value = toYearMonth(cursor);
+    months.push({
+      label: formatYearMonthLabel(value),
+      value,
+    });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  return months.reverse();
+};
+
+export const filterDatesByPeriod = (
+  dates: string[] | undefined,
+  period: string,
+): string[] => {
+  const list = dates ?? [];
+  if (period === ALL_ATTENDANCE_PERIOD) {
+    return list;
+  }
+
+  return list.filter((iso) => {
+    const date = parseLocalDate(iso);
+    if (!date) return false;
+    return toYearMonth(date) === period;
+  });
+};
+
 /**
  * Generates months from joining date to current date
  * @param joiningDate - The date when the student joined
@@ -174,4 +262,22 @@ export const convertMonthFormat = (monthString: string): string => {
     console.error("Error converting month format:", error);
     return monthString; // Return original if conversion fails
   }
+};
+
+/**
+ * Converts a month picker value to YYYY-MM.
+ * Accepts "Jan-2025", "MM-YYYY", or "YYYY-MM".
+ */
+export const convertMonthToYearMonth = (monthString: string): string => {
+  if (/^\d{4}-\d{2}$/.test(monthString)) {
+    return monthString;
+  }
+
+  const mmYyyy = convertMonthFormat(monthString);
+  if (/^\d{2}-\d{4}$/.test(mmYyyy)) {
+    const [month, year] = mmYyyy.split("-");
+    return `${year}-${month}`;
+  }
+
+  return monthString;
 };

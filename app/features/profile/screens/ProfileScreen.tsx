@@ -5,23 +5,41 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Icon from "react-native-vector-icons/MaterialIcons";
 import { useAppContext } from "../../../context/AppContext";
 import { useTheme } from "../../../context/ThemeContext";
 import { ThemeColors } from "../../../theme/colors";
 import { ScreenGradientBackground } from "../../../shared/components/ScreenGradientBackground";
 import MyCourses from "../components/MyCourses";
 import TeachingOverviewSection from "../components/TeachingOverviewSection";
+import { ProfilePhotoSourceSheet } from "../components/ProfilePhotoSourceSheet";
+import { useUpdateProfilePicture } from "../hooks/useUpdateProfilePicture";
 
 interface ProfileScreenProps {
-  navigation?: any;
+  navigation?: unknown;
 }
 
 const ProfileScreen = (_props: ProfileScreenProps) => {
   const { user } = useAppContext();
   const { colors, isDark } = useTheme();
   const s = createStyles(colors, isDark);
+  const {
+    isUpdating,
+    isSourceSheetVisible,
+    openSourceMenu,
+    closeSourceSheet,
+    onTakePhoto,
+    onChooseFromGallery,
+  } = useUpdateProfilePicture();
+
+  const profilePictureUri =
+    typeof user?.profilePicture === "string" && user.profilePicture.length > 0
+      ? user.profilePicture
+      : null;
 
   return (
     <SafeAreaView style={s.safeArea} edges={["top"]}>
@@ -31,15 +49,34 @@ const ProfileScreen = (_props: ProfileScreenProps) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={s.heroCard}>
-          <Image
-            source={
-              user?.profilePicture
-                ? { uri: user.profilePicture }
-                : require("../../../../assets/images/profileDefault.png")
-            }
-            style={s.heroAvatar}
-            accessibilityLabel="Profile photo"
-          />
+          <TouchableOpacity
+            style={s.avatarButton}
+            onPress={openSourceMenu}
+            disabled={isUpdating}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile photo"
+            accessibilityHint="Opens options to take a photo or choose from gallery"
+          >
+            <Image
+              source={
+                profilePictureUri
+                  ? { uri: profilePictureUri }
+                  : require("../../../../assets/images/profileDefault.png")
+              }
+              style={s.heroAvatar}
+              accessibilityLabel="Profile photo"
+            />
+            {isUpdating ? (
+              <View style={s.avatarOverlay}>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              </View>
+            ) : (
+              <View style={s.cameraBadge}>
+                <Icon name="photo-camera" size={14} color="#FFFFFF" />
+              </View>
+            )}
+          </TouchableOpacity>
           <View style={s.heroTextBlock}>
             <Text style={s.heroName} numberOfLines={2}>
               {user?.name?.trim() || "User"}
@@ -63,6 +100,13 @@ const ProfileScreen = (_props: ProfileScreenProps) => {
           <TeachingOverviewSection teacherId={user?.id} />
         )}
       </ScrollView>
+
+      <ProfilePhotoSourceSheet
+        visible={isSourceSheetVisible}
+        onClose={closeSourceSheet}
+        onTakePhoto={onTakePhoto}
+        onChooseFromGallery={onChooseFromGallery}
+      />
     </SafeAreaView>
   );
 };
@@ -94,6 +138,9 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
         ? "rgba(13, 17, 34, 0.88)"
         : "rgba(255, 255, 255, 0.92)",
     },
+    avatarButton: {
+      position: "relative",
+    },
     heroAvatar: {
       width: 72,
       height: 72,
@@ -102,6 +149,26 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
       borderColor: isDark
         ? "rgba(167, 139, 250, 0.45)"
         : "rgba(45, 212, 191, 0.45)",
+    },
+    avatarOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(15, 23, 42, 0.45)",
+    },
+    cameraBadge: {
+      position: "absolute",
+      right: -4,
+      bottom: -4,
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      borderWidth: 2,
+      borderColor: isDark ? "#0B1020" : "#FFFFFF",
     },
     heroTextBlock: {
       flex: 1,

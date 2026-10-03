@@ -2,7 +2,7 @@
   "expo": {
     "name": "Johnson Academy",
     "slug": "johnson-academy-app",
-    "version": "1.8.0",
+    "version": "1.9.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "johnsoynacademy",
@@ -14,9 +14,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.johnsonacademy.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Allow Johnson Academy to use your camera to take a profile photo.",
+        "NSPhotoLibraryUsageDescription": "Allow Johnson Academy to access your photos so you can update your profile picture."
       },
-      "buildNumber": "40"
+      "buildNumber": "42"
     },
     "android": {
       "adaptiveIcon": {
@@ -24,8 +26,13 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.johnsonacademy.app",
-      "permissions": ["android.permission.RECORD_AUDIO"],
-      "versionCode": 39
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "versionCode": 42
     },
     "web": {
       "bundler": "metro",
@@ -58,7 +65,17 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app accesses your photos to let you share them with your friends."
+          "photosPermission": "Allow Johnson Academy to access your photos so you can update your profile picture.",
+          "cameraPermission": "Allow Johnson Academy to use your camera to take a profile photo."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#0c1224",
+          "defaultChannel": "default",
+          "enableBackgroundRemoteNotifications": false
         }
       ],
       "./plugins/withFmtXcode26Fix"

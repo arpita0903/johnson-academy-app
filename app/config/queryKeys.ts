@@ -24,4 +24,11 @@ export const queryKeys = {
   promoteStudent: () => ["promoteStudent"] as const,
   courses: (params?: { page?: number; limit?: number }) =>
     ["courses", params] as const,
+  mrtByStudentClassMonth: (
+    studentId: string | null,
+    classId: string | null,
+    month: string | null,
+    courseId: string | null,
+  ) =>
+    ["mrtByStudentClassMonth", studentId, classId, month, courseId] as const,
 };

@@ -12,7 +12,9 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRoute } from "@react-navigation/native";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTeacherContext } from "../../../context/TeacherContext";
+import { useAppContext } from "../../../context/AppContext";
 import { getStudentAttendance } from "../../../services/attendance";
 import {
   generateFilteredMonths,
@@ -21,16 +23,17 @@ import {
 } from "../../../utils/dateUtils";
 import { AttendanceResponse } from "../../../types/attendance";
 import { submitMRT } from "../../../services/mrt";
+import { queryKeys } from "../../../config/queryKeys";
 import { useTheme } from "../../../context/ThemeContext";
 import { ThemeColors } from "../../../theme/colors";
 import { ScreenGradientBackground } from "../../../shared/components/ScreenGradientBackground";
 import { ScreenHeroCard } from "../../../shared/components/ScreenHeroCard";
 import { GlassCard } from "../../../shared/components/GlassCard";
 import { StudentAttendanceSection } from "../../../shared/components/StudentAttendanceSection";
+import { StudentProgressSummarySection } from "../../../shared/components/StudentProgressSummarySection";
 import { MRTMonthSection } from "../../../shared/components/MRTMonthSection";
 import { MonthPickerModal } from "../../../shared/components/MonthPickerModal";
 import {
-  MRTEvaluationForm,
   MRTFormData,
   EMPTY_MRT_FORM,
   MRT_SCORE_FIELDS,
@@ -42,16 +45,46 @@ import {
   PromoteStudentOverlays,
 } from "../../../shared/components/PromoteStudentSection";
 
+type StudentDetailsRouteParams = {
+  selectedStudent?: {
+    id?: string;
+    name?: string;
+    rollNumber?: string;
+    profilePicture?: string | null;
+    date_of_joining?: string;
+    user?: {
+      name?: string;
+      rollNumber?: string;
+      profilePicture?: string | null;
+    };
+  };
+  course?: { id?: string; name?: string };
+  studentClass?: {
+    id?: string;
+    _id?: string;
+    name?: string;
+    title?: string;
+  };
+};
+
 const StudentDetailsScreen = () => {
-  const { selectedStudent, selectedClass } = useTeacherContext();
+  const { selectedStudent: contextStudent, selectedClass: contextClass } =
+    useTeacherContext();
+  const { user, role } = useAppContext();
+  const isTeacher = role === "teacher";
   const route = useRoute();
-  const routeCourse = (
-    route.params as { course?: { id?: string; name?: string } } | undefined
-  )?.course;
+  const routeParams = route.params as StudentDetailsRouteParams | undefined;
+  const selectedStudent =
+    contextStudent ??
+    routeParams?.selectedStudent ??
+    (role === "student" ? user : null);
+  const selectedClass = contextClass ?? routeParams?.studentClass ?? null;
+  const routeCourse = routeParams?.course;
   const courseId = routeCourse?.id ?? null;
   const courseName = routeCourse?.name ?? "";
   const { colors, isDark } = useTheme();
   const s = createStyles(colors, isDark);
+  const queryClient = useQueryClient();
 
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [attendanceData, setAttendanceData] =
@@ -133,7 +166,7 @@ const StudentDetailsScreen = () => {
     handleMRTFieldChange(key, value, setFormData);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<boolean> => {
     if (!selectedMonth || !selectedStudent || !selectedClass || !courseId) {
       console.warn("Missing required data for MRT submission");
       if (!courseId) {
@@ -141,7 +174,7 @@ const StudentDetailsScreen = () => {
           "Course information is missing. Please open this screen from a course.",
         );
       }
-      return;
+      return false;
     }
 
     const missingFields = MRT_SCORE_FIELDS.filter((field) => {
@@ -151,12 +184,12 @@ const StudentDetailsScreen = () => {
 
     if (missingFields.length > 0) {
       alert(`Please fill in all required fields: ${missingFields.join(", ")}`);
-      return;
+      return false;
     }
 
     if (!formData.remarks || formData.remarks.trim() === "") {
       alert("Please fill in the Remarks field");
-      return;
+      return false;
     }
 
     const invalidScores = MRT_SCORE_FIELDS.filter((field) => {
@@ -166,7 +199,7 @@ const StudentDetailsScreen = () => {
 
     if (invalidScores.length > 0) {
       alert("All scores must be between 2 and 5 (valid range: 2-5)");
-      return;
+      return false;
     }
 
     try {
@@ -197,11 +230,21 @@ const StudentDetailsScreen = () => {
 
       await submitMRT(mrtData);
       setFormData(EMPTY_MRT_FORM);
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.mrtByStudentClassMonth(
+          studentId,
+          classId,
+          formattedMonth,
+          courseId,
+        ),
+      });
       alert("MRT submitted successfully!");
+      return true;
     } catch (error) {
       console.error("Error submitting MRT:", error);
       const message = (error as Error).message;
       alert(message);
+      return false;
     }
   };
 
@@ -286,38 +329,47 @@ const StudentDetailsScreen = () => {
             {attendanceData ? (
               <StudentAttendanceSection
                 attendanceData={attendanceData}
-                filteredMonthsCount={filteredMonths.length}
                 fallbackJoiningDate={selectedStudent.date_of_joining}
               />
             ) : null}
 
-            <PromoteStudentCard flow={promoteFlow} />
+            <StudentProgressSummarySection
+              studentId={studentId}
+              classId={classId}
+              courseId={courseId}
+              courseName={courseName}
+            />
+
+            {isTeacher ? <PromoteStudentCard flow={promoteFlow} /> : null}
 
             <MRTMonthSection
               loading={loading}
               filteredMonths={filteredMonths}
+              selectedMonth={selectedMonth}
               selectedMonthLabel={selectedMonthLabel}
               onOpenPicker={() => setMonthPickerOpen(true)}
+              studentId={studentId}
+              classId={classId}
+              courseId={courseId}
+              formData={formData}
+              onChange={handleChange}
+              onSubmit={handleSubmit}
+              allowFill={isTeacher}
             />
-
-            {selectedMonth ? (
-              <MRTEvaluationForm
-                formData={formData}
-                onChange={handleChange}
-                onSubmit={handleSubmit}
-              />
-            ) : null}
           </ScrollView>
         </KeyboardAvoidingView>
 
-        <PromoteStudentOverlays flow={promoteFlow} />
+        {isTeacher ? <PromoteStudentOverlays flow={promoteFlow} /> : null}
 
         <MonthPickerModal
           visible={monthPickerOpen}
           onClose={() => setMonthPickerOpen(false)}
           months={filteredMonths}
           selectedMonth={selectedMonth}
-          onSelectMonth={setSelectedMonth}
+          onSelectMonth={(month) => {
+            setSelectedMonth(month);
+            setFormData(EMPTY_MRT_FORM);
+          }}
         />
       </SafeAreaView>
     </GestureHandlerRootView>

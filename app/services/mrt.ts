@@ -1,9 +1,11 @@
+import { AxiosError } from "axios";
 import api from "./axiosInstance";
 import {
   MRTSubmissionData,
-  MRTData,
   MRTResponse,
   MRTListResponse,
+  GetMrtByStudentClassMonthSuccess,
+  GetMrtByStudentClassMonthError,
 } from "../types/mrt";
 
 /**
@@ -12,7 +14,7 @@ import {
  * @returns Response from MRT submission
  */
 export const submitMRT = async (
-  mrtData: MRTSubmissionData
+  mrtData: MRTSubmissionData,
 ): Promise<MRTResponse> => {
   try {
     const response = await api.post("/mrt", mrtData);
@@ -28,6 +30,53 @@ export const submitMRT = async (
 };
 
 /**
+ * Get MRT data for a student, class, and month
+ * @param studentId - The ID of the student
+ * @param classId - The ID of the class
+ * @param month - Month in MM-YYYY format (e.g. "09-2026")
+ * @param courseId - The ID of the course
+ */
+export const getMrtByStudentClassMonth = async (
+  studentId: string,
+  classId: string,
+  month: string,
+  courseId: string,
+): Promise<GetMrtByStudentClassMonthSuccess> => {
+  try {
+    const response = await api.get<GetMrtByStudentClassMonthSuccess>(
+      `/mrt/student/${studentId}/class/${classId}/month/${month}`,
+      { params: { courseId } },
+    );
+    return response.data;
+  } catch (error: unknown) {
+    if (error instanceof AxiosError && error.response) {
+      const status = error.response.status;
+      const data = error.response.data as
+        | Partial<GetMrtByStudentClassMonthError>
+        | undefined;
+      const normalized: GetMrtByStudentClassMonthError = {
+        code: data?.code ?? status,
+        message:
+          data?.message ?? "Failed to fetch MRT data for this student",
+        stack: data?.stack,
+      };
+      if (status !== 404) {
+        console.error(
+          "Error fetching MRT by student, class, and month:",
+          error,
+        );
+      }
+      throw normalized;
+    }
+    console.error("Error fetching MRT by student, class, and month:", error);
+    throw {
+      code: 500,
+      message: "Failed to fetch MRT data for this student",
+    } satisfies GetMrtByStudentClassMonthError;
+  }
+};
+
+/**
  * Get MRT data for a specific student and class
  * @param studentId - The ID of the student
  * @param classId - The ID of the class
@@ -37,7 +86,7 @@ export const submitMRT = async (
 export const getStudentMRT = async (
   studentId: string,
   classId: string,
-  month?: string
+  month?: string,
 ): Promise<MRTListResponse> => {
   try {
     let url = `/mrt/student/${studentId}/class/${classId}`;
@@ -65,7 +114,7 @@ export const getStudentMRT = async (
  */
 export const getClassMRT = async (
   classId: string,
-  month: string
+  month: string,
 ): Promise<MRTListResponse> => {
   try {
     const response = await api.get(`/mrt/class/${classId}?month=${month}`);
@@ -88,7 +137,7 @@ export const getClassMRT = async (
  */
 export const updateMRT = async (
   mrtId: string,
-  updateData: Partial<MRTSubmissionData>
+  updateData: Partial<MRTSubmissionData>,
 ): Promise<MRTResponse> => {
   try {
     const response = await api.put(`/mrt/${mrtId}`, updateData);

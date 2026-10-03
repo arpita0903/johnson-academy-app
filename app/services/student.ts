@@ -5,6 +5,11 @@ import type {
   PromoteStudentResponse,
 } from "../types/classes";
 import type { StudentProfileResponse } from "../types/student";
+import type {
+  GetStudentProgressByIdSuccess,
+  GetStudentProgressByStudentAndClassSuccess,
+  GetStudentProgressByStudentClassAndCourseSuccess,
+} from "../types/studentProgress";
 
 export const getStudentClasses = async (
   studentId: string,
@@ -38,9 +43,13 @@ export const getStudentProfile = async (
   }
 };
 
-export const getStudentProgress = async (progressId: string) => {
+export const getStudentProgress = async (
+  progressId: string,
+): Promise<GetStudentProgressByIdSuccess> => {
   try {
-    const response = await api.get(`/student-progress/${progressId}`);
+    const response = await api.get<GetStudentProgressByIdSuccess>(
+      `/student-progress/${progressId}`,
+    );
     return response.data;
   } catch (error: any) {
     console.error("Error fetching student progress:", error);
@@ -50,15 +59,30 @@ export const getStudentProgress = async (progressId: string) => {
   }
 };
 
-export const getProgressFromStudentIdClassId = async (
+export async function getProgressFromStudentIdClassId(
   studentId: string,
   classId: string,
   courseId: string,
-) => {
+): Promise<GetStudentProgressByStudentClassAndCourseSuccess>;
+export async function getProgressFromStudentIdClassId(
+  studentId: string,
+  classId: string,
+): Promise<GetStudentProgressByStudentAndClassSuccess>;
+export async function getProgressFromStudentIdClassId(
+  studentId: string,
+  classId: string,
+  courseId?: string,
+): Promise<
+  | GetStudentProgressByStudentAndClassSuccess
+  | GetStudentProgressByStudentClassAndCourseSuccess
+> {
   try {
-    const response = await api.get(
-      `/student-progress/student/${studentId}/class/${classId}?courseId=${courseId}`,
-    );
+    const response = await api.get<
+      | GetStudentProgressByStudentAndClassSuccess
+      | GetStudentProgressByStudentClassAndCourseSuccess
+    >(`/student-progress/student/${studentId}/class/${classId}`, {
+      params: courseId ? { courseId } : undefined,
+    });
     return response.data;
   } catch (error: any) {
     console.error(
@@ -71,7 +95,7 @@ export const getProgressFromStudentIdClassId = async (
       }
     );
   }
-};
+}
 
 export const promoteStudent = async ({
   classId,

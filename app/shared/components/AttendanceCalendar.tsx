@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,8 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { Calendar } from "react-native-calendars";
+import { Calendar, DateData } from "react-native-calendars";
+import Icon from "react-native-vector-icons/MaterialIcons";
 import moment from "moment";
 import {
   getStudentAttendance,
@@ -20,44 +21,48 @@ import {
   AttendanceResponse,
 } from "../../types/attendance";
 import { useToast } from "../../context/ToastContext";
+import { useTheme } from "../../context/ThemeContext";
+import { ThemeColors } from "../../theme/colors";
+import { toLocalYmd } from "../../utils/dateUtils";
 
-/**
- * AttendanceCalendar Component
- *
- * Displays a calendar showing student attendance with present/absent dates marked.
- * Fetches attendance data from the API using studentId and classId.
- *
- * @example
- * <AttendanceCalendar
- *   studentId="6873618b960cf10f278aa93a"
- *   classId="687387f6e0b6e94e85464b0e"
- * />
- *
- * @param props - Component props
- * @param props.studentId - The unique identifier for the student
- * @param props.classId - The unique identifier for the class
- */
+type AttendanceStatus = "present" | "absent" | "unmarked";
+type UpdatingAction = "present" | "absent" | "clear" | null;
+
+type DayMark = {
+  customStyles: {
+    container: {
+      backgroundColor: string;
+      borderRadius: number;
+      borderWidth: number;
+      borderColor: string;
+    };
+    text: {
+      color: string;
+      fontWeight: "700";
+    };
+  };
+};
+
 const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
   studentId,
   classId,
+  onMarked,
 }) => {
   const today = moment().format("YYYY-MM-DD");
+  const { colors, isDark } = useTheme();
+  const s = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [present, setPresent] = useState<string[]>([]);
   const [absent, setAbsent] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState(today);
-  const [markedDates, setMarkedDates] = useState<Record<string, any>>({
-    [today]: {
-      selected: true,
-      selectedColor: "#E0E0E0", // Initial gray if needed
-    },
-  });
+  const [markedDates, setMarkedDates] = useState<Record<string, DayMark>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [attendanceId, setAttendanceId] = useState<string | null>(null);
-  const [updating, setUpdating] = useState(false);
+  const [updatingAction, setUpdatingAction] = useState<UpdatingAction>(null);
   const { showError, showSuccess } = useToast();
 
-  // Fetch attendance data from API
+  const updating = updatingAction !== null;
+
   const fetchAttendanceData = async () => {
     if (!studentId || !classId) {
       setError("Student ID and Class ID are required");
@@ -77,23 +82,20 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
       if (response.results && response.results.length > 0) {
         const attendanceData = response.results[0];
 
-        // Store the attendance record ID for future API calls
         setAttendanceId(attendanceData.id);
 
-        // Convert ISO dates to YYYY-MM-DD format for the calendar
         const presentDates =
-          attendanceData.presentDates?.map((date: string) =>
-            moment(date).format("YYYY-MM-DD"),
-          ) || [];
+          attendanceData.presentDates?.map((date: string) => toLocalYmd(date)) ||
+          [];
 
         const absentDates =
-          attendanceData.absentDates?.map((date: string) =>
-            moment(date).format("YYYY-MM-DD"),
-          ) || [];
+          attendanceData.absentDates?.map((date: string) => toLocalYmd(date)) ||
+          [];
 
         setPresent(presentDates);
         setAbsent(absentDates);
       } else {
+        setAttendanceId(null);
         setPresent([]);
         setAbsent([]);
       }
@@ -109,42 +111,63 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
   }, [studentId, classId]);
 
   useEffect(() => {
-    const newMarks: Record<string, any> = {};
+    const newMarks: Record<string, DayMark> = {};
+    const selectedBorder = colors.primary;
+
+    const markDay = (
+      date: string,
+      backgroundColor: string,
+      textColor: string,
+    ) => {
+      newMarks[date] = {
+        customStyles: {
+          container: {
+            backgroundColor,
+            borderRadius: 10,
+            borderWidth: date === selectedDate ? 2 : 0,
+            borderColor: selectedBorder,
+          },
+          text: {
+            color: textColor,
+            fontWeight: "700",
+          },
+        },
+      };
+    };
 
     present.forEach((date) => {
-      newMarks[date] = {
-        selected: true,
-        selectedColor: "#4CAF50", // Green
-        //attendance: true,
-      };
+      markDay(date, colors.success, "#FFFFFF");
     });
 
     absent.forEach((date) => {
-      newMarks[date] = {
-        selected: true,
-        selectedColor: "#F44336", // Red
-        //attendance: true,
-      };
+      markDay(date, colors.error, "#FFFFFF");
     });
 
-    // Add selected date with gray if not already marked
     if (!newMarks[selectedDate]) {
-      newMarks[selectedDate] = {
-        selected: true,
-        selectedColor: selectedDate === today ? "#E0E0E0" : "#BDBDBD",
-      };
+      markDay(
+        selectedDate,
+        isDark ? "rgba(255, 107, 53, 0.18)" : "rgba(255, 122, 46, 0.14)",
+        colors.primary,
+      );
     }
 
     setMarkedDates(newMarks);
-  }, [present, absent, selectedDate]);
+  }, [present, absent, selectedDate, colors, isDark]);
 
-  const onDayPress = (day: any) => {
-    const newDate = day.dateString;
-    setSelectedDate(newDate);
+  const onDayPress = (day: DateData) => {
+    setSelectedDate(day.dateString);
   };
 
-  const isSelectedMarked =
-    present.includes(selectedDate) || absent.includes(selectedDate);
+  const selectedStatus: AttendanceStatus = present.includes(selectedDate)
+    ? "present"
+    : absent.includes(selectedDate)
+      ? "absent"
+      : "unmarked";
+
+  const isSelectedMarked = selectedStatus !== "unmarked";
+  const formattedSelectedDate = moment(selectedDate).format("D MMM YYYY");
+  const selectedWeekday = moment(selectedDate).format("dddd");
+  const isToday = selectedDate === today;
 
   const getErrorMessage = (err: unknown) =>
     (err as { message?: string })?.message || "Something went wrong";
@@ -155,12 +178,12 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
       return;
     }
 
-    if (updating) {
-      return; // Prevent multiple simultaneous requests
+    if (updating || selectedStatus === status) {
+      return;
     }
 
     try {
-      setUpdating(true);
+      setUpdatingAction(status);
 
       const payload = {
         studentId,
@@ -174,26 +197,24 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         await markStudentAbsent(attendanceId, payload);
       }
 
-      // Update local state
       const targetArray = status === "present" ? present : absent;
       const setTarget = status === "present" ? setPresent : setAbsent;
       const otherArray = status === "present" ? absent : present;
       const setOther = status === "present" ? setAbsent : setPresent;
 
       if (!targetArray.includes(selectedDate)) {
-        // Remove from the other array if exists
         if (otherArray.includes(selectedDate)) {
           setOther(otherArray.filter((d) => d !== selectedDate));
         }
-        // Add to the correct array
         setTarget([...targetArray, selectedDate]);
       }
 
-      showSuccess(`Marked as ${status} for ${selectedDate}`);
+      showSuccess(`Marked as ${status} for ${formattedSelectedDate}`);
+      onMarked?.(status);
     } catch (err: unknown) {
       showError(getErrorMessage(err));
     } finally {
-      setUpdating(false);
+      setUpdatingAction(null);
     }
   };
 
@@ -209,7 +230,7 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
     Alert.alert(
       "Clear attendance",
-      `Remove attendance mark for ${selectedDate}?`,
+      `Remove attendance mark for ${formattedSelectedDate}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -217,7 +238,7 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
           style: "destructive",
           onPress: async () => {
             try {
-              setUpdating(true);
+              setUpdatingAction("clear");
 
               await clearStudentAttendance(attendanceId, {
                 studentId,
@@ -227,11 +248,11 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
               setPresent((prev) => prev.filter((d) => d !== selectedDate));
               setAbsent((prev) => prev.filter((d) => d !== selectedDate));
-              showSuccess(`Cleared attendance for ${selectedDate}`);
+              showSuccess(`Cleared attendance for ${formattedSelectedDate}`);
             } catch (err: unknown) {
               showError(getErrorMessage(err));
             } finally {
-              setUpdating(false);
+              setUpdatingAction(null);
             }
           },
         },
@@ -241,151 +262,420 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#4CAF50" />
-        <Text style={styles.loadingText}>Loading attendance data...</Text>
+      <View style={[s.container, s.centered]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={s.loadingText}>Loading attendance…</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <Text style={styles.errorText}>Error: {error}</Text>
+      <View style={[s.container, s.centered]}>
+        <Icon name="error-outline" size={36} color={colors.error} />
+        <Text style={s.errorText}>{error}</Text>
         <TouchableOpacity
-          style={styles.retryButton}
+          style={s.retryButton}
           onPress={fetchAttendanceData}
+          activeOpacity={0.85}
         >
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <Text style={s.retryButtonText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Calendar
-        onDayPress={onDayPress}
-        markedDates={markedDates}
-        markingType={"custom"}
-        style={styles.calendar}
-      />
+    <View style={s.container}>
+      <View style={s.calendarCard}>
+        <Calendar
+          onDayPress={onDayPress}
+          markedDates={markedDates}
+          markingType="custom"
+          enableSwipeMonths
+          style={s.calendar}
+          theme={{
+            backgroundColor: "transparent",
+            calendarBackground: "transparent",
+            textSectionTitleColor: isDark ? "#94A3B8" : "#64748B",
+            selectedDayBackgroundColor: colors.primary,
+            selectedDayTextColor: colors.primaryText,
+            todayTextColor: colors.primary,
+            dayTextColor: isDark ? "#F8FAFC" : "#0f172a",
+            textDisabledColor: isDark
+              ? "rgba(148, 163, 184, 0.35)"
+              : "rgba(100, 116, 139, 0.35)",
+            arrowColor: colors.primary,
+            monthTextColor: isDark ? "#F8FAFC" : "#0f172a",
+            indicatorColor: colors.primary,
+            textDayFontWeight: "600",
+            textMonthFontWeight: "800",
+            textDayHeaderFontWeight: "700",
+            textDayFontSize: 15,
+            textMonthFontSize: 18,
+            textDayHeaderFontSize: 12,
+          }}
+        />
+      </View>
 
-      <View style={styles.buttonContainer}>
+      <View style={s.legendRow}>
+        <View style={s.legendItem}>
+          <View style={[s.legendDot, { backgroundColor: colors.success }]} />
+          <Text style={s.legendLabel}>Present</Text>
+        </View>
+        <View style={s.legendItem}>
+          <View style={[s.legendDot, { backgroundColor: colors.error }]} />
+          <Text style={s.legendLabel}>Absent</Text>
+        </View>
+        <View style={s.legendItem}>
+          <View style={[s.legendDot, s.legendDotSelected]} />
+          <Text style={s.legendLabel}>Selected</Text>
+        </View>
+      </View>
+
+      <View style={s.statusCard}>
+        <View style={s.statusTextBlock}>
+          <View style={s.statusDateRow}>
+            <Text style={s.statusWeekday}>{selectedWeekday}</Text>
+            {isToday ? (
+              <View style={s.todayBadge}>
+                <Text style={s.todayBadgeText}>Today</Text>
+              </View>
+            ) : null}
+          </View>
+          <Text style={s.statusDate}>{formattedSelectedDate}</Text>
+        </View>
+        <View
+          style={[
+            s.statusPill,
+            selectedStatus === "present" && s.statusPillPresent,
+            selectedStatus === "absent" && s.statusPillAbsent,
+          ]}
+        >
+          <Icon
+            name={
+              selectedStatus === "present"
+                ? "check-circle"
+                : selectedStatus === "absent"
+                  ? "cancel"
+                  : "radio-button-unchecked"
+            }
+            size={14}
+            color={
+              selectedStatus === "present"
+                ? colors.success
+                : selectedStatus === "absent"
+                  ? colors.error
+                  : isDark
+                    ? "#94A3B8"
+                    : "#64748B"
+            }
+          />
+          <Text
+            style={[
+              s.statusPillText,
+              selectedStatus === "present" && s.statusPillTextPresent,
+              selectedStatus === "absent" && s.statusPillTextAbsent,
+            ]}
+          >
+            {selectedStatus === "present"
+              ? "Present"
+              : selectedStatus === "absent"
+                ? "Absent"
+                : "Not marked"}
+          </Text>
+        </View>
+      </View>
+
+      <View style={s.buttonContainer}>
         <TouchableOpacity
           style={[
-            styles.button,
-            { backgroundColor: "#4CAF50" },
-            updating && styles.buttonDisabled,
+            s.button,
+            s.presentButton,
+            selectedStatus === "present" && s.buttonSelected,
+            (updating || selectedStatus === "present") && s.buttonDisabled,
           ]}
           onPress={() => markAttendance("present")}
-          disabled={updating}
+          disabled={updating || selectedStatus === "present"}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={`Mark ${formattedSelectedDate} as present`}
         >
-          <Text style={styles.buttonText}>
-            {updating ? "Updating..." : "Mark as Present"}
+          {updatingAction === "present" ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Icon name="check-circle" size={18} color="#FFFFFF" />
+          )}
+          <Text style={s.buttonText}>
+            {updatingAction === "present" ? "Saving…" : "Mark as Present"}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[
-            styles.button,
-            { backgroundColor: "#F44336" },
-            updating && styles.buttonDisabled,
+            s.button,
+            s.absentButton,
+            selectedStatus === "absent" && s.buttonSelected,
+            (updating || selectedStatus === "absent") && s.buttonDisabled,
           ]}
           onPress={() => markAttendance("absent")}
-          disabled={updating}
+          disabled={updating || selectedStatus === "absent"}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={`Mark ${formattedSelectedDate} as absent`}
         >
-          <Text style={styles.buttonText}>
-            {updating ? "Updating..." : "Mark as Absent"}
+          {updatingAction === "absent" ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Icon name="cancel" size={18} color="#FFFFFF" />
+          )}
+          <Text style={s.buttonText}>
+            {updatingAction === "absent" ? "Saving…" : "Mark as Absent"}
           </Text>
         </TouchableOpacity>
       </View>
 
-      {isSelectedMarked && (
+      {isSelectedMarked ? (
         <TouchableOpacity
-          style={[styles.clearButton, updating && styles.buttonDisabled]}
+          style={[s.clearButton, updating && s.buttonDisabled]}
           onPress={clearAttendance}
           disabled={updating}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={`Undo attendance for ${formattedSelectedDate}`}
         >
-          <Text style={styles.clearButtonText}>
-            {updating ? "Updating..." : "Undo Marking"}
+          {updatingAction === "clear" ? (
+            <ActivityIndicator size="small" color={colors.warning} />
+          ) : (
+            <Icon name="undo" size={18} color={colors.warning} />
+          )}
+          <Text style={s.clearButtonText}>
+            {updatingAction === "clear" ? "Clearing…" : "Undo marking"}
           </Text>
         </TouchableOpacity>
-      )}
+      ) : null}
     </View>
   );
 };
 
 export default AttendanceCalendar;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  centered: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  calendar: {
-    borderRadius: 10,
-    elevation: 3,
-  },
-  buttonContainer: {
-    marginTop: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 10,
-  },
-  button: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  clearButton: {
-    marginTop: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#FFD700",
-    alignItems: "center",
-  },
-  clearButtonText: {
-    color: "#FFD700",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: "#666",
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#F44336",
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: "#2196F3",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-});
+function createStyles(colors: ThemeColors, isDark: boolean) {
+  return StyleSheet.create({
+    container: {
+      paddingHorizontal: 8,
+      paddingBottom: 8,
+    },
+    centered: {
+      minHeight: 280,
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 10,
+    },
+    calendarCard: {
+      borderRadius: 16,
+      overflow: "hidden",
+      backgroundColor: isDark
+        ? "rgba(255, 255, 255, 0.04)"
+        : "rgba(248, 250, 252, 0.92)",
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(255, 255, 255, 0.14)"
+        : "rgba(148, 163, 184, 0.18)",
+      paddingBottom: 6,
+    },
+    calendar: {
+      borderRadius: 16,
+    },
+    legendRow: {
+      marginTop: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 16,
+    },
+    legendItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    legendDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    legendDotSelected: {
+      backgroundColor: "transparent",
+      borderWidth: 2,
+      borderColor: colors.primary,
+    },
+    legendLabel: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: isDark ? "#94A3B8" : "#64748B",
+    },
+    statusCard: {
+      marginTop: 14,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(255, 255, 255, 0.14)"
+        : "rgba(148, 163, 184, 0.22)",
+      backgroundColor: isDark
+        ? "rgba(255, 255, 255, 0.04)"
+        : "rgba(248, 250, 252, 0.95)",
+    },
+    statusTextBlock: {
+      flex: 1,
+      minWidth: 0,
+      marginRight: 10,
+    },
+    statusDateRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    statusWeekday: {
+      fontSize: 12,
+      fontWeight: "700",
+      letterSpacing: 0.3,
+      color: isDark ? "#94A3B8" : "#64748B",
+      textTransform: "uppercase",
+    },
+    todayBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 999,
+      backgroundColor: isDark
+        ? "rgba(255, 107, 53, 0.16)"
+        : "rgba(255, 122, 46, 0.12)",
+    },
+    todayBadgeText: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: colors.primary,
+    },
+    statusDate: {
+      marginTop: 4,
+      fontSize: 17,
+      fontWeight: "800",
+      letterSpacing: -0.3,
+      color: isDark ? "#F8FAFC" : "#0f172a",
+    },
+    statusPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 999,
+      backgroundColor: isDark
+        ? "rgba(148, 163, 184, 0.12)"
+        : "rgba(148, 163, 184, 0.14)",
+    },
+    statusPillPresent: {
+      backgroundColor: isDark
+        ? "rgba(76, 175, 80, 0.16)"
+        : "rgba(76, 175, 80, 0.12)",
+    },
+    statusPillAbsent: {
+      backgroundColor: isDark
+        ? "rgba(244, 67, 54, 0.16)"
+        : "rgba(244, 67, 54, 0.12)",
+    },
+    statusPillText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: isDark ? "#94A3B8" : "#64748B",
+    },
+    statusPillTextPresent: {
+      color: colors.success,
+    },
+    statusPillTextAbsent: {
+      color: colors.error,
+    },
+    buttonContainer: {
+      marginTop: 14,
+      gap: 10,
+    },
+    button: {
+      minHeight: 48,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      paddingVertical: 13,
+      paddingHorizontal: 16,
+      borderRadius: 14,
+    },
+    presentButton: {
+      backgroundColor: colors.success,
+    },
+    absentButton: {
+      backgroundColor: colors.error,
+    },
+    buttonSelected: {
+      opacity: 0.55,
+    },
+    buttonDisabled: {
+      opacity: 0.55,
+    },
+    buttonText: {
+      color: "#FFFFFF",
+      fontWeight: "800",
+      fontSize: 15,
+    },
+    clearButton: {
+      marginTop: 12,
+      minHeight: 44,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(255, 152, 0, 0.45)"
+        : "rgba(255, 152, 0, 0.55)",
+      backgroundColor: isDark
+        ? "rgba(255, 152, 0, 0.08)"
+        : "rgba(255, 152, 0, 0.06)",
+    },
+    clearButtonText: {
+      color: colors.warning,
+      fontWeight: "700",
+      fontSize: 14,
+    },
+    loadingText: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: isDark ? "#94A3B8" : "#64748B",
+    },
+    errorText: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: colors.error,
+      textAlign: "center",
+      paddingHorizontal: 12,
+    },
+    retryButton: {
+      marginTop: 4,
+      backgroundColor: colors.primary,
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      borderRadius: 12,
+    },
+    retryButtonText: {
+      color: colors.primaryText,
+      fontWeight: "800",
+      fontSize: 14,
+    },
+  });
+}
