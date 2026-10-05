@@ -47,8 +47,9 @@ const MRT_SCORE_ROWS: { key: MrtScoreKey; label: string }[] = [
   { key: "repertoireDynamics", label: "Repertoire (Dynamics)" },
 ];
 
-function formatMrtScore(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+function formatMrtScore(value: number, outOf?: number): string {
+  const score = Number.isInteger(value) ? String(value) : value.toFixed(2);
+  return outOf === undefined ? score : `${score}/${outOf}`;
 }
 
 function toApiMonth(selectedMonth: string | null): string | null {
@@ -396,13 +397,13 @@ function SubmittedMrtDetails({
           key={row.key}
           icon="star-border"
           label={row.label}
-          value={formatMrtScore(mrt[row.key])}
+          value={formatMrtScore(mrt[row.key], 5)}
         />
       ))}
       <StatInfoRow
         icon="calculate"
         label="Total score"
-        value={formatMrtScore(mrt.totalScore)}
+        value={formatMrtScore(mrt.totalScore, 30)}
         variant="success"
       />
       <StatInfoRow

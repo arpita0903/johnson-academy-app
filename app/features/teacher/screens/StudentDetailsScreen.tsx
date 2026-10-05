@@ -20,6 +20,7 @@ import {
   generateFilteredMonths,
   MonthOption,
   convertMonthFormat,
+  ALL_ATTENDANCE_PERIOD,
 } from "../../../utils/dateUtils";
 import { AttendanceResponse } from "../../../types/attendance";
 import { submitMRT } from "../../../services/mrt";
@@ -93,6 +94,13 @@ const StudentDetailsScreen = () => {
   const [loading, setLoading] = useState(false);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [formData, setFormData] = useState<MRTFormData>(EMPTY_MRT_FORM);
+  const [attendancePeriod, setAttendancePeriod] = useState(
+    ALL_ATTENDANCE_PERIOD,
+  );
+
+  useEffect(() => {
+    setAttendancePeriod(ALL_ATTENDANCE_PERIOD);
+  }, [selectedStudent?.id, selectedClass?.id]);
 
   useEffect(() => {
     const fetchAttendanceAndGenerateMonths = async () => {
@@ -194,11 +202,11 @@ const StudentDetailsScreen = () => {
 
     const invalidScores = MRT_SCORE_FIELDS.filter((field) => {
       const score = parseInt(formData[field], 10);
-      return Number.isNaN(score) || score < 2 || score > 5;
+      return Number.isNaN(score) || score < 0 || score > 5;
     });
 
     if (invalidScores.length > 0) {
-      alert("All scores must be between 2 and 5 (valid range: 2-5)");
+      alert("All scores must be between 0 and 5 (valid range: 0-5)");
       return false;
     }
 
@@ -330,6 +338,8 @@ const StudentDetailsScreen = () => {
               <StudentAttendanceSection
                 attendanceData={attendanceData}
                 fallbackJoiningDate={selectedStudent.date_of_joining}
+                selectedPeriod={attendancePeriod}
+                onSelectPeriod={setAttendancePeriod}
               />
             ) : null}
 
@@ -338,6 +348,7 @@ const StudentDetailsScreen = () => {
               classId={classId}
               courseId={courseId}
               courseName={courseName}
+              period={attendancePeriod}
             />
 
             {isTeacher ? <PromoteStudentCard flow={promoteFlow} /> : null}

@@ -26,11 +26,15 @@ const CHIP_OPTION_LIMIT = 6;
 export interface StudentAttendanceSectionProps {
   attendanceData: AttendanceResponse;
   fallbackJoiningDate?: string | null;
+  selectedPeriod: string;
+  onSelectPeriod: (period: string) => void;
 }
 
 export function StudentAttendanceSection({
   attendanceData,
   fallbackJoiningDate,
+  selectedPeriod,
+  onSelectPeriod,
 }: StudentAttendanceSectionProps) {
   const records = attendanceData.results ?? [];
 
@@ -53,6 +57,8 @@ export function StudentAttendanceSection({
           key={record.id}
           record={record}
           fallbackJoiningDate={fallbackJoiningDate}
+          selectedPeriod={selectedPeriod}
+          onSelectPeriod={onSelectPeriod}
         />
       ))}
     </>
@@ -62,25 +68,39 @@ export function StudentAttendanceSection({
 interface AttendanceStatsCardProps {
   record: AttendanceData;
   fallbackJoiningDate?: string | null;
+  selectedPeriod: string;
+  onSelectPeriod: (period: string) => void;
 }
 
 function AttendanceStatsCard({
   record,
   fallbackJoiningDate,
+  selectedPeriod: selectedPeriodProp,
+  onSelectPeriod,
 }: AttendanceStatsCardProps) {
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const [expanded, setExpanded] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState(ALL_ATTENDANCE_PERIOD);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState(selectedPeriodProp);
 
   const joiningDate = record.joiningDate || fallbackJoiningDate || "";
 
   useEffect(() => {
-    setSelectedPeriod(ALL_ATTENDANCE_PERIOD);
+    setSelectedPeriod(selectedPeriodProp);
+  }, [selectedPeriodProp]);
+
+  useEffect(() => {
     setExpanded(false);
-  }, [record.id, record.joiningDate]);
+    setSelectedPeriod(ALL_ATTENDANCE_PERIOD);
+    onSelectPeriod(ALL_ATTENDANCE_PERIOD);
+  }, [record.id, record.joiningDate, onSelectPeriod]);
+
+  const handleSelectPeriod = (period: string) => {
+    setSelectedPeriod(period);
+    onSelectPeriod(period);
+  };
 
   const monthOptions = useMemo(
     () => generateAttendanceMonthOptions(joiningDate),
@@ -170,7 +190,7 @@ function AttendanceStatsCard({
                 <TouchableOpacity
                   key={option.value}
                   activeOpacity={0.82}
-                  onPress={() => setSelectedPeriod(option.value)}
+                  onPress={() => handleSelectPeriod(option.value)}
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
                   accessibilityLabel={`Show attendance stats for ${option.label}`}
@@ -254,7 +274,7 @@ function AttendanceStatsCard({
         onClose={() => setMonthPickerOpen(false)}
         months={periodOptions}
         selectedMonth={selectedPeriod}
-        onSelectMonth={setSelectedPeriod}
+        onSelectMonth={handleSelectPeriod}
         title="Filter attendance"
       />
     </GlassCard>

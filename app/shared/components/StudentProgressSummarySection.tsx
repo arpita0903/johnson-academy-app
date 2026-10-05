@@ -19,7 +19,13 @@ import {
   ThemeColors,
   loginButtonGradientColors,
 } from "../../theme/colors";
-import { formatDate } from "../../utils/dateUtils";
+import {
+  ALL_ATTENDANCE_PERIOD,
+  formatDate,
+  formatYearMonthLabel,
+  parseLocalDate,
+  toYearMonth,
+} from "../../utils/dateUtils";
 import { useStudentProgress } from "../hooks/useStudentProgress";
 import type {
   ModuleProgress,
@@ -34,6 +40,8 @@ export interface StudentProgressSummarySectionProps {
   classId: string | null;
   courseId: string | null;
   courseName?: string;
+  /** Attendance period: "ALL" or YYYY-MM. */
+  period?: string;
 }
 
 type ModuleListItem = ModuleProgress & {
@@ -90,11 +98,57 @@ function formatModuleType(type: ModuleType | string): string {
   return type;
 }
 
+function toMonthKey(value?: string): string | null {
+  if (!value) return null;
+  const date = parseLocalDate(value);
+  return date ? toYearMonth(date) : null;
+}
+
+type MonthModuleSplit = {
+  completed: ModuleListItem[];
+  inProgress: ModuleListItem[];
+};
+
+/**
+ * A module is completed in a month when its end date falls in that month.
+ * It is in progress when it had already started and had not ended yet.
+ */
+function splitModulesForMonth(
+  modules: ModuleListItem[],
+  period: string,
+): MonthModuleSplit {
+  const completed: ModuleListItem[] = [];
+  const inProgress: ModuleListItem[] = [];
+
+  if (period === ALL_ATTENDANCE_PERIOD) {
+    return { completed, inProgress };
+  }
+
+  for (const module of modules) {
+    const start = toMonthKey(module.startDate);
+    const end = toMonthKey(module.endDate);
+
+    if (end === period) {
+      completed.push(module);
+      continue;
+    }
+
+    const startedOnOrBefore = start != null && start <= period;
+    const stillOpen = end == null || end > period;
+    if (startedOnOrBefore && stillOpen) {
+      inProgress.push(module);
+    }
+  }
+
+  return { completed, inProgress };
+}
+
 export function StudentProgressSummarySection({
   studentId,
   classId,
   courseId,
   courseName = "",
+  period = ALL_ATTENDANCE_PERIOD,
 }: StudentProgressSummarySectionProps) {
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
@@ -103,13 +157,28 @@ export function StudentProgressSummarySection({
   const progressQuery = useStudentProgress(studentId, classId, courseId);
   const progress = progressQuery.data;
   const modules = useMemo(() => flattenModules(progress), [progress]);
+  const monthModules = useMemo(
+    () => splitModulesForMonth(modules, period),
+    [modules, period],
+  );
   const isDisabled = !studentId || !classId || !courseId;
+  const periodLabel =
+    period !== ALL_ATTENDANCE_PERIOD ? formatYearMonthLabel(period) : null;
+
+  const completedCount = periodLabel
+    ? monthModules.completed.length
+    : (progress?.completedModules ?? 0);
+  const inProgressCount = periodLabel
+    ? monthModules.inProgress.length
+    : (progress?.inProgressModules ?? 0);
 
   const subtitle = isDisabled
     ? "Open this screen from a course to view module progress."
-    : progress
-      ? `${progress.completedModules} of ${progress.totalModules} modules completed · ${progress.progress}%`
-      : "See every module status, dates, and scores in one list.";
+    : periodLabel
+      ? periodLabel
+      : progress
+        ? `${progress.completedModules} of ${progress.totalModules} modules completed · ${progress.progress}%`
+        : "See every module status, dates, and scores in one list.";
 
   return (
     <>
@@ -125,10 +194,27 @@ export function StudentProgressSummarySection({
           </View>
         ) : null}
 
-            {progressQuery.isError && !isDisabled ? (
+        {progressQuery.isError && !isDisabled ? (
           <Text style={s.errorText}>
             {progressQuery.error?.message || "Failed to load progress."}
           </Text>
+        ) : null}
+
+        {!progressQuery.isLoading && !isDisabled && (progress || periodLabel) ? (
+          <View style={s.cardStatRow}>
+            <ProgressChip
+              label="Completed"
+              value={completedCount}
+              tone="success"
+              styles={s}
+            />
+            <ProgressChip
+              label="In progress"
+              value={inProgressCount}
+              tone="primary"
+              styles={s}
+            />
+          </View>
         ) : null}
 
         <TouchableOpacity
@@ -136,7 +222,11 @@ export function StudentProgressSummarySection({
           onPress={() => setListOpen(true)}
           disabled={isDisabled}
           accessibilityRole="button"
-          accessibilityLabel="View all module progress"
+          accessibilityLabel={
+            periodLabel
+              ? `View modules for ${periodLabel}`
+              : "View all module progress"
+          }
           style={[s.ctaShell, isDisabled && s.ctaDisabled]}
         >
           <LinearGradient
@@ -146,7 +236,9 @@ export function StudentProgressSummarySection({
             style={s.ctaGradient}
           >
             <Icon name="format-list-bulleted" size={20} color="#FFFFFF" />
-            <Text style={s.ctaText}>View all modules</Text>
+            <Text style={s.ctaText}>
+              {periodLabel ? `Modules in ${periodLabel}` : "View all modules"}
+            </Text>
           </LinearGradient>
         </TouchableOpacity>
       </GlassCard>
@@ -156,6 +248,8 @@ export function StudentProgressSummarySection({
         onClose={() => setListOpen(false)}
         courseName={courseName}
         modules={modules}
+        monthModules={monthModules}
+        periodLabel={periodLabel}
         progress={progress}
         isLoading={progressQuery.isLoading}
         isError={progressQuery.isError}
@@ -169,11 +263,17 @@ export function StudentProgressSummarySection({
   );
 }
 
+type ModuleListRow =
+  | { kind: "header"; listKey: string; title: string }
+  | { kind: "module"; item: ModuleListItem };
+
 interface ModuleProgressListModalProps {
   visible: boolean;
   onClose: () => void;
   courseName: string;
   modules: ModuleListItem[];
+  monthModules: MonthModuleSplit;
+  periodLabel: string | null;
   progress: StudentProgressRecord | undefined;
   isLoading: boolean;
   isError: boolean;
@@ -187,6 +287,8 @@ function ModuleProgressListModal({
   onClose,
   courseName,
   modules,
+  monthModules,
+  periodLabel,
   progress,
   isLoading,
   isError,
@@ -196,11 +298,21 @@ function ModuleProgressListModal({
 }: ModuleProgressListModalProps) {
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const rows = useMemo(
+    () => buildModuleRows(modules, monthModules, periodLabel),
+    [modules, monthModules, periodLabel],
+  );
+  const moduleCount = periodLabel
+    ? monthModules.completed.length + monthModules.inProgress.length
+    : modules.length;
 
   const renderItem = useCallback(
-    ({ item }: { item: ModuleListItem }) => (
-      <ModuleProgressRow item={item} styles={s} isDark={isDark} />
-    ),
+    ({ item }: { item: ModuleListRow }) => {
+      if (item.kind === "header") {
+        return <Text style={s.groupLabel}>{item.title}</Text>;
+      }
+      return <ModuleProgressRow item={item.item} styles={s} isDark={isDark} />;
+    },
     [s, isDark],
   );
 
@@ -220,8 +332,8 @@ function ModuleProgressListModal({
                 <Text style={s.sheetTitle}>Module progress</Text>
                 <Text style={s.sheetSubtitle} numberOfLines={1}>
                   {courseName
-                    ? `${courseName} · ${modules.length} modules`
-                    : `${modules.length} modules`}
+                    ? `${courseName} · ${periodLabel ? `${periodLabel} · ` : ""}${moduleCount} modules`
+                    : `${periodLabel ? `${periodLabel} · ` : ""}${moduleCount} modules`}
                 </Text>
               </View>
               <TouchableOpacity
@@ -239,7 +351,22 @@ function ModuleProgressListModal({
               </TouchableOpacity>
             </View>
 
-            {progress ? (
+            {periodLabel ? (
+              <View style={s.statRow}>
+                <ProgressChip
+                  label="Completed"
+                  value={monthModules.completed.length}
+                  tone="success"
+                  styles={s}
+                />
+                <ProgressChip
+                  label="In progress"
+                  value={monthModules.inProgress.length}
+                  tone="primary"
+                  styles={s}
+                />
+              </View>
+            ) : progress ? (
               <View style={s.statRow}>
                 <ProgressChip
                   label="Done"
@@ -284,12 +411,14 @@ function ModuleProgressListModal({
             ) : (
               <FlatList
                 style={s.list}
-                data={modules}
-                keyExtractor={(item) => item.listKey}
+                data={rows}
+                keyExtractor={(item) =>
+                  item.kind === "header" ? item.listKey : item.item.listKey
+                }
                 renderItem={renderItem}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={
-                  modules.length === 0 ? s.listEmptyContent : s.listContent
+                  rows.length === 0 ? s.listEmptyContent : s.listContent
                 }
                 ListEmptyComponent={
                   <View style={s.centeredState}>
@@ -302,7 +431,11 @@ function ModuleProgressListModal({
                           : "rgba(100, 116, 139, 0.55)"
                       }
                     />
-                    <Text style={s.bodyMuted}>No modules in this course.</Text>
+                    <Text style={s.bodyMuted}>
+                      {periodLabel
+                        ? `No modules completed or in progress in ${periodLabel}.`
+                        : "No modules in this course."}
+                    </Text>
                   </View>
                 }
                 refreshControl={
@@ -321,6 +454,37 @@ function ModuleProgressListModal({
       </View>
     </Modal>
   );
+}
+
+function buildModuleRows(
+  modules: ModuleListItem[],
+  monthModules: MonthModuleSplit,
+  periodLabel: string | null,
+): ModuleListRow[] {
+  if (!periodLabel) {
+    return modules.map((item) => ({ kind: "module", item }));
+  }
+
+  const rows: ModuleListRow[] = [];
+  if (monthModules.completed.length > 0) {
+    rows.push({
+      kind: "header",
+      listKey: "completed",
+      title: `Completed · ${monthModules.completed.length}`,
+    });
+    monthModules.completed.forEach((item) => rows.push({ kind: "module", item }));
+  }
+  if (monthModules.inProgress.length > 0) {
+    rows.push({
+      kind: "header",
+      listKey: "inprogress",
+      title: `In progress · ${monthModules.inProgress.length}`,
+    });
+    monthModules.inProgress.forEach((item) =>
+      rows.push({ kind: "module", item }),
+    );
+  }
+  return rows;
 }
 
 function ProgressChip({
@@ -470,6 +634,19 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       color: "#FFFFFF",
       fontSize: 16,
       fontWeight: "900",
+    },
+    cardStatRow: {
+      flexDirection: "row",
+      gap: 8,
+      marginTop: 12,
+    },
+    groupLabel: {
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 0.2,
+      color: isDark ? "#CBD5E1" : "#475569",
+      marginBottom: 6,
+      marginTop: 4,
     },
     backdrop: {
       ...StyleSheet.absoluteFillObject,

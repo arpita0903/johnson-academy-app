@@ -7,12 +7,12 @@ export interface MRTSubmissionData {
   classId: string;
   studentId: string;
   courseId: string;
-  regularity: number; // Score range: 2-5
-  learningSpeed: number; // Score range: 2-5
-  theory: number; // Score range: 2-5
-  technicalExercises: number; // Score range: 2-5
-  repertoireRhythmSense: number; // Score range: 2-5
-  repertoireDynamics: number; // Score range: 2-5
+  regularity: number; // Score range: 0-5
+  learningSpeed: number; // Score range: 0-5
+  theory: number; // Score range: 0-5
+  technicalExercises: number; // Score range: 0-5
+  repertoireRhythmSense: number; // Score range: 0-5
+  repertoireDynamics: number; // Score range: 0-5
   remarks?: string; // Optional remarks
 }
 

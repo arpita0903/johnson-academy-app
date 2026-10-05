@@ -55,7 +55,7 @@ export function handleMRTFieldChange(
       return;
     }
     const num = parseInt(numericValue, 10);
-    if (num < 2 || num > 5) {
+    if (num < 0 || num > 5) {
       return;
     }
     setFormData((prev) => ({ ...prev, [key]: numericValue }));
@@ -89,7 +89,7 @@ export function MRTEvaluationForm({
             style={field === "remarks" ? [s.input, s.inputMultiline] : s.input}
             value={formData[field]}
             onChangeText={(text) => onChange(field, text)}
-            placeholder={field === "remarks" ? "Enter remarks" : "Range: 2–5"}
+            placeholder={field === "remarks" ? "Enter remarks" : "Range: 0–5"}
             placeholderTextColor={
               isDark ? "rgba(148, 163, 184, 0.5)" : colors.placeholderText
             }
