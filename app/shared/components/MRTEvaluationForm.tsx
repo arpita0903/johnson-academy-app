@@ -4,6 +4,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Switch,
   StyleSheet,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
@@ -66,30 +67,68 @@ export function handleMRTFieldChange(
 
 export interface MRTEvaluationFormProps {
   formData: MRTFormData;
+  isAbsent: boolean;
+  onAbsentChange: (isAbsent: boolean) => void;
   onChange: (key: MRTFormField, value: string) => void;
   onSubmit: () => void;
 }
 
 export function MRTEvaluationForm({
   formData,
+  isAbsent,
+  onAbsentChange,
   onChange,
   onSubmit,
 }: MRTEvaluationFormProps) {
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const fields = isAbsent
+    ? MRT_FORM_FIELDS.filter((field) => field === "remarks")
+    : MRT_FORM_FIELDS;
 
   return (
     <GlassCard title="Evaluation form" spacing="bottom">
-      {MRT_FORM_FIELDS.map((field) => (
+      <View style={s.absentRow}>
+        <View style={s.absentCopy}>
+          <Text style={s.absentLabel}>Mark as Absent</Text>
+          <Text style={s.absentHint}>
+            Student was not available. Scores are not recorded.
+          </Text>
+        </View>
+        <Switch
+          value={isAbsent}
+          onValueChange={onAbsentChange}
+          trackColor={{
+            false: isDark ? "rgba(148, 163, 184, 0.35)" : "rgba(148, 163, 184, 0.55)",
+            true: colors.primary,
+          }}
+          thumbColor="#FFFFFF"
+          accessibilityRole="switch"
+          accessibilityLabel="Mark as Absent"
+          accessibilityState={{ checked: isAbsent }}
+        />
+      </View>
+
+      {fields.map((field) => (
         <View key={field} style={s.inputGroup}>
           <Text style={s.fieldLabel}>
-            {field === "remarks" ? "Remarks *" : `${field} *`}
+            {field === "remarks"
+              ? isAbsent
+                ? "Remarks"
+                : "Remarks *"
+              : `${field} *`}
           </Text>
           <TextInput
             style={field === "remarks" ? [s.input, s.inputMultiline] : s.input}
             value={formData[field]}
             onChangeText={(text) => onChange(field, text)}
-            placeholder={field === "remarks" ? "Enter remarks" : "Range: 0–5"}
+            placeholder={
+              field === "remarks"
+                ? isAbsent
+                  ? "Reason (optional)"
+                  : "Enter remarks"
+                : "Range: 0–5"
+            }
             placeholderTextColor={
               isDark ? "rgba(148, 163, 184, 0.5)" : colors.placeholderText
             }
@@ -104,6 +143,8 @@ export function MRTEvaluationForm({
         activeOpacity={0.88}
         onPress={onSubmit}
         style={s.submitShell}
+        accessibilityRole="button"
+        accessibilityLabel={isAbsent ? "Mark absent" : "Submit MRT"}
       >
         <LinearGradient
           colors={[...loginButtonGradientColors]}
@@ -111,8 +152,10 @@ export function MRTEvaluationForm({
           end={{ x: 1, y: 0.5 }}
           style={s.submitGradient}
         >
-          <Icon name="send" size={20} color="#FFFFFF" />
-          <Text style={s.submitGradientText}>Submit MRT</Text>
+          <Icon name={isAbsent ? "event-busy" : "send"} size={20} color="#FFFFFF" />
+          <Text style={s.submitGradientText}>
+            {isAbsent ? "Mark absent" : "Submit MRT"}
+          </Text>
         </LinearGradient>
       </TouchableOpacity>
     </GlassCard>
@@ -121,6 +164,38 @@ export function MRTEvaluationForm({
 
 function createStyles(colors: ThemeColors, isDark: boolean) {
   return StyleSheet.create({
+    absentRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      marginBottom: 16,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderRadius: 14,
+      borderWidth: 1.5,
+      borderColor: isDark
+        ? "rgba(148, 163, 184, 0.35)"
+        : "rgba(148, 163, 184, 0.45)",
+      backgroundColor: isDark
+        ? "rgba(15, 23, 42, 0.55)"
+        : "rgba(248, 250, 252, 0.98)",
+    },
+    absentCopy: {
+      flex: 1,
+    },
+    absentLabel: {
+      fontSize: 13,
+      fontWeight: "800",
+      marginBottom: 4,
+      letterSpacing: 0.15,
+      color: isDark ? "#E2E8F0" : "#334155",
+    },
+    absentHint: {
+      fontSize: 12,
+      fontWeight: "600",
+      lineHeight: 17,
+      color: isDark ? "#94A3B8" : "#64748B",
+    },
     inputGroup: {
       marginBottom: 14,
     },

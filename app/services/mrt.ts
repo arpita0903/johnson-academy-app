@@ -9,9 +9,9 @@ import {
 } from "../types/mrt";
 
 /**
- * Submit Monthly Review Test (MRT) data for a student
- * @param mrtData - MRT submission data
- * @returns Response from MRT submission
+ * Submit Monthly Review Test (MRT) data for a student.
+ * Scored submissions include all six scores. Absent submissions send
+ * `isAbsent: true` and omit every score field.
  */
 export const submitMRT = async (
   mrtData: MRTSubmissionData,

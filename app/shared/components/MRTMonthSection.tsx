@@ -18,7 +18,13 @@ import {
   convertMonthToYearMonth,
   MonthOption,
 } from "../../utils/dateUtils";
-import type { GetMrtByStudentClassMonthSuccess } from "../../types/mrt";
+import {
+  getMrtRecordStatus,
+  MRT_ABSENT_DETAIL,
+  MRT_STATUS_COPY,
+  type GetMrtByStudentClassMonthSuccess,
+  type MrtRecordStatus,
+} from "../../types/mrt";
 import { useMrtByStudentClassMonth } from "../hooks/useMrtByStudentClassMonth";
 import { useDownloadAttendancePdf } from "../hooks/useDownloadAttendancePdf";
 import { useToast } from "../hooks/useToast";
@@ -47,7 +53,11 @@ const MRT_SCORE_ROWS: { key: MrtScoreKey; label: string }[] = [
   { key: "repertoireDynamics", label: "Repertoire (Dynamics)" },
 ];
 
-function formatMrtScore(value: number, outOf?: number): string {
+function formatMrtScore(
+  value: number | null | undefined,
+  outOf?: number,
+): string {
+  if (value == null || Number.isNaN(value)) return "—";
   const score = Number.isInteger(value) ? String(value) : value.toFixed(2);
   return outOf === undefined ? score : `${score}/${outOf}`;
 }
@@ -74,6 +84,8 @@ export interface MRTMonthSectionProps {
   classId: string | null;
   courseId: string | null;
   formData: MRTFormData;
+  isAbsent: boolean;
+  onAbsentChange: (isAbsent: boolean) => void;
   onChange: (key: MRTFormField, value: string) => void;
   onSubmit: () => void | Promise<boolean>;
   allowFill?: boolean;
@@ -89,6 +101,8 @@ export function MRTMonthSection({
   classId,
   courseId,
   formData,
+  isAbsent,
+  onAbsentChange,
   onChange,
   onSubmit,
   allowFill = true,
@@ -156,11 +170,22 @@ export function MRTMonthSection({
     !!courseId &&
     (justSubmitted || (mrtQuery.isFetching && !mrt));
 
-  const subtitle = mrt
-    ? "MRT already submitted for this month."
-    : allowFill
+  const recordStatus = getMrtRecordStatus(
+    mrtQuery.isError || !selectedMonth ? undefined : mrt,
+  );
+  const subtitle = !selectedMonth
+    ? allowFill
       ? "Select a month to view a submitted review or fill a new one."
-      : "Select a month to view a submitted review.";
+      : "Select a month to view a submitted review."
+    : showMrtLoader
+      ? "Loading this month's MRT."
+      : mrtQuery.isError
+        ? "Could not load MRT for this month."
+        : recordStatus === "submitted"
+          ? "Scored MRT exists for this month."
+          : recordStatus === "absent"
+            ? "Teacher marked unavailable. No marks given."
+            : "No MRT record for this month.";
 
   return (
     <>
@@ -203,6 +228,7 @@ export function MRTMonthSection({
                   s={s}
                   courseId={courseId}
                   isFilling={isFilling}
+                  isAbsent={isAbsent}
                   showMrtLoader={showMrtLoader}
                   mrt={mrt}
                   isError={mrtQuery.isError}
@@ -243,6 +269,8 @@ export function MRTMonthSection({
       {allowFill && isFilling && !mrt ? (
         <MRTEvaluationForm
           formData={formData}
+          isAbsent={isAbsent}
+          onAbsentChange={onAbsentChange}
           onChange={onChange}
           onSubmit={() => {
             void handleFormSubmit();
@@ -258,6 +286,7 @@ interface MrtMonthContentProps {
   s: ReturnType<typeof createStyles>;
   courseId: string | null;
   isFilling: boolean;
+  isAbsent: boolean;
   showMrtLoader: boolean;
   mrt: GetMrtByStudentClassMonthSuccess | null;
   isError: boolean;
@@ -272,6 +301,7 @@ function MrtMonthContent({
   s,
   courseId,
   isFilling,
+  isAbsent,
   showMrtLoader,
   mrt,
   isError,
@@ -313,8 +343,11 @@ function MrtMonthContent({
   if (isFilling) {
     return (
       <View style={s.fillHeader}>
+        <MrtStatusBanner status="missing" s={s} />
         <Text style={s.helperText}>
-          Complete the evaluation form below, then submit.
+          {isAbsent
+            ? "Mark this student absent below. Scores are not required."
+            : "Complete the evaluation form below, then submit."}
         </Text>
         <TouchableOpacity
           activeOpacity={0.85}
@@ -329,7 +362,8 @@ function MrtMonthContent({
 
   return (
     <View style={s.emptyMrt}>
-      <Text style={s.helperText}>No MRT submitted for this month yet.</Text>
+      <MrtStatusBanner status="missing" s={s} />
+      <Text style={s.helperText}>No MRT record for this month yet.</Text>
       {allowFill ? (
         <TouchableOpacity
           activeOpacity={0.88}
@@ -383,6 +417,28 @@ function DownloadReportCta({
   );
 }
 
+function MrtStatusBanner({
+  status,
+  s,
+}: {
+  status: MrtRecordStatus;
+  s: ReturnType<typeof createStyles>;
+}) {
+  return (
+    <View
+      style={[
+        s.statusBanner,
+        status === "absent" && s.statusBannerAbsent,
+        status === "submitted" && s.statusBannerSubmitted,
+      ]}
+      accessibilityRole="text"
+    >
+      <Text style={s.statusEyebrow}>MRT status</Text>
+      <Text style={s.statusValue}>{MRT_STATUS_COPY[status]}</Text>
+    </View>
+  );
+}
+
 function SubmittedMrtDetails({
   mrt,
   s,
@@ -390,8 +446,26 @@ function SubmittedMrtDetails({
   mrt: GetMrtByStudentClassMonthSuccess;
   s: ReturnType<typeof createStyles>;
 }) {
+  const status = getMrtRecordStatus(mrt);
+
+  if (status === "absent") {
+    return (
+      <View style={s.submittedWrap}>
+        <MrtStatusBanner status="absent" s={s} />
+        <Text style={s.absentDetail}>{MRT_ABSENT_DETAIL}</Text>
+        {mrt.remarks ? (
+          <View style={s.remarksBlock}>
+            <Text style={s.remarksLabel}>Remarks</Text>
+            <Text style={s.remarksText}>{mrt.remarks}</Text>
+          </View>
+        ) : null}
+      </View>
+    );
+  }
+
   return (
     <View style={s.submittedWrap}>
+      <MrtStatusBanner status="submitted" s={s} />
       {MRT_SCORE_ROWS.map((row) => (
         <StatInfoRow
           key={row.key}
@@ -549,6 +623,45 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     submittedWrap: {
       marginTop: 8,
+    },
+    statusBanner: {
+      marginTop: 14,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderRadius: 14,
+      backgroundColor: isDark
+        ? "rgba(148, 163, 184, 0.12)"
+        : "rgba(148, 163, 184, 0.14)",
+    },
+    statusBannerAbsent: {
+      backgroundColor: isDark
+        ? "rgba(239, 68, 68, 0.16)"
+        : "rgba(239, 68, 68, 0.1)",
+    },
+    statusBannerSubmitted: {
+      backgroundColor: isDark
+        ? "rgba(34, 197, 94, 0.16)"
+        : "rgba(34, 197, 94, 0.12)",
+    },
+    statusEyebrow: {
+      fontSize: 11,
+      fontWeight: "800",
+      letterSpacing: 0.4,
+      textTransform: "uppercase",
+      color: isDark ? "#94A3B8" : "#64748B",
+      marginBottom: 4,
+    },
+    statusValue: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: isDark ? "#F8FAFC" : "#0f172a",
+    },
+    absentDetail: {
+      marginTop: 12,
+      fontSize: 14,
+      fontWeight: "700",
+      lineHeight: 20,
+      color: isDark ? "#FECACA" : "#B91C1C",
     },
     remarksBlock: {
       marginTop: 8,

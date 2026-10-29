@@ -24,6 +24,7 @@ import {
 } from "../../../utils/dateUtils";
 import { AttendanceResponse } from "../../../types/attendance";
 import { submitMRT } from "../../../services/mrt";
+import type { MRTSubmissionData } from "../../../types/mrt";
 import { queryKeys } from "../../../config/queryKeys";
 import { useTheme } from "../../../context/ThemeContext";
 import { ThemeColors } from "../../../theme/colors";
@@ -94,6 +95,7 @@ const StudentDetailsScreen = () => {
   const [loading, setLoading] = useState(false);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [formData, setFormData] = useState<MRTFormData>(EMPTY_MRT_FORM);
+  const [isAbsent, setIsAbsent] = useState(false);
   const [attendancePeriod, setAttendancePeriod] = useState(
     ALL_ATTENDANCE_PERIOD,
   );
@@ -185,59 +187,79 @@ const StudentDetailsScreen = () => {
       return false;
     }
 
-    const missingFields = MRT_SCORE_FIELDS.filter((field) => {
-      const value = formData[field];
-      return !value || value.trim() === "";
-    });
-
-    if (missingFields.length > 0) {
-      alert(`Please fill in all required fields: ${missingFields.join(", ")}`);
-      return false;
-    }
-
-    if (!formData.remarks || formData.remarks.trim() === "") {
-      alert("Please fill in the Remarks field");
-      return false;
-    }
-
-    const invalidScores = MRT_SCORE_FIELDS.filter((field) => {
-      const score = parseInt(formData[field], 10);
-      return Number.isNaN(score) || score < 0 || score > 5;
-    });
-
-    if (invalidScores.length > 0) {
-      alert("All scores must be between 0 and 5 (valid range: 0-5)");
-      return false;
-    }
-
     try {
       const formattedMonth = convertMonthFormat(selectedMonth);
       if (formattedMonth.includes("NaN")) {
         throw new Error("Invalid month format. Please select a valid month.");
       }
 
-      const mrtData = {
-        month: formattedMonth,
-        classId: selectedClass.id,
-        studentId: selectedStudent.id,
-        courseId,
-        regularity: parseInt(formData["Regularity (5M)"], 10),
-        learningSpeed: parseInt(formData["Learning Speed (5M)"], 10),
-        theory: parseInt(formData["Theory (5M)"], 10),
-        technicalExercises: parseInt(formData["Technical Exercises (5M)"], 10),
-        repertoireRhythmSense: parseInt(
-          formData["Repertoire (Rhythm Sense) (5M)"],
-          10,
-        ),
-        repertoireDynamics: parseInt(
-          formData["Repertoire (Dynamics) (5M)"],
-          10,
-        ),
-        remarks: formData.remarks || "",
-      };
+      const remarks = formData.remarks.trim();
+      let mrtData: MRTSubmissionData;
+
+      if (isAbsent) {
+        mrtData = {
+          month: formattedMonth,
+          classId: selectedClass.id,
+          studentId: selectedStudent.id,
+          courseId,
+          isAbsent: true,
+          ...(remarks ? { remarks } : {}),
+        };
+      } else {
+        const missingFields = MRT_SCORE_FIELDS.filter((field) => {
+          const value = formData[field];
+          return !value || value.trim() === "";
+        });
+
+        if (missingFields.length > 0) {
+          alert(
+            `Please fill in all required fields: ${missingFields.join(", ")}`,
+          );
+          return false;
+        }
+
+        if (!remarks) {
+          alert("Please fill in the Remarks field");
+          return false;
+        }
+
+        const invalidScores = MRT_SCORE_FIELDS.filter((field) => {
+          const score = parseInt(formData[field], 10);
+          return Number.isNaN(score) || score < 0 || score > 5;
+        });
+
+        if (invalidScores.length > 0) {
+          alert("All scores must be between 0 and 5 (valid range: 0-5)");
+          return false;
+        }
+
+        mrtData = {
+          month: formattedMonth,
+          classId: selectedClass.id,
+          studentId: selectedStudent.id,
+          courseId,
+          regularity: parseInt(formData["Regularity (5M)"], 10),
+          learningSpeed: parseInt(formData["Learning Speed (5M)"], 10),
+          theory: parseInt(formData["Theory (5M)"], 10),
+          technicalExercises: parseInt(
+            formData["Technical Exercises (5M)"],
+            10,
+          ),
+          repertoireRhythmSense: parseInt(
+            formData["Repertoire (Rhythm Sense) (5M)"],
+            10,
+          ),
+          repertoireDynamics: parseInt(
+            formData["Repertoire (Dynamics) (5M)"],
+            10,
+          ),
+          remarks,
+        };
+      }
 
       await submitMRT(mrtData);
       setFormData(EMPTY_MRT_FORM);
+      setIsAbsent(false);
       await queryClient.invalidateQueries({
         queryKey: queryKeys.mrtByStudentClassMonth(
           studentId,
@@ -246,7 +268,11 @@ const StudentDetailsScreen = () => {
           courseId,
         ),
       });
-      alert("MRT submitted successfully!");
+      alert(
+        isAbsent
+          ? "Marked as absent. No marks were recorded."
+          : "MRT submitted successfully!",
+      );
       return true;
     } catch (error) {
       console.error("Error submitting MRT:", error);
@@ -363,6 +389,8 @@ const StudentDetailsScreen = () => {
               classId={classId}
               courseId={courseId}
               formData={formData}
+              isAbsent={isAbsent}
+              onAbsentChange={setIsAbsent}
               onChange={handleChange}
               onSubmit={handleSubmit}
               allowFill={isTeacher}
@@ -380,6 +408,7 @@ const StudentDetailsScreen = () => {
           onSelectMonth={(month) => {
             setSelectedMonth(month);
             setFormData(EMPTY_MRT_FORM);
+            setIsAbsent(false);
           }}
         />
       </SafeAreaView>
