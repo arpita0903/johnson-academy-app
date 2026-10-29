@@ -2,7 +2,7 @@
   "expo": {
     "name": "Johnson Academy",
     "slug": "johnson-academy-app",
-    "version": "1.9.0",
+    "version": "1.9.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "johnsoynacademy",
@@ -18,7 +18,7 @@
         "NSCameraUsageDescription": "Allow Johnson Academy to use your camera to take a profile photo.",
         "NSPhotoLibraryUsageDescription": "Allow Johnson Academy to access your photos so you can update your profile picture."
       },
-      "buildNumber": "42"
+      "buildNumber": "45"
     },
     "android": {
       "adaptiveIcon": {
@@ -32,7 +32,7 @@
         "android.permission.CAMERA",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "versionCode": 42
+      "versionCode": 44
     },
     "web": {
       "bundler": "metro",
@@ -48,7 +48,9 @@
             "targetSdkVersion": 36,
             "buildToolsVersion": "36.0.0",
             "ndkVersion": "27.1.12297006",
-            "useLegacyPackaging": false
+            "useLegacyPackaging": false,
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
           }
         }
       ],
