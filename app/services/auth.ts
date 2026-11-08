@@ -24,6 +24,32 @@ export interface User {
   isCompleteProfile?: boolean;
   phoneNumber?: string;
   profilePicture?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  occupation?: string;
+  address?: string;
+  referralSource?: string;
+  referralSourceOther?: string;
+  emergencyContact?: {
+    name?: string;
+    relationship?: string;
+    phone?: string;
+    email?: string;
+  };
+  motherName?: string;
+  fatherName?: string;
+  guardians?: { name?: string; relation?: string }[];
+  isProfileCardComplete?: boolean;
+}
+
+export interface CompleteStudentProfilePayload {
+  dateOfBirth: string;
+  gender: string;
+  occupation: string;
+  referralSource: string;
+  referralSourceOther?: string;
+  address: string;
+  emergencyContact: { phone: string };
 }
 
 export const loginUser = async (email: string, password: string) => {
@@ -64,6 +90,45 @@ export const updateUserProfile = async (user: UserProfile) => {
     return response.data;
   } catch (error: any) {
     throw error.response?.data || { message: "Something went wrong" };
+  }
+};
+
+export const fetchOwnProfile = async (userId: string): Promise<User> => {
+  try {
+    const response = await api.get(`/users/${userId}`);
+    return response.data as User;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Could not load your profile" };
+  }
+};
+
+export const completeStudentProfile = async (
+  userId: string,
+  payload: CompleteStudentProfilePayload,
+): Promise<User> => {
+  try {
+    const response = await api.patch(`/users/${userId}`, payload);
+    return response.data as User;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Could not save your profile" };
+  }
+};
+
+export interface CompleteProfileCardPayload {
+  motherName?: string;
+  fatherName?: string;
+  guardians?: { name: string; relation: string }[];
+}
+
+export const completeProfileCard = async (
+  userId: string,
+  payload: CompleteProfileCardPayload,
+): Promise<User> => {
+  try {
+    const response = await api.post(`/users/${userId}/profile-card`, payload);
+    return response.data as User;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Could not save your profile card" };
   }
 };
 

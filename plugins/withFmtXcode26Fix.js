@@ -28,6 +28,24 @@ const FMT_PATCH = `
     unless patched_fmt
       Pod::UI.warn "${WORKAROUND_MARKER}: fmt/base.h not found under \#{installer.sandbox.root}"
     end
+
+    # Xcode 26 only accepts deployment targets from 15.0 up. Pod resource
+    # bundles such as RNCAsyncStorage_resources keep the podspec minimum (13.4).
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        current = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+        if current.nil? || current.to_f < 15.0
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+        end
+      end
+    end
+    installer.target_installation_results.pod_target_installation_results.each do |pod_name, target_installation_result|
+      target_installation_result.resource_bundle_targets.each do |resource_bundle_target|
+        resource_bundle_target.build_configurations.each do |config|
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+        end
+      end
+    end
 `;
 
 function withFmtXcode26Fix(config) {

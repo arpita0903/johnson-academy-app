@@ -10,17 +10,29 @@ interface AuthNavigatorProps {
 
 const AuthNavigator: React.FC<AuthNavigatorProps> = ({ navigation }) => {
   const { colors } = useTheme();
-  const { isLoading, isAuthenticated, userRole } = useAuthGuard();
+  const { isLoading, isAuthenticated, userRole, needsStudentProfile, needsProfileCard } =
+    useAuthGuard();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && userRole) {
-      if (userRole === "teacher") {
+      if (needsStudentProfile) {
+        navigation.replace("CompleteProfile");
+      } else if (needsProfileCard) {
+        navigation.replace("ProfileCard");
+      } else if (userRole === "teacher") {
         navigation.replace("TeacherDashboard");
       } else {
         navigation.replace("Homepage");
       }
     }
-  }, [isLoading, isAuthenticated, userRole, navigation]);
+  }, [
+    isLoading,
+    isAuthenticated,
+    userRole,
+    needsStudentProfile,
+    needsProfileCard,
+    navigation,
+  ]);
 
   if (isLoading) {
     return (

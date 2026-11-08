@@ -22,6 +22,10 @@ import { useAppContext } from "../../../context/AppContext";
 import { useToast } from "../../../context/ToastContext";
 import { loginButtonGradientColors } from "../../../theme/colors";
 import { loginUser } from "@/app/services/auth";
+import {
+  isStudentProfileComplete,
+  needsProfileCardUpdate,
+} from "../../profile/utils/studentProfile";
 
 interface LoginProps {
   navigation: any;
@@ -143,7 +147,11 @@ const Login = ({ navigation }: LoginProps) => {
 
       login(user);
 
-      if (user.role === "teacher") {
+      if (user.role === "student" && !isStudentProfileComplete(user)) {
+        navigation.replace("CompleteProfile");
+      } else if (needsProfileCardUpdate(user)) {
+        navigation.replace("ProfileCard");
+      } else if (user.role === "teacher") {
         navigation.replace("TeacherDashboard");
       } else {
         navigation.replace("Homepage");

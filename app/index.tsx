@@ -29,6 +29,8 @@ import AssignmentList from "./features/teacher/screens/AssignmentList";
 import AssignmentDetail from "./features/teacher/screens/AssignmentDetail";
 import ProfileDrawer from "./features/profile/components/ProfileDrawer";
 import ProfileScreen from "./features/profile/screens/ProfileScreen";
+import CompleteStudentProfileScreen from "./features/profile/screens/CompleteStudentProfileScreen";
+import StudentProfileCardScreen from "./features/profile/screens/StudentProfileCardScreen";
 
 import { AppProvider, useAppContext } from "./context/AppContext";
 import { TeacherProvider } from "./context/TeacherContext";
@@ -44,6 +46,9 @@ import { setDrawerNavigation } from "./features/notifications/notificationNaviga
 
 import Icon from "react-native-vector-icons/Foundation";
 import StudentDetailsScreen from "./features/teacher/screens/StudentDetailsScreen";
+import TicketListScreen from "./features/student/screens/TicketListScreen";
+import CreateTicketScreen from "./features/student/screens/CreateTicketScreen";
+import TicketDetailScreen from "./features/student/screens/TicketDetailScreen";
 
 type MainStackParamList = {
   Home: undefined;
@@ -62,6 +67,11 @@ type MainStackParamList = {
   StudentAssignmentDetail: Record<string, unknown> | undefined;
   StudentAssignments: Record<string, unknown> | undefined;
   Profile: undefined;
+  CompleteProfile: undefined;
+  ProfileCard: undefined;
+  StudentTickets: undefined;
+  CreateTicket: undefined;
+  TicketDetail: { ticketId: string };
 };
 
 const Drawer = createDrawerNavigator();
@@ -108,6 +118,16 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
         name="Login"
         component={Login}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="CompleteProfile"
+        component={CompleteStudentProfileScreen}
+        options={{ headerShown: false, gestureEnabled: false }}
+      />
+      <Stack.Screen
+        name="ProfileCard"
+        component={StudentProfileCardScreen}
+        options={{ headerShown: false, gestureEnabled: false }}
       />
       <Stack.Screen
         name="Course"
@@ -351,6 +371,48 @@ const StackScreens: React.FC<StackScreensProps> = ({ navigation, route }) => {
         options={{ headerShown: false }}
       >
         {(props) => <StudentAssignmentDetailScreen {...(props as any)} />}
+      </Stack.Screen>
+      <Stack.Screen
+        name="StudentTickets"
+        options={{ headerTitle: "Concerns" }}
+      >
+        {(props) => (
+          <ProtectedWrapper
+            navigation={props.navigation}
+            requiredRole="student"
+          >
+            <TicketListScreen navigation={props.navigation} />
+          </ProtectedWrapper>
+        )}
+      </Stack.Screen>
+      <Stack.Screen
+        name="CreateTicket"
+        options={{ headerTitle: "Raise a concern" }}
+      >
+        {(props) => (
+          <ProtectedWrapper
+            navigation={props.navigation}
+            requiredRole="student"
+          >
+            <CreateTicketScreen navigation={props.navigation} />
+          </ProtectedWrapper>
+        )}
+      </Stack.Screen>
+      <Stack.Screen
+        name="TicketDetail"
+        options={{ headerTitle: "Concern" }}
+      >
+        {(props) => (
+          <ProtectedWrapper
+            navigation={props.navigation}
+            requiredRole="student"
+          >
+            <TicketDetailScreen
+              navigation={props.navigation}
+              route={props.route}
+            />
+          </ProtectedWrapper>
+        )}
       </Stack.Screen>
       <Stack.Screen
         name="StudentAssignments"

@@ -8,6 +8,11 @@ export type NotificationAuthState = {
   role: string | null;
 };
 
+export type TicketUpdatedNotificationData = {
+  type: "ticket_updated";
+  ticketId: string;
+};
+
 export type ModuleStartedNotificationData = {
   type: "module_started";
   progressId: string;
@@ -33,6 +38,56 @@ export const setDrawerNavigation = (
 
 const asString = (value: unknown): string | null =>
   typeof value === "string" && value.length > 0 ? value : null;
+
+export const parseTicketUpdatedData = (
+  data: Record<string, unknown> | undefined,
+): TicketUpdatedNotificationData | null => {
+  if (!data || data["type"] !== "ticket_updated") {
+    return null;
+  }
+
+  const ticketId = asString(data["ticketId"]);
+  if (!ticketId) {
+    return null;
+  }
+
+  return { type: "ticket_updated", ticketId };
+};
+
+const navigateFromTicketUpdated = (
+  data: TicketUpdatedNotificationData,
+  auth: NotificationAuthState,
+): void => {
+  if (!auth.isAuthenticated || auth.role !== "student") {
+    return;
+  }
+
+  if (!drawerNavigation) {
+    pendingNotificationData = data;
+    return;
+  }
+
+  drawerNavigation.navigate("Main", {
+    screen: "TicketDetail",
+    params: { ticketId: data.ticketId },
+  });
+};
+
+const routeNotificationData = async (
+  data: Record<string, unknown> | undefined,
+  auth: NotificationAuthState,
+): Promise<void> => {
+  const ticketUpdated = parseTicketUpdatedData(data);
+  if (ticketUpdated) {
+    navigateFromTicketUpdated(ticketUpdated, auth);
+    return;
+  }
+
+  const moduleStarted = parseModuleStartedData(data);
+  if (moduleStarted) {
+    await navigateFromModuleStarted(moduleStarted, auth);
+  }
+};
 
 export const parseModuleStartedData = (
   data: Record<string, unknown> | undefined,
@@ -143,12 +198,7 @@ export const handleNotificationResponse = async (
     return;
   }
 
-  const moduleStarted = parseModuleStartedData(data);
-  if (!moduleStarted) {
-    return;
-  }
-
-  await navigateFromModuleStarted(moduleStarted, auth);
+  await routeNotificationData(data, auth);
 };
 
 export const processPendingNotification = async (
@@ -156,10 +206,7 @@ export const processPendingNotification = async (
 ): Promise<void> => {
   const pending = consumePendingNotificationData();
   if (pending) {
-    const moduleStarted = parseModuleStartedData(pending);
-    if (moduleStarted) {
-      await navigateFromModuleStarted(moduleStarted, auth);
-    }
+    await routeNotificationData(pending, auth);
     return;
   }
 

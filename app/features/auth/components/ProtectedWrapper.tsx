@@ -17,7 +17,8 @@ const ProtectedWrapper: React.FC<ProtectedWrapperProps> = ({
   requiredRole,
 }) => {
   const { colors } = useTheme();
-  const { isLoading, isAuthenticated, userRole } = useAuthGuard();
+  const { isLoading, isAuthenticated, userRole, needsStudentProfile, needsProfileCard } =
+    useAuthGuard();
 
   if (isLoading) {
     return (
@@ -29,6 +30,16 @@ const ProtectedWrapper: React.FC<ProtectedWrapperProps> = ({
 
   if (!isAuthenticated) {
     return <Login navigation={navigation} />;
+  }
+
+  if (needsStudentProfile) {
+    navigation.replace("CompleteProfile");
+    return null;
+  }
+
+  if (needsProfileCard) {
+    navigation.replace("ProfileCard");
+    return null;
   }
 
   if (requiredRole && userRole !== requiredRole) {
