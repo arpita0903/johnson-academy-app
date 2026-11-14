@@ -2,7 +2,7 @@
   "expo": {
     "name": "Johnson Academy",
     "slug": "johnson-academy-app",
-    "version": "1.9.4",
+    "version": "1.9.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "johnsoynacademy",
@@ -32,7 +32,7 @@
         "android.permission.CAMERA",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "versionCode": 53
+      "versionCode": 55
     },
     "web": {
       "bundler": "metro",
