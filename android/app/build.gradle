@@ -92,8 +92,8 @@ android {
         applicationId 'com.johnsonacademy.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 50
-        versionName "1.9.4"
+        versionCode 53
+        versionName "1.9.5"
     }
     signingConfigs {
         debug {

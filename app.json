@@ -32,7 +32,7 @@
         "android.permission.CAMERA",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "versionCode": 50
+      "versionCode": 53
     },
     "web": {
       "bundler": "metro",
